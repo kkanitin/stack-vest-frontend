@@ -34,7 +34,7 @@ Connect this repository to Cloudflare Pages for automatic deployments on push:
 - **Build Output Directory**: `dist`
 - **Root Directory**: `/` (or `frontend/` if in a monorepo)
 
-*Note: With `wrangler.toml` present, Cloudflare Pages can also use `wrangler deploy` to perform the deployment, but standard Git integration is preferred.*
+*Note: With `wrangler.toml` present, Cloudflare Pages can also use `wrangler deploy` to perform the deployment, but standard Git integration is preferred. If updating to Wrangler v4+, ensure your build environment uses Node.js v22 or higher.*
 
 ## Stack
 
