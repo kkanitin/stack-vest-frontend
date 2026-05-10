@@ -9,9 +9,30 @@ npm run dev       # Start dev server with HMR
 npm run build     # Type-check then bundle for production (tsc -b && vite build)
 npm run lint      # Run ESLint
 npm run preview   # Serve the production build locally
+npm run deploy    # Deploy the dist folder to Cloudflare Pages
 ```
 
 No test runner is configured yet.
+
+## Deployment
+
+This project is deployed to **Cloudflare Pages**.
+
+### Manual Deployment
+To deploy manually from your local machine:
+1. Ensure you have the necessary environment variables set in the Cloudflare Dashboard.
+2. Run:
+   ```bash
+   npm run build
+   npm run deploy
+   ```
+   *Note: You may need to authenticate with Cloudflare (`npx wrangler login`) if it's your first time.*
+
+### Automated Deployment (Recommended)
+Connect this repository to Cloudflare Pages for automatic deployments on push:
+- **Build Command**: `npm run build`
+- **Build Output Directory**: `dist`
+- **Root Directory**: `/` (or `frontend/` if in a monorepo)
 
 ## Stack
 
