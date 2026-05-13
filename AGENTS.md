@@ -48,32 +48,18 @@ This is a greenfield SPA. The only source files so far are `src/main.tsx` (React
 
 When adding features, keep in mind the React Compiler is intentionally disabled (noted in the project README) — do not enable it without discussion.
 
-## Look & Feel
+## Look & Feel (StackVest Design Language)
 
-The StackVest design language is minimalist, precise, and data-centric, optimized for financial visualization and technical interfaces.
+The StackVest design language is minimalist, precise, and data-centric. Detailed guidelines, design tokens, and UI patterns have been centralized into an agent-agnostic skill:
 
-### Core Principles
-- **Clarity over Decoration**: UI elements should serve a functional purpose. Minimal use of decorative elements.
-- **Precision**: Use consistent spacing and alignment to convey trust and accuracy, especially in data visualizations.
-- **Technical Aesthetic**: Inspired by developer tools, using monospaced fonts for technical data and subtle "grid" or "tick" motifs.
-- **Theming**: Full support for Light and Dark modes using CSS variables defined in `index.css`.
+👉 **[StackVest UI Skill](./skills/stackvest-ui/SKILL.md)**
 
-### Design Tokens
-- **Typography**: 
-  - **Sans/Heading**: `Inter` (system-fallback) with tight letter-spacing (`-0.01em` to `-0.04em`).
-  - **Monospace**: `JetBrains Mono` for technical data, numbers, and code snippets.
-- **Colors**:
-  - **Accent**: Indigo (`#6366f1` in Light, `#818cf8` in Dark).
-  - **Backgrounds**: White (`#ffffff`) for Light mode, Deep Navy (`#020617`) for Dark mode.
-  - **Borders**: Subtle Slate (`#e2e8f0` Light, `#1e293b` Dark).
-- **Shapes**:
-  - **Interactive Elements**: `8px` border radius (buttons, nav links).
-  - **Small Accents**: `4px` or `6px` radius (code blocks, badges).
-
-### UI Patterns
-- **Layout**: 280px sidebar for navigation, spacious main content area (3rem padding).
-- **Interactions**: Smooth transitions (`200ms cubic-bezier`) with subtle lifts (`translateY(-1px)`) and shadows on hover for interactive elements.
-- **Visual Cues**: Use of emojis/icons for navigation and clear "Beta" badges for experimental features.
+All agents MUST refer to this skill when performing UI/Design tasks. It includes:
+- **Core Principles**: Clarity, Precision, and Technical Aesthetic.
+- **Design Tokens**: Typography (Inter/Mono split), theme-aware colors, and shape rules.
+- **UI Patterns**: Layout conventions and interaction rules.
+- **Review Checklist**: A mandatory checklist to run before submitting UI changes.
+- **Templates**: Boilerplate for components like `FinancialCard`.
 
 ## Environment Variables
 

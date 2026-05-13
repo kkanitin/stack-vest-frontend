@@ -9,6 +9,7 @@
   --accent-border: rgba(99, 102, 241, 0.2);
   --social-bg: #f1f5f9;
   --success: #10b981;
+  --warning: #f59e0b;
   --error: #ef4444;
   --shadow:
     0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -44,6 +45,7 @@
     --accent-border: rgba(129, 140, 248, 0.3);
     --social-bg: #0f172a;
     --success: #34d399;
+    --warning: #fbbf24;
     --error: #f87171;
     --shadow:
       0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);

@@ -33,8 +33,10 @@ This project uses [Vite's environment variable handling](https://vitejs.dev/guid
 
 ## AI Agent Guidelines
 
-This repository includes specialized guidelines for AI coding agents (like Junie, Claude, etc.).
-- See [AGENTS.md](./AGENTS.md) for full instructions.
+This repository includes specialized guidelines and "skills" for AI coding agents (like Junie, Claude Code, etc.).
+- See [AGENTS.md](./AGENTS.md) for core instructions and system rules.
+- See [CLAUDE.md](./CLAUDE.md) for Claude Code specific setup.
+- **AI Skills**: Centralized domain knowledge is stored in the `skills/` directory (e.g., [StackVest UI Skill](./skills/stackvest-ui/SKILL.md)).
 - **Git Restriction**: Agents are prohibited from committing or pushing code. All changes must be manually reviewed and committed by humans.
 
 ## Expanding the ESLint configuration
