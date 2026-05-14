@@ -2,55 +2,77 @@ import React, { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const GREETINGS = (import.meta.env.VITE_GREETINGS?.split(';') || [
-  "Ready to stack,",
-  "To the moon,",
-  "Happy investing,",
-  "Stacking sats,",
-  "Welcome back,",
+  'Ready to stack,',
+  'To the moon,',
+  'Happy investing,',
+  'Stacking sats,',
+  'Welcome back,',
 ]).filter((g: string) => g.trim() !== '');
+
+const S = `
+  .viz-greeting{margin:0 0 4px;line-height:1;}
+  .viz-sub{font-size:15px;color:var(--text);margin:0 0 36px;font-weight:300;}
+  .viz-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);}
+  .viz-card{background:var(--card);padding:28px 24px;}
+  .viz-card-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--text);opacity:.65;margin:0 0 14px;}
+  .viz-card-value{font-size:30px;font-weight:700;color:var(--text-h);margin-bottom:6px;letter-spacing:-.03em;font-family:var(--mono);}
+  .viz-card-delta{font-size:13px;font-weight:600;display:flex;align-items:center;gap:4px;font-family:var(--mono);}
+  .viz-card-delta.up{color:var(--success);}
+  .viz-card-delta.warn{color:var(--warning);}
+  .viz-card-body{font-size:14px;font-weight:300;color:var(--text);line-height:1.65;}
+  .viz-card-title{font-size:17px;font-weight:600;color:var(--text-h);margin-bottom:8px;font-family:var(--heading);}
+  .viz-activity{font-size:14px;color:var(--text);}
+  .viz-activity-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;}
+  .viz-activity-row+.viz-activity-row{border-top:1px solid var(--border);}
+  .viz-activity-name strong{color:var(--text-h);}
+  .viz-section-head{display:flex;align-items:baseline;gap:14px;margin-bottom:0;}
+  .viz-divider{flex:1;height:1px;background:var(--border);}
+  .viz-kicker{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text);opacity:.45;margin-bottom:16px;}
+`;
 
 const Visualization: React.FC = () => {
   const { user } = useAuth();
-  
-  const greeting = useMemo(() => {
-    return GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-  }, []);
+  const greeting = useMemo(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)], []);
+  const firstName = user?.name?.split(' ')[0] ?? 'Investor';
 
   return (
-    <section id="center" style={{ textAlign: 'center', marginBottom: '4rem' }}>
-      <h1>{greeting} {user?.name?.split(' ')[0]}!</h1>
-      <p>Here's a quick look at your investment stack and market activity.</p>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '3rem' }}>
-        <div style={{ padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', boxShadow: 'var(--shadow)' }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text)', opacity: 0.8 }}>Portfolio Value</h3>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: 'var(--text-h)', marginBottom: '8px', letterSpacing: '-0.02em', fontFamily: 'var(--mono)' }}>$24,560.12</div>
-          <div style={{ color: 'var(--success)', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--mono)' }}>
+    <>
+      <style>{S}</style>
+
+      <div className="viz-kicker">Overview</div>
+      <h1 className="viz-greeting">{greeting} {firstName}!</h1>
+      <p className="viz-sub">Here's a quick look at your investment stack and market activity.</p>
+
+      <div className="viz-grid">
+        <div className="viz-card">
+          <p className="viz-card-label">Portfolio Value</p>
+          <div className="viz-card-value">$24,560.12</div>
+          <div className="viz-card-delta up">
             <span>↑</span> 12.4% (+$2,720.00)
           </div>
         </div>
-        
-        <div style={{ padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', boxShadow: 'var(--shadow)' }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text)', opacity: 0.8 }}>Market Status</h3>
-          <div style={{ fontSize: '20px', fontWeight: '600', color: 'var(--text-h)', marginBottom: '8px' }}>Bullish Sentiment</div>
-          <p style={{ fontSize: '14px', color: 'var(--text)', lineHeight: '1.5' }}>BTC and ETH showing strong recovery in last 24h with increased volume.</p>
+
+        <div className="viz-card">
+          <p className="viz-card-label">Market Status</p>
+          <div className="viz-card-title">Bullish Sentiment</div>
+          <p className="viz-card-body">BTC and ETH showing strong recovery in the last 24h with increased volume.</p>
         </div>
-        
-        <div style={{ padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', boxShadow: 'var(--shadow)' }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text)', opacity: 0.8 }}>Recent Activity</h3>
-          <div style={{ fontSize: '14px', color: 'var(--text)' }}>
-            <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
-              <span><strong>Solstack</strong> Rebalanced</span>
-              <span style={{ color: 'var(--success)' }}>+2.1%</span>
+
+        <div className="viz-card">
+          <p className="viz-card-label">Recent Activity</p>
+          <div className="viz-activity">
+            <div className="viz-activity-row">
+              <span className="viz-activity-name"><strong>Solstack</strong> Rebalanced</span>
+              <span className="viz-card-delta up">+2.1%</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span><strong>Market</strong> Volatility</span>
-              <span style={{ color: 'var(--warning)' }}>High</span>
+            <div className="viz-activity-row">
+              <span className="viz-activity-name"><strong>Market</strong> Volatility</span>
+              <span className="viz-card-delta warn">High</span>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </>
   );
 };
 
