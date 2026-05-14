@@ -1,8 +1,10 @@
 .counter {
-  font-size: 14px;
+  font-family: var(--sans);
+  font-size: 13px;
   font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 8px;
+  letter-spacing: .03em;
+  padding: 9px 18px;
+  border-radius: 0;
   color: #fff;
   background: var(--accent);
   border: 1px solid var(--accent);
@@ -11,17 +13,18 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 24px;
+  text-transform: uppercase;
 
   &:hover {
-    background: color-mix(in srgb, var(--accent), #000 10%);
-    border-color: color-mix(in srgb, var(--accent), #000 10%);
-    box-shadow: 0 4px 12px var(--accent-border);
-    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--accent), #000 12%);
+    border-color: color-mix(in srgb, var(--accent), #000 12%);
+    box-shadow: 3px 3px 0 rgba(0,0,0,.15);
+    transform: translate(-1px, -1px);
   }
-  
+
   &:active {
-    transform: translateY(0);
+    transform: translate(0, 0);
+    box-shadow: none;
   }
 
   &:focus-visible {
@@ -32,7 +35,7 @@
 
 .hero {
   margin-bottom: 1rem;
-  
+
   img {
     display: block;
     margin: 0 auto;
@@ -45,116 +48,13 @@
 
 @media (prefers-color-scheme: dark) {
   .brand-logo {
-    /* Improve visibility of dark logo elements on deep navy background */
-    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.2)) 
-            drop-shadow(0 0 10px rgba(99, 102, 241, 0.3));
+    filter: invert(1) brightness(0.85);
   }
 }
 
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-  text-align: center;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-}
-
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
+/* Used by Visualization and DCASimulation for their content sections */
+.page-section {
+  width: 100%;
 }
 
 .ticks {
@@ -177,4 +77,38 @@
     right: 0;
     border-right-color: var(--border);
   }
+}
+
+/* Editorial card */
+.ed-card {
+  padding: 1.75rem;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--text-h);
+  background: var(--card);
+  text-align: left;
+  box-shadow: var(--shadow);
+}
+
+.ed-card-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--text);
+  opacity: 0.7;
+  margin: 0 0 10px;
+}
+
+.ed-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-bg);
 }

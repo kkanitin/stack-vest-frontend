@@ -1,21 +1,25 @@
-:root {
-  --text: #475569;
-  --text-h: #0f172a;
-  --bg: #ffffff;
-  --border: #e2e8f0;
-  --code-bg: #f8fafc;
-  --accent: #6366f1;
-  --accent-bg: rgba(99, 102, 241, 0.08);
-  --accent-border: rgba(99, 102, 241, 0.2);
-  --social-bg: #f1f5f9;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --shadow:
-    0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-  --sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --heading: 'Inter', system-ui, -apple-system, sans-serif;
+:root {
+  --text: #6b5e52;
+  --text-h: #111111;
+  --bg: #f5f0eb;
+  --card: #ffffff;
+  --sidebar-bg: #111111;
+  --border: #ddd6ce;
+  --code-bg: #ede8e2;
+  --accent: #dc2626;
+  --accent-bg: rgba(220, 38, 38, 0.07);
+  --accent-border: rgba(220, 38, 38, 0.22);
+  --social-bg: #ede8e2;
+  --success: #16a34a;
+  --warning: #d97706;
+  --error: #dc2626;
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+
+  --display: 'Bebas Neue', impact, sans-serif;
+  --sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --heading: 'DM Sans', system-ui, -apple-system, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   font: 16px/1.6 var(--sans);
@@ -35,24 +39,21 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #94a3b8;
-    --text-h: #f8fafc;
-    --bg: #020617;
-    --border: #1e293b;
-    --code-bg: #0f172a;
-    --accent: #818cf8;
-    --accent-bg: rgba(129, 140, 248, 0.12);
-    --accent-border: rgba(129, 140, 248, 0.3);
-    --social-bg: #0f172a;
-    --success: #34d399;
+    --text: #9a8f83;
+    --text-h: #f0ebe3;
+    --bg: #1c1712;
+    --card: #231e18;
+    --sidebar-bg: #0d0a07;
+    --border: #2e2720;
+    --code-bg: #231e18;
+    --accent: #ef4444;
+    --accent-bg: rgba(239, 68, 68, 0.1);
+    --accent-border: rgba(239, 68, 68, 0.25);
+    --social-bg: #231e18;
+    --success: #4ade80;
     --warning: #fbbf24;
     --error: #f87171;
-    --shadow:
-      0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   }
 }
 
@@ -68,31 +69,34 @@ body {
   margin: 0;
 }
 
-h1,
-h2,
-h3 {
-  font-family: var(--heading);
-  font-weight: 600;
-  color: var(--text-h);
-  line-height: 1.2;
-}
-
 h1 {
+  font-family: var(--display);
+  font-weight: 400;
+  color: var(--text-h);
+  line-height: 1;
+  letter-spacing: .01em;
   font-size: 3.5rem;
-  letter-spacing: -0.04em;
-  margin: 2rem 0;
+  margin: 1.5rem 0;
   @media (max-width: 1024px) {
     font-size: 2.5rem;
   }
 }
 
 h2 {
+  font-family: var(--heading);
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.2;
   font-size: 1.5rem;
   letter-spacing: -0.02em;
   margin: 0 0 0.5rem;
 }
 
 h3 {
+  font-family: var(--heading);
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.2;
   font-size: 1.125rem;
   letter-spacing: -0.01em;
 }
@@ -101,17 +105,12 @@ p {
   margin: 0 0 1rem;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
 code {
+  font-family: var(--mono);
   font-size: 15px;
   line-height: 135%;
   padding: 4px 8px;
+  border-radius: 4px;
   background: var(--code-bg);
+  color: var(--text-h);
 }

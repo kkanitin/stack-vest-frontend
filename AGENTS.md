@@ -48,10 +48,6 @@ This is a greenfield SPA. The only source files so far are `src/main.tsx` (React
 
 When adding features, keep in mind the React Compiler is intentionally disabled (noted in the project README) — do not enable it without discussion.
 
-## Look & Feel (StackVest Design Language)
-
-The StackVest design language is minimalist, precise, and data-centric. Detailed guidelines, design tokens, and UI patterns have been centralized into an agent-agnostic skill:
-
 👉 **[StackVest UI Skill](./skills/stackvest-ui/SKILL.md)**
 
 All agents MUST refer to this skill when performing UI/Design tasks. It includes:
