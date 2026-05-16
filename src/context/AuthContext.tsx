@@ -1,15 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-
-const API_BASE = `${import.meta.env.VITE_API_URL}/api/v1`;
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  picture: string;
-}
+import { getMe, createMe } from '../api/users';
+import type { User } from '../api/users';
 
 interface AuthContextType {
   user: User | null;
@@ -43,26 +36,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (credential: string) => {
-    const headers = { Authorization: `Bearer ${credential}` };
-
-    let userData: User;
-
-    const getRes = await fetch(`${API_BASE}/users/me`, { headers });
-    const getData = await getRes.json();
-
-    if (getRes.ok && getData.code === 200) {
-      userData = getData.result;
-    } else {
-      const createRes = await fetch(`${API_BASE}/users/me`, {
-        method: 'POST',
-        headers,
-      });
-      const createData = await createRes.json();
-      if (!createRes.ok) {
-        throw new Error(createData.errorMessage || 'Failed to create user account');
-      }
-      userData = createData.result;
-    }
+    console.log("credential : ",credential)
+    const userData = (await getMe(credential)) ?? (await createMe(credential));
 
     setUser(userData);
     setToken(credential);
