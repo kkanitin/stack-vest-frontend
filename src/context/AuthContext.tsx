@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
-const API_BASE = 'http://localhost:8080/api/v1';
+const API_BASE = `${import.meta.env.VITE_API_URL}/api/v1`;
 
 interface User {
   id: string;
