@@ -201,6 +201,14 @@
   box-sizing: border-box;
 }
 
+/* Loading state */
+.lp-loading {
+  font-size: 13px;
+  color: #aaa;
+  letter-spacing: .05em;
+  margin-bottom: 16px;
+}
+
 /* Fine print */
 .lp-fine {
   margin-top: 24px;
