@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage';
 import LandingPage from './pages/LandingPage';
 import Visualization from './components/Visualization';
 import DCASimulation from './components/DCASimulation';
+import HeatmapPage from './pages/HeatmapPage';
+import WatchlistPage from './pages/WatchlistPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -39,6 +41,8 @@ function App() {
               <Route index element={<Navigate to="visualization" replace />} />
               <Route path="visualization" element={<Visualization />} />
               <Route path="dca" element={<DCASimulation />} />
+              <Route path="visualization/heatmap" element={<HeatmapPage />} />
+              <Route path="watchlist" element={<WatchlistPage />} />
             </Route>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>

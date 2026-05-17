@@ -8,13 +8,24 @@ import './LoginPage.css';
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
   const [error, setError] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
   const navigate = useNavigate();
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
-  const handleSuccess = (r: CredentialResponse) => {
+  const handleSuccess = async (r: CredentialResponse) => {
     setError(null);
-    if (r.credential) { login(r.credential); navigate('/dashboard'); }
+    if (r.credential) {
+      setLoading(true);
+      try {
+        await login(r.credential);
+        navigate('/dashboard');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Sign-in failed. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
   const handleError = () => setError('Sign-in failed. Ensure your account is registered.');
 
@@ -49,7 +60,11 @@ const LoginPage: React.FC = () => {
 
           {error && <div className="lp-err">{error}</div>}
 
-          <GoogleLogin onSuccess={handleSuccess} onError={handleError} useOneTap />
+          {loading ? (
+            <div className="lp-loading">Signing in…</div>
+          ) : (
+            <GoogleLogin onSuccess={handleSuccess} onError={handleError} useOneTap />
+          )}
 
           <p className="lp-fine">
             By signing in you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.

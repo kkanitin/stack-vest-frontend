@@ -19,6 +19,10 @@ const S = `
   .sidebar-link-icon{opacity:.6;font-style:normal;font-size:14px;}
   .sidebar-link.active .sidebar-link-icon{opacity:1;}
   .sidebar-badge{margin-left:auto;font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;background:rgba(220,38,38,.15);color:var(--accent);border:1px solid rgba(220,38,38,.25);}
+  .sidebar-sublink{display:flex;align-items:center;gap:10px;padding:7px 10px 7px 32px;font-size:12px;font-weight:500;text-decoration:none;color:rgba(255,255,255,.35);transition:all .15s;position:relative;letter-spacing:.01em;}
+  .sidebar-sublink:hover{color:rgba(255,255,255,.7);}
+  .sidebar-sublink.active{color:rgba(255,255,255,.9);}
+  .sidebar-sublink.active::before{content:'';position:absolute;left:16px;top:6px;bottom:6px;width:2px;background:var(--accent);}
   .sidebar-foot{padding:20px 16px;border-top:1px solid rgba(255,255,255,.07);}
   .sidebar-user{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0 2px;}
   .sidebar-avatar{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);flex-shrink:0;object-fit:cover;}
@@ -68,10 +72,18 @@ const LandingPage: React.FC = () => {
             <div className="sidebar-nav-label">Workspace</div>
             <NavLink
               to="/dashboard/visualization"
+              end
               className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
             >
               <em className="sidebar-link-icon">📊</em>
               Visualization
+            </NavLink>
+            <NavLink
+              to="/dashboard/visualization/heatmap"
+              className={({ isActive }) => `sidebar-sublink${isActive ? ' active' : ''}`}
+            >
+              <em className="sidebar-link-icon" style={{ fontSize: 11 }}>🟥</em>
+              Heatmap
             </NavLink>
             <NavLink
               to="/dashboard/dca"
@@ -80,6 +92,13 @@ const LandingPage: React.FC = () => {
               <em className="sidebar-link-icon">⏳</em>
               DCA Simulation
               <span className="sidebar-badge">Beta</span>
+            </NavLink>
+            <NavLink
+              to="/dashboard/watchlist"
+              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+            >
+              <em className="sidebar-link-icon">📋</em>
+              Watchlist
             </NavLink>
           </nav>
 
