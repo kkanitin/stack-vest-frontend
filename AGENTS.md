@@ -57,6 +57,32 @@ All agents MUST refer to this skill when performing UI/Design tasks. It includes
 - **Review Checklist**: A mandatory checklist to run before submitting UI changes.
 - **Templates**: Boilerplate for components like `FinancialCard`.
 
+## CSS Conventions
+
+**Always use separate `.css` files — never inject styles via a JS string.**
+
+The pattern below is explicitly forbidden:
+
+```tsx
+// ❌ Anti-pattern — do not do this
+const S = `.my-class { color: red; }`;
+return <><style>{S}</style>...</>;
+```
+
+**Why it's harmful:**
+- Styles are re-injected into the DOM on every render, bypassing Vite's CSS pipeline (no deduplication, no minification, no caching).
+- The JS bundle carries dead CSS weight that the browser cannot separately cache.
+- It is invisible to linters, browser DevTools source maps, and the StackVest UI Skill checklist.
+
+**Correct pattern:** co-locate a `ComponentName.css` file next to the component and import it:
+
+```tsx
+// ✅ Correct
+import './MyComponent.css';
+```
+
+Existing components (`WatchlistPage`, `Visualization`, `HeatmapPage`, `DCASimulation`) still use inline strings pending a future cleanup pass. Do not introduce new ones.
+
 ## Environment Variables
 
 - `.env`: Default configuration. Must be kept in sync with `.env.local` and contain all required keys with example/non-sensitive values.
