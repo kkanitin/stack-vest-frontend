@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, NavLink, Outlet } from 'react-router-dom';
 import heroImg from '../assets/hero.png';
@@ -39,12 +39,26 @@ const S = `
   .main-footer-live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);opacity:.5;letter-spacing:.04em;}
   .live-dot{width:5px;height:5px;border-radius:50%;background:var(--success);animation:livepulse 2s ease-in-out infinite;}
   @keyframes livepulse{0%,100%{opacity:1}50%{opacity:.3}}
-  @media(max-width:900px){.sidebar{display:none;}.main-content{padding:28px 20px;}.main-topbar{padding:16px 20px;}.main-footer{padding:16px 20px;}}
+  .hamburger{display:none;align-items:center;justify-content:center;background:transparent;border:1px solid var(--border);padding:6px 10px;cursor:pointer;border-radius:8px;color:var(--text-h);font-size:18px;line-height:1;transition:border-color 150ms;}
+  .hamburger:hover{border-color:var(--text-h);}
+  .sidebar-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:199;}
+  .sidebar-close{display:none;align-items:center;justify-content:center;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:4px 8px;cursor:pointer;color:rgba(255,255,255,.6);font-size:18px;line-height:1;margin-left:auto;transition:all 150ms;}
+  .sidebar-close:hover{color:#fff;border-color:rgba(255,255,255,.35);}
+  @media(max-width:1024px){
+    .sidebar{position:fixed;top:0;left:0;height:100%;z-index:200;transform:translateX(-260px);transition:transform 200ms cubic-bezier(0.4,0,0.2,1);}
+    .sidebar--open{transform:translateX(0);}
+    .main-content{padding:clamp(1rem,4vw,2.5rem);}
+    .main-topbar{padding:16px clamp(1rem,4vw,2.5rem);}
+    .main-footer{padding:16px clamp(1rem,4vw,2.5rem);}
+    .hamburger{display:flex;}
+    .sidebar-close{display:flex;}
+  }
 `;
 
 const LandingPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -57,7 +71,7 @@ const LandingPage: React.FC = () => {
     <>
       <style>{S}</style>
       <div className="layout">
-        <aside className="sidebar">
+        <aside className={`sidebar${sidebarOpen ? ' sidebar--open' : ''}`}>
           <div className="sidebar-head">
             <div className="sidebar-brand">
               <img src={heroImg} alt="StackVest" className="brand-logo" style={{ width: 28, height: 'auto', filter: 'invert(1) brightness(0.9)' }} />
@@ -65,6 +79,7 @@ const LandingPage: React.FC = () => {
                 <div className="sidebar-brand-name">StackVest</div>
                 <div className="sidebar-brand-sub">Portfolio</div>
               </div>
+              <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">✕</button>
             </div>
           </div>
 
@@ -118,6 +133,7 @@ const LandingPage: React.FC = () => {
 
         <main className="main">
           <div className="main-topbar">
+            <button className="hamburger" onClick={() => setSidebarOpen(true)} aria-label="Open menu">☰</button>
             <span className="main-topbar-left">Dashboard</span>
             <span className="main-topbar-date">{today}</span>
           </div>
@@ -135,6 +151,9 @@ const LandingPage: React.FC = () => {
           </footer>
         </main>
       </div>
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+      )}
     </>
   );
 };

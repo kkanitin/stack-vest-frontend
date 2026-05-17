@@ -5,6 +5,7 @@ const S = `
   .dca-h{margin:0 0 6px;}
   .dca-sub{font-size:15px;color:var(--text);margin:0 0 40px;font-weight:300;}
   .dca-coming{border:1px solid var(--border);border-top:3px solid var(--text-h);background:var(--card);padding:48px 40px;max-width:520px;}
+  @media(max-width:767px){.dca-coming{padding:clamp(1.25rem,5vw,3rem) clamp(1rem,4vw,2.5rem);}}
   .dca-coming-icon{font-size:36px;margin-bottom:20px;display:block;}
   .dca-coming-h{font-family:'Bebas Neue',impact,sans-serif;font-size:32px;letter-spacing:.02em;color:var(--text-h);margin:0 0 12px;}
   .dca-coming-body{font-size:14px;color:var(--text);line-height:1.7;font-weight:300;margin:0 0 24px;}
