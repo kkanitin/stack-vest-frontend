@@ -36,6 +36,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (credential: string) => {
+    console.log(import.meta.env.VITE_API_URL)
     console.log("credential : ",credential)
     const userData = (await getMe(credential)) ?? (await createMe(credential));
 
