@@ -55,7 +55,9 @@ const S = `
   .hm-error-retry{background:transparent;border:1px solid var(--accent-border);color:var(--accent);font-size:12px;font-weight:600;padding:4px 12px;cursor:pointer;border-radius:8px;transition:all 200ms cubic-bezier(0.4,0,0.2,1);font-family:var(--sans);}
   .hm-error-retry:hover{background:var(--accent);color:#fff;}
 
+  @media(max-width:767px){.hm-toolbar{flex-direction:column;align-items:flex-start;gap:8px;}.hm-updated{margin-left:0;}}
   @media(max-width:600px){.hm-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}}
+  @media(max-width:400px){.hm-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));}}
 `;
 
 const SKELETON_COUNT = 8;

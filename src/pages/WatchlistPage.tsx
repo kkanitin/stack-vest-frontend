@@ -46,6 +46,14 @@ const S = `
   .wl-list-type{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:4px;flex-shrink:0;}
   .wl-list-date{font-size:11px;color:var(--text);opacity:.4;font-family:var(--mono);flex-shrink:0;}
 
+  @media(max-width:767px){
+    .wl-search-bar{flex-direction:column;}
+    .wl-btn{width:100%;}
+    .wl-row{padding:10px 12px;gap:8px;}
+    .wl-list-row{padding:10px 12px;gap:8px;flex-wrap:wrap;}
+    .wl-list-date{width:100%;margin-top:2px;}
+  }
+
   /* Empty / idle states */
   .wl-empty{padding:32px 20px;text-align:center;border:1px solid var(--border);color:var(--text);font-size:14px;font-weight:300;background:var(--card);}
   .wl-idle{padding:20px;text-align:center;color:var(--text);font-size:13px;opacity:.5;border:1px solid var(--border);}

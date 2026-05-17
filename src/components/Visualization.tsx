@@ -12,8 +12,9 @@ const GREETINGS = (import.meta.env.VITE_GREETINGS?.split(';') || [
 const S = `
   .viz-greeting{margin:0 0 4px;line-height:1;}
   .viz-sub{font-size:15px;color:var(--text);margin:0 0 36px;font-weight:300;}
-  .viz-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);}
+  .viz-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:1px;background:var(--border);border:1px solid var(--border);}
   .viz-card{background:var(--card);padding:28px 24px;}
+  @media(max-width:767px){.viz-grid{grid-template-columns:1fr;}.viz-card{padding:16px;}.viz-card-value{font-size:24px;}}
   .viz-card-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--text);opacity:.65;margin:0 0 14px;}
   .viz-card-value{font-size:30px;font-weight:700;color:var(--text-h);margin-bottom:6px;letter-spacing:-.03em;font-family:var(--mono);}
   .viz-card-delta{font-size:13px;font-weight:600;display:flex;align-items:center;gap:4px;font-family:var(--mono);}
