@@ -28,7 +28,7 @@ dist-ssr
 .junie/*
 !.junie/commands
 .claude/*
-!.claude/commands
+!.claude/skills
 
 # wrangler files
 .wrangler
