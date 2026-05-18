@@ -1,64 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { searchStocks } from '../api/stocks';
-import { getWatchlist, addToWatchlist } from '../api/watchlist';
+import { getWatchlist, addToWatchlist, deleteFromWatchlist } from '../api/watchlist';
 import type { StockSearchResult } from '../api/stocks';
 import type { WatchlistItem } from '../api/watchlist';
-
-const S = `
-  .wl-sub{font-size:15px;color:var(--text);margin:0 0 28px;font-weight:300;}
-
-  /* Section dividers */
-  .wl-section{display:flex;align-items:center;gap:12px;margin:28px 0 14px;}
-  .wl-section-label{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text);opacity:.5;white-space:nowrap;}
-  .wl-section-rule{flex:1;height:1px;background:var(--border);}
-
-  /* Search bar */
-  .wl-search-bar{display:flex;gap:8px;align-items:stretch;}
-  .wl-input{flex:1;padding:9px 14px;border:1px solid var(--border);background:var(--card);color:var(--text-h);font-family:var(--sans);font-size:14px;border-radius:8px;outline:none;transition:border-color 150ms;}
-  .wl-input:focus{border-color:var(--text);}
-  .wl-input::placeholder{color:var(--text);opacity:.45;}
-  .wl-btn{padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.03em;cursor:pointer;transition:all 200ms cubic-bezier(0.4,0,0.2,1);white-space:nowrap;}
-  .wl-btn:hover:not(:disabled){filter:brightness(0.88);transform:translateY(-1px);box-shadow:var(--shadow);}
-  .wl-btn:disabled{opacity:.55;cursor:default;}
-  .wl-search-error{font-size:12px;color:var(--accent);margin-top:8px;}
-
-  /* Search results */
-  .wl-results{border:1px solid var(--border);}
-  .wl-row{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--border);}
-  .wl-row:last-child{border-bottom:none;}
-  .wl-row-left{flex:1;min-width:0;}
-  .wl-row-symbol{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text-h);letter-spacing:-.01em;}
-  .wl-row-name{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
-  .wl-row-meta{font-size:11px;color:var(--text);opacity:.5;margin-top:2px;font-family:var(--mono);}
-  .wl-add{padding:5px 12px;font-size:12px;font-weight:600;font-family:var(--sans);letter-spacing:.03em;border:1px solid var(--border);background:transparent;color:var(--text-h);border-radius:8px;cursor:pointer;transition:all 200ms cubic-bezier(0.4,0,0.2,1);white-space:nowrap;flex-shrink:0;}
-  .wl-add:hover:not(:disabled){border-color:var(--success);color:var(--success);transform:translateY(-1px);box-shadow:var(--shadow);}
-  .wl-add.added{opacity:.38;cursor:default;}
-  .wl-add:disabled:not(.added){opacity:.6;cursor:default;}
-  .wl-row-err{font-size:11px;color:var(--accent);margin-top:3px;}
-
-  /* Current watchlist */
-  .wl-list{border:1px solid var(--border);}
-  .wl-list-row{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--border);}
-  .wl-list-row:last-child{border-bottom:none;}
-  .wl-list-symbol{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text-h);width:60px;flex-shrink:0;}
-  .wl-list-name{flex:1;font-size:13px;color:var(--text);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .wl-list-type{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:4px;flex-shrink:0;}
-  .wl-list-date{font-size:11px;color:var(--text);opacity:.4;font-family:var(--mono);flex-shrink:0;}
-
-  @media(max-width:767px){
-    .wl-search-bar{flex-direction:column;}
-    .wl-btn{width:100%;}
-    .wl-row{padding:10px 12px;gap:8px;}
-    .wl-list-row{padding:10px 12px;gap:8px;flex-wrap:wrap;}
-    .wl-list-date{width:100%;margin-top:2px;}
-  }
-
-  /* Empty / idle states */
-  .wl-empty{padding:32px 20px;text-align:center;border:1px solid var(--border);color:var(--text);font-size:14px;font-weight:300;background:var(--card);}
-  .wl-idle{padding:20px;text-align:center;color:var(--text);font-size:13px;opacity:.5;border:1px solid var(--border);}
-  .wl-kicker{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text);opacity:.45;margin-bottom:16px;}
-`;
+import './WatchlistPage.css';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -78,6 +24,9 @@ const WatchlistPage: React.FC = () => {
 
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [wlStatus, setWlStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteErrors, setDeleteErrors] = useState<Record<string, string>>({});
 
   const loadWatchlist = async () => {
     if (!token) return;
@@ -128,10 +77,26 @@ const WatchlistPage: React.FC = () => {
     }
   };
 
+  const handleDelete = async (item: WatchlistItem) => {
+    if (!token || deleting) return;
+    setDeleting(item.symbol);
+    setDeleteErrors(prev => { const n = { ...prev }; delete n[item.symbol]; return n; });
+    try {
+      await deleteFromWatchlist(token, item.symbol);
+      setWatchlist(prev => prev.filter(w => w.symbol !== item.symbol));
+      setAdded(prev => { const n = new Set(prev); n.delete(item.symbol); return n; });
+    } catch (err) {
+      setDeleteErrors(prev => ({
+        ...prev,
+        [item.symbol]: err instanceof Error ? err.message : 'Failed to remove',
+      }));
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   return (
     <>
-      <style>{S}</style>
-
       <div className="wl-kicker">Watchlist</div>
       <h1>Manage Watchlist</h1>
       <p className="wl-sub">Search for stocks and ETFs to track, and manage your watchlist.</p>
@@ -210,6 +175,16 @@ const WatchlistPage: React.FC = () => {
               <span className="wl-list-name">{item.name}</span>
               <span className="wl-list-type">{item.type}</span>
               <span className="wl-list-date">Added {formatDate(item.addedAt)}</span>
+              <button
+                className="wl-remove"
+                onClick={() => handleDelete(item)}
+                disabled={deleting !== null}
+              >
+                {deleting === item.symbol ? 'Removing…' : 'Remove'}
+              </button>
+              {deleteErrors[item.symbol] && (
+                <span className="wl-list-err">⚠ {deleteErrors[item.symbol]}</span>
+              )}
             </div>
           ))}
         </div>
