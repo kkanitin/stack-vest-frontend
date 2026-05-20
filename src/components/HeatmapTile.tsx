@@ -6,6 +6,12 @@ function formatChange(val: number): string {
   return `${sign}${val.toFixed(2)}%`;
 }
 
+// Tint scale: 5 buckets per direction (matches DESIGN.md performance scale).
+function intensity(pct: number): number {
+  const mag = Math.min(Math.abs(pct) / 5, 1);
+  return 0.06 + mag * 0.22;
+}
+
 interface Props {
   entry: WatchlistEntry;
 }
@@ -16,9 +22,7 @@ const HeatmapTile: React.FC<Props> = ({ entry }) => {
 
   const dir = change1D === null ? undefined : change1D >= 0 ? 'up' : 'down';
   const changeClass = change1D === null ? 'neutral' : change1D > 0 ? 'positive' : change1D < 0 ? 'negative' : 'neutral';
-
-  // Scale opacity 0→0.18 based on magnitude, capped at ±5%
-  const tileAlpha = change1D !== null ? Math.min(Math.abs(change1D) / 5, 1) * 0.18 : 0;
+  const tileAlpha = change1D !== null ? intensity(change1D) : 0;
 
   return (
     <button
@@ -47,7 +51,7 @@ const HeatmapTile: React.FC<Props> = ({ entry }) => {
           <div className={`htile-change ${changeClass}`}>
             {change1D !== null ? formatChange(change1D) : '—'}
           </div>
-          <div className="htile-period">1D change</div>
+          <div className="htile-period">24h</div>
         </>
       )}
     </button>

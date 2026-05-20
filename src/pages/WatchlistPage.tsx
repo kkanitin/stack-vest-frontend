@@ -1,195 +1,215 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { searchStocks } from '../api/stocks';
-import { getWatchlist, addToWatchlist, deleteFromWatchlist } from '../api/watchlist';
-import type { StockSearchResult } from '../api/stocks';
+import { getWatchlist, deleteFromWatchlist } from '../api/watchlist';
 import type { WatchlistItem } from '../api/watchlist';
+import AddAssetModal from '../components/AddAssetModal';
+import Button from '../components/ui/Button';
 import './WatchlistPage.css';
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+// TODO(mock): price, 24h change, 7d sparkline, and alerts state all need real
+// backend feeds (quotes endpoint + per-symbol historical + alert subscription).
+// We seed deterministic mock values keyed off the symbol so a given asset
+// always renders the same fake values across reloads.
+interface MockMarket {
+  price: number;
+  change: number;
+  series: number[];
+}
+
+function hashSymbol(symbol: string): number {
+  let h = 0;
+  for (let i = 0; i < symbol.length; i++) h = (h * 31 + symbol.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function mockMarket(symbol: string): MockMarket {
+  const seed = hashSymbol(symbol);
+  const price = 20 + (seed % 47000) / 10;
+  const change = ((seed % 1000) / 100) - 5; // -5..+5
+  const series: number[] = [];
+  let val = price;
+  let s = seed;
+  for (let i = 0; i < 14; i++) {
+    s = (s * 1103515245 + 12345) >>> 0;
+    const step = ((s % 200) - 100) / 1000;
+    val = val * (1 + step);
+    series.push(val);
+  }
+  return { price, change, series };
+}
+
+function Sparkline({ values, positive }: { values: number[]; positive: boolean }) {
+  const w = 80;
+  const h = 24;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * w;
+      const y = h - ((v - min) / range) * h;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(' ');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="wl-spark">
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={positive ? 'var(--success)' : 'var(--loss)'}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function fmtPrice(n: number): string {
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function fmtPct(n: number): string {
+  const sign = n > 0 ? '+' : '';
+  return `${sign}${n.toFixed(2)}%`;
 }
 
 const WatchlistPage: React.FC = () => {
   const { token } = useAuth();
 
-  const [keywords, setKeywords] = useState('');
-  const [results, setResults] = useState<StockSearchResult[]>([]);
-  const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [searchError, setSearchError] = useState<string | null>(null);
-
-  const [adding, setAdding] = useState<string | null>(null);
-  const [addErrors, setAddErrors] = useState<Record<string, string>>({});
-  const [added, setAdded] = useState<Set<string>>(new Set());
-
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
-  const [wlStatus, setWlStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [deleteErrors, setDeleteErrors] = useState<Record<string, string>>({});
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const loadWatchlist = async () => {
+  // TODO(mock): per-row alerts toggle is local-only until backend exists.
+  const [alerts, setAlerts] = useState<Record<string, boolean>>({});
+
+  const addedSymbols = useMemo(() => new Set(watchlist.map(w => w.symbol)), [watchlist]);
+
+  const load = useCallback(async () => {
     if (!token) return;
-    setWlStatus('loading');
+    setStatus('loading');
+    setError(null);
     try {
       const items = await getWatchlist(token);
       setWatchlist(items);
-      setAdded(new Set(items.map(i => i.symbol)));
-      setWlStatus('success');
-    } catch {
-      setWlStatus('error');
+      setStatus('success');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load watchlist');
+      setStatus('error');
     }
-  };
+  }, [token]);
 
-  useEffect(() => { loadWatchlist(); }, [token]);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !keywords.trim()) return;
-    setSearchStatus('loading');
-    setSearchError(null);
-    setResults([]);
-    try {
-      const data = await searchStocks(token, keywords.trim());
-      setResults(data);
-      setSearchStatus('success');
-    } catch (err) {
-      setSearchError(err instanceof Error ? err.message : 'Search failed');
-      setSearchStatus('error');
-    }
-  };
-
-  const handleAdd = async (result: StockSearchResult) => {
-    if (!token || adding || added.has(result.symbol)) return;
-    setAdding(result.symbol);
-    setAddErrors(prev => { const n = { ...prev }; delete n[result.symbol]; return n; });
-    try {
-      await addToWatchlist(token, { symbol: result.symbol, name: result.name, type: result.type });
-      setAdded(prev => new Set([...prev, result.symbol]));
-      await loadWatchlist();
-    } catch (err) {
-      setAddErrors(prev => ({
-        ...prev,
-        [result.symbol]: err instanceof Error ? err.message : 'Failed to add',
-      }));
-    } finally {
-      setAdding(null);
-    }
-  };
+  useEffect(() => { load(); }, [load]);
 
   const handleDelete = async (item: WatchlistItem) => {
     if (!token || deleting) return;
     setDeleting(item.symbol);
-    setDeleteErrors(prev => { const n = { ...prev }; delete n[item.symbol]; return n; });
     try {
       await deleteFromWatchlist(token, item.symbol);
       setWatchlist(prev => prev.filter(w => w.symbol !== item.symbol));
-      setAdded(prev => { const n = new Set(prev); n.delete(item.symbol); return n; });
-    } catch (err) {
-      setDeleteErrors(prev => ({
-        ...prev,
-        [item.symbol]: err instanceof Error ? err.message : 'Failed to remove',
-      }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to remove');
     } finally {
       setDeleting(null);
     }
   };
 
   return (
-    <>
-      <div className="wl-kicker">Watchlist</div>
-      <h1>Manage Watchlist</h1>
-      <p className="wl-sub">Search for stocks and ETFs to track, and manage your watchlist.</p>
+    <div className="wl">
+      <header className="wl-head">
+        <div className="wl-head-text">
+          <h1 className="wl-title">Watchlist</h1>
+          <p className="wl-sub">Track your high-conviction investment assets.</p>
+        </div>
+        <Button variant="primary" onClick={() => setModalOpen(true)}>+ Add Asset</Button>
+      </header>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="wl-search-bar">
-        <input
-          className="wl-input"
-          type="text"
-          placeholder="Search stocks or ETFs… e.g. Apple, AAPL"
-          value={keywords}
-          onChange={e => setKeywords(e.target.value)}
-        />
-        <button className="wl-btn" type="submit" disabled={searchStatus === 'loading'}>
-          {searchStatus === 'loading' ? 'Searching…' : 'Search'}
-        </button>
-      </form>
-      {searchStatus === 'error' && searchError && (
-        <div className="wl-search-error">⚠ {searchError}</div>
-      )}
+      {error && <div className="wl-banner">⚠ {error}</div>}
 
-      {/* Search Results */}
-      {searchStatus === 'success' && (
-        <>
-          <div className="wl-section">
-            <span className="wl-section-label">Results</span>
-            <span className="wl-section-rule" />
-          </div>
-          {results.length === 0 ? (
-            <div className="wl-idle">No results found for "{keywords}"</div>
-          ) : (
-            <div className="wl-results">
-              {results.map(r => {
-                const isAdded = added.has(r.symbol);
-                const isAdding = adding === r.symbol;
+      {status === 'loading' ? (
+        <div className="wl-empty">Loading watchlist…</div>
+      ) : watchlist.length === 0 ? (
+        <div className="wl-empty">
+          <p className="wl-empty-title">Your watchlist is empty</p>
+          <p className="wl-empty-body">Add assets to track their performance over time.</p>
+          <Button variant="primary" onClick={() => setModalOpen(true)}>+ Add your first asset</Button>
+        </div>
+      ) : (
+        <div className="wl-table-wrap">
+          <table className="wl-table">
+            <thead>
+              <tr>
+                <th className="wl-th">Asset</th>
+                <th className="wl-th wl-th--right">Price</th>
+                <th className="wl-th wl-th--right">24h Change</th>
+                <th className="wl-th wl-th--center">7d Trend</th>
+                <th className="wl-th wl-th--center">Alerts</th>
+                <th className="wl-th"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {watchlist.map(item => {
+                const mkt = mockMarket(item.symbol);
+                const positive = mkt.change >= 0;
+                const cls = mkt.change > 0 ? 'positive' : mkt.change < 0 ? 'negative' : 'neutral';
+                const alertOn = !!alerts[item.symbol];
                 return (
-                  <div key={r.symbol} className="wl-row">
-                    <div className="wl-row-left">
-                      <div className="wl-row-symbol">{r.symbol}</div>
-                      <div className="wl-row-name">{r.name}</div>
-                      <div className="wl-row-meta">{r.type} · {r.region} · {r.currency}</div>
-                      {addErrors[r.symbol] && (
-                        <div className="wl-row-err">⚠ {addErrors[r.symbol]}</div>
-                      )}
-                    </div>
-                    <button
-                      className={`wl-add${isAdded ? ' added' : ''}`}
-                      onClick={() => handleAdd(r)}
-                      disabled={isAdded || isAdding || adding !== null}
-                    >
-                      {isAdding ? 'Adding…' : isAdded ? 'Added ✓' : '+ Add'}
-                    </button>
-                  </div>
+                  <tr key={item.id} className="wl-tr">
+                    <td className="wl-td">
+                      <div className="wl-asset">
+                        <span className="wl-asset-icon">{item.symbol.slice(0, 2)}</span>
+                        <div className="wl-asset-text">
+                          <span className="wl-asset-symbol">{item.symbol}</span>
+                          <span className="wl-asset-name">{item.name}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="wl-td wl-td--mono wl-td--right">{fmtPrice(mkt.price)}</td>
+                    <td className={`wl-td wl-td--right wl-change ${cls}`}>
+                      <span className="wl-change-chip">{fmtPct(mkt.change)}</span>
+                    </td>
+                    <td className="wl-td wl-td--center">
+                      <Sparkline values={mkt.series} positive={positive} />
+                    </td>
+                    <td className="wl-td wl-td--center">
+                      <button
+                        className={`wl-toggle${alertOn ? ' on' : ''}`}
+                        onClick={() => setAlerts(prev => ({ ...prev, [item.symbol]: !alertOn }))}
+                        role="switch"
+                        aria-checked={alertOn}
+                        aria-label={`Toggle alerts for ${item.symbol}`}
+                      >
+                        <span className="wl-toggle-knob" />
+                      </button>
+                    </td>
+                    <td className="wl-td wl-td--right">
+                      <button
+                        className="wl-remove"
+                        onClick={() => handleDelete(item)}
+                        disabled={deleting === item.symbol}
+                        aria-label={`Remove ${item.symbol}`}
+                      >
+                        {deleting === item.symbol ? '…' : '✕'}
+                      </button>
+                    </td>
+                  </tr>
                 );
               })}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Current Watchlist */}
-      <div className="wl-section">
-        <span className="wl-section-label">Your Watchlist</span>
-        <span className="wl-section-rule" />
-      </div>
-
-      {wlStatus === 'loading' ? (
-        <div className="wl-idle">Loading…</div>
-      ) : watchlist.length === 0 ? (
-        <div className="wl-empty">Your watchlist is empty. Search above to add stocks.</div>
-      ) : (
-        <div className="wl-list">
-          {watchlist.map(item => (
-            <div key={item.id} className="wl-list-row">
-              <span className="wl-list-symbol">{item.symbol}</span>
-              <span className="wl-list-name">{item.name}</span>
-              <span className="wl-list-type">{item.type}</span>
-              <span className="wl-list-date">Added {formatDate(item.addedAt)}</span>
-              <button
-                className="wl-remove"
-                onClick={() => handleDelete(item)}
-                disabled={deleting !== null}
-              >
-                {deleting === item.symbol ? 'Removing…' : 'Remove'}
-              </button>
-              {deleteErrors[item.symbol] && (
-                <span className="wl-list-err">⚠ {deleteErrors[item.symbol]}</span>
-              )}
-            </div>
-          ))}
+            </tbody>
+          </table>
         </div>
       )}
-    </>
+
+      <AddAssetModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onAdded={load}
+        addedSymbols={addedSymbols}
+      />
+    </div>
   );
 };
 

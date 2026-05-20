@@ -1,0 +1,57 @@
+.sv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+  text-transform: uppercase;
+}
+
+.sv-badge--pill {
+  border-radius: var(--r-pill);
+  text-transform: none;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+}
+
+.sv-badge--mono {
+  font-family: var(--mono);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.sv-badge--neutral {
+  background: var(--surface-high);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.sv-badge--primary {
+  background: var(--primary-bg);
+  color: var(--primary);
+  border-color: var(--primary-border);
+}
+
+.sv-badge--success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.sv-badge--error {
+  background: var(--error-bg);
+  color: var(--error);
+  border-color: var(--error-border);
+}
+
+.sv-badge--warning {
+  background: rgba(242, 187, 149, 0.10);
+  color: var(--warning);
+  border-color: rgba(242, 187, 149, 0.30);
+}

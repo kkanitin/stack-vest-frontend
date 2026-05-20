@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import HeatmapTile from './HeatmapTile';
 import type { WatchlistEntry } from '../hooks/useWatchlistQuotes';
+import type { StockPriceChange } from '../api/stocks';
 
-// A reusable base item so each test only changes what it needs.
 const baseItem = {
   id: '1',
   userId: 'u1',
@@ -11,6 +11,15 @@ const baseItem = {
   type: 'Stock',
   addedAt: '2026-01-01',
 };
+
+function makePriceChange(oneDay: number): StockPriceChange {
+  return {
+    symbol: 'AAPL',
+    '1D': oneDay,
+    '5D': 0, '1M': 0, '3M': 0, '6M': 0, ytd: 0,
+    '1Y': 0, '3Y': 0, '5Y': 0, '10Y': 0, max: 0,
+  };
+}
 
 function makeEntry(overrides: Partial<WatchlistEntry>): WatchlistEntry {
   return {
@@ -33,9 +42,8 @@ describe('HeatmapTile', () => {
   it('shows skeleton placeholders while loading', () => {
     render(<HeatmapTile entry={makeEntry({ status: 'loading' })} />);
 
-    // No percentage or "unavailable" text should appear
     expect(screen.queryByText(/unavailable/i)).not.toBeInTheDocument();
-    expect(screen.queryByText('1D change')).not.toBeInTheDocument();
+    expect(screen.queryByText('24h')).not.toBeInTheDocument();
   });
 
   it('shows "unavailable" on error', () => {
@@ -48,12 +56,12 @@ describe('HeatmapTile', () => {
   it('shows a positive change with the correct label', () => {
     render(
       <HeatmapTile
-        entry={makeEntry({ priceChange: { '1D': 2.5 }, status: 'success' })}
+        entry={makeEntry({ priceChange: makePriceChange(2.5), status: 'success' })}
       />
     );
 
     expect(screen.getByText('+2.50%')).toBeInTheDocument();
-    expect(screen.getByText('1D change')).toBeInTheDocument();
+    expect(screen.getByText('24h')).toBeInTheDocument();
 
     const changeEl = screen.getByText('+2.50%');
     expect(changeEl).toHaveClass('positive');
@@ -62,7 +70,7 @@ describe('HeatmapTile', () => {
   it('shows a negative change with the correct label', () => {
     render(
       <HeatmapTile
-        entry={makeEntry({ priceChange: { '1D': -1.3 }, status: 'success' })}
+        entry={makeEntry({ priceChange: makePriceChange(-1.3), status: 'success' })}
       />
     );
 

@@ -17,7 +17,7 @@ function App() {
   if (!googleClientId || googleClientId === 'your-google-client-id.apps.googleusercontent.com') {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h1 style={{ color: '#ef4444' }}>Missing Google Client ID</h1>
+        <h1 style={{ color: 'var(--error)' }}>Missing Google Client ID</h1>
         <p>Please configure <code>VITE_GOOGLE_CLIENT_ID</code> in <code>.env.local</code> and restart the dev server.</p>
         <p>Current value: <code>{googleClientId || 'undefined'}</code></p>
       </div>

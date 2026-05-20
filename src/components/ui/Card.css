@@ -1,0 +1,25 @@
+.sv-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  position: relative;
+}
+
+.sv-card--l2 {
+  background: var(--surface-high);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.25);
+}
+
+.sv-card--padded {
+  padding: 24px;
+}
+
+.sv-card-label {
+  margin: 0 0 16px;
+}
+
+@media (max-width: 767px) {
+  .sv-card--padded {
+    padding: 18px;
+  }
+}
