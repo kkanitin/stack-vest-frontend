@@ -5,6 +5,14 @@ import { GoogleLogin } from '@react-oauth/google';
 import type { CredentialResponse } from '@react-oauth/google';
 import './LoginPage.css';
 
+const LogoMark: React.FC = () => (
+  <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 21h18" />
+    <path d="M4 10l8-6 8 6" />
+    <path d="M5 10v8M19 10v8M9 10v8M15 10v8" />
+  </svg>
+);
+
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
   const [error, setError] = React.useState<string | null>(null);
@@ -31,46 +39,44 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="lp">
-      <div className="lp-left">
-          <div>
-            <div className="lp-tag">
-              <span className="lp-tag-dot" />
-              Live Platform
-            </div>
-            <div className="lp-big">
-              INVEST<br /><em>SMARTER</em><br />TODAY
-            </div>
-            <p className="lp-desc">
-              Real-time portfolio analytics and DCA simulation for the modern investor.
-            </p>
-          </div>
-          <div className="lp-issue">Vol. 2026 / Issue 01 — StackVest</div>
+      <div className="lp-card">
+        <div className="lp-logo" aria-hidden>
+          <LogoMark />
         </div>
+        <h1 className="lp-title">StackVest</h1>
+        <p className="lp-tagline">
+          A personal investment portfolio tracker. Built for clarity, precision,
+          and the calm pursuit of long-term growth.
+        </p>
 
-        <div className="lp-right">
-          <div className="lp-eyebrow">Member Access</div>
-          <h1 className="lp-form-h">SIGN<br />IN</h1>
-          <p className="lp-form-sub">Access your portfolio dashboard</p>
-
-          <div className="lp-divider">
-            <div className="lp-divider-line" />
-            <span className="lp-divider-txt">Continue with</span>
-            <div className="lp-divider-line" />
-          </div>
-
+        <div className="lp-google-card">
           {error && <div className="lp-err">{error}</div>}
 
           {loading ? (
             <div className="lp-loading">Signing in…</div>
           ) : (
-            <GoogleLogin onSuccess={handleSuccess} onError={handleError} useOneTap />
+            <div className="lp-google-btn">
+              <GoogleLogin
+                onSuccess={handleSuccess}
+                onError={handleError}
+                useOneTap
+                theme="filled_black"
+                shape="rectangular"
+                size="large"
+                text="continue_with"
+                width="320"
+              />
+            </div>
           )}
 
-          <p className="lp-fine">
-            By signing in you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
-          </p>
+          <p className="lp-google-sub">Simple, secure Google sign-in.</p>
         </div>
+
+        <p className="lp-foot">
+          Personal Side Project · <a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a>
+        </p>
       </div>
+    </div>
   );
 };
 

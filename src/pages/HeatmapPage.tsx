@@ -1,127 +1,131 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useWatchlistQuotes } from '../hooks/useWatchlistQuotes';
 import HeatmapTile from '../components/HeatmapTile';
+import SegmentedControl from '../components/ui/SegmentedControl';
+import type { Segment } from '../components/ui/SegmentedControl';
+import Button from '../components/ui/Button';
+import type { WatchlistEntry } from '../hooks/useWatchlistQuotes';
+import './HeatmapPage.css';
 
-const S = `
-  /* Page header */
-  .hm-kicker{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text);opacity:.45;margin-bottom:16px;}
-  .hm-sub{font-size:15px;color:var(--text);margin:0 0 28px;font-weight:300;}
+type FilterValue = 'all' | 'top100' | 'defi' | 'l1';
 
-  /* Toolbar */
-  .hm-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
-  .hm-count{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:4px;font-family:var(--mono);}
-  .hm-updated{font-size:11px;color:var(--text);opacity:.45;font-family:var(--mono);margin-left:auto;}
-  .hm-refresh{font-size:11px;font-weight:600;letter-spacing:.04em;padding:5px 14px;background:transparent;border:1px solid var(--border);color:var(--text);cursor:pointer;transition:all 200ms cubic-bezier(0.4,0,0.2,1);border-radius:8px;font-family:var(--sans);}
-  .hm-refresh:hover{border-color:var(--text-h);color:var(--text-h);transform:translateY(-1px);box-shadow:var(--shadow);}
+const FILTERS: Segment<FilterValue>[] = [
+  { value: 'all', label: 'All Assets' },
+  { value: 'top100', label: 'Top 100' },
+  { value: 'defi', label: 'DeFi' },
+  { value: 'l1', label: 'L1s' },
+];
 
-  /* Grid */
-  .hm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px;background:var(--border);border:1px solid var(--border);}
+// TODO(mock): when the user has no watchlist entries, we render this demo grid
+// so the screen still demonstrates the heatmap pattern. Replace with a real
+// "popular" feed once an endpoint exists.
+function makeMockChange(symbol: string, pct: number) {
+  return { symbol, '1D': pct, '5D': 0, '1M': 0, '3M': 0, '6M': 0, ytd: 0, '1Y': 0, '3Y': 0, '5Y': 0, '10Y': 0, max: 0 };
+}
 
-  /* Tile base */
-  .htile{position:relative;background:var(--card);padding:16px;border:none;cursor:pointer;text-align:left;width:100%;overflow:hidden;transition:transform 200ms cubic-bezier(0.4,0,0.2,1),box-shadow 200ms cubic-bezier(0.4,0,0.2,1);}
-  .htile:hover{transform:translateY(-1px);box-shadow:var(--shadow);z-index:1;}
+function mockTile(id: string, symbol: string, name: string, pct: number): WatchlistEntry {
+  return {
+    item: { id, userId: 'mock', symbol, name, type: 'Crypto', addedAt: new Date().toISOString() },
+    priceChange: makeMockChange(symbol, pct),
+    status: 'success',
+    error: null,
+  };
+}
 
-  /* Tile tint overlay — uses ::before so it inherits card bg correctly in both themes */
-  .htile::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;}
-  .htile[data-dir="up"]::before{background:var(--success);opacity:var(--tile-alpha,0);}
-  .htile[data-dir="down"]::before{background:var(--accent);opacity:var(--tile-alpha,0);}
-
-  /* Tile content sits above the tint layer */
-  .htile-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px;}
-  .htile-symbol{position:relative;font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text-h);letter-spacing:-0.02em;}
-  .htile-type{position:relative;font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 5px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:4px;flex-shrink:0;margin-top:2px;}
-  .htile-name{position:relative;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:14px;}
-  .htile-change{position:relative;font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-0.03em;margin-bottom:3px;}
-  .htile-change.positive{color:var(--success);}
-  .htile-change.negative{color:var(--accent);}
-  .htile-change.neutral{color:var(--text);opacity:.35;}
-  .htile-period{position:relative;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text);opacity:.45;}
-
-  /* Skeleton shimmer */
-  @keyframes hshimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
-  .htile-skel{position:relative;border-radius:4px;background:linear-gradient(90deg,var(--border) 25%,var(--card) 50%,var(--border) 75%);background-size:200% 100%;animation:hshimmer 1.4s ease-in-out infinite;}
-  .htile-skel-lg{height:20px;width:60%;margin-bottom:5px;}
-  .htile-skel-sm{height:10px;width:30%;}
-
-  /* Empty state */
-  .hm-empty{border:1px solid var(--border);padding:52px 32px;text-align:center;}
-  .hm-empty-badge{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:3px 9px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:4px;display:inline-block;margin-bottom:20px;}
-  .hm-empty-title{font-family:var(--heading);font-size:18px;font-weight:600;color:var(--text-h);margin:0 0 8px;letter-spacing:-0.02em;}
-  .hm-empty-body{font-size:14px;color:var(--text);font-weight:300;margin:0;}
-
-  /* Error banner */
-  .hm-error{padding:14px 18px;border:1px solid var(--accent-border);background:var(--accent-bg);color:var(--accent);font-size:13px;display:flex;align-items:center;gap:10px;border-radius:8px;}
-  .hm-error-msg{flex:1;}
-  .hm-error-retry{background:transparent;border:1px solid var(--accent-border);color:var(--accent);font-size:12px;font-weight:600;padding:4px 12px;cursor:pointer;border-radius:8px;transition:all 200ms cubic-bezier(0.4,0,0.2,1);font-family:var(--sans);}
-  .hm-error-retry:hover{background:var(--accent);color:#fff;}
-
-  @media(max-width:767px){.hm-toolbar{flex-direction:column;align-items:flex-start;gap:8px;}.hm-updated{margin-left:0;}}
-  @media(max-width:600px){.hm-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}}
-  @media(max-width:400px){.hm-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));}}
-`;
+const MOCK_TILES: WatchlistEntry[] = [
+  mockTile('m-btc', 'BTC', 'Bitcoin', 2.34),
+  mockTile('m-eth', 'ETH', 'Ethereum', 1.12),
+  mockTile('m-sol', 'SOL', 'Solana', -0.84),
+  mockTile('m-avax', 'AVAX', 'Avalanche', -3.20),
+  mockTile('m-link', 'LINK', 'Chainlink', 0.42),
+  mockTile('m-uni', 'UNI', 'Uniswap', 4.10),
+  mockTile('m-aave', 'AAVE', 'Aave', -1.55),
+  mockTile('m-doge', 'DOGE', 'Dogecoin', 0.12),
+];
 
 const SKELETON_COUNT = 8;
 
 const HeatmapPage: React.FC = () => {
   const { entries, watchlistStatus, watchlistError, lastUpdated, refresh } = useWatchlistQuotes();
+  const [filter, setFilter] = useState<FilterValue>('all');
 
   const formattedTime = lastUpdated
-    ? lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    ? lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     : null;
 
-  return (
-    <>
-      <style>{S}</style>
+  const showMock = watchlistStatus === 'success' && entries.length === 0;
+  const tiles: WatchlistEntry[] = showMock ? MOCK_TILES : entries;
 
-      <div className="hm-kicker">Watchlist</div>
-      <h1>Heatmap</h1>
-      <p className="hm-sub">Daily price change across your watchlist — green is up, red is down.</p>
+  return (
+    <div className="hm">
+      <header className="hm-head">
+        <div className="hm-head-text">
+          <h1 className="hm-title">Market Heatmap</h1>
+          <p className="hm-sub">Real-time investment performance across tracked assets.</p>
+        </div>
+        <div className="hm-toolbar">
+          {/* TODO(mock): segmented filter is presentational; backend filter not wired yet. */}
+          <SegmentedControl<FilterValue>
+            segments={FILTERS}
+            value={filter}
+            onChange={setFilter}
+            size="sm"
+          />
+          <span className="hm-timeframe">24H</span>
+          <Button variant="outline" onClick={refresh} className="hm-refresh">
+            ↻ Refresh
+          </Button>
+        </div>
+      </header>
+
+      <div className="hm-legend">
+        <span className="hm-legend-label">Performance Scale</span>
+        <span className="hm-legend-scale" aria-hidden />
+        <span className="hm-legend-range">
+          <span>-5%</span>
+          <span>0</span>
+          <span>+5%</span>
+        </span>
+        {formattedTime && (
+          <span className="hm-updated">Updated {formattedTime}</span>
+        )}
+      </div>
 
       {watchlistStatus === 'error' ? (
         <div className="hm-error">
           <span>⚠</span>
           <span className="hm-error-msg">{watchlistError}</span>
-          <button className="hm-error-retry" onClick={refresh}>Retry</button>
-        </div>
-      ) : watchlistStatus === 'success' && entries.length === 0 ? (
-        <div className="hm-empty">
-          <span className="hm-empty-badge">Watchlist Empty</span>
-          <p className="hm-empty-title">No stocks added yet</p>
-          <p className="hm-empty-body">Add stocks to your watchlist to see their daily performance here.</p>
+          <Button variant="outline" onClick={refresh}>Retry</Button>
         </div>
       ) : (
         <>
-          <div className="hm-toolbar">
-            {watchlistStatus === 'success' && (
-              <span className="hm-count">{entries.length} stock{entries.length !== 1 ? 's' : ''}</span>
-            )}
-            <button className="hm-refresh" onClick={refresh}>↻ Refresh</button>
-            {formattedTime && (
-              <span className="hm-updated">Updated {formattedTime}</span>
-            )}
-          </div>
-
+          {showMock && (
+            <div className="hm-mock-banner">
+              {/* TODO(mock): empty-state demo grid */}
+              Your watchlist is empty — these tiles are sample data. Add assets to track real performance.
+            </div>
+          )}
           <div className="hm-grid">
             {watchlistStatus === 'loading'
               ? Array.from({ length: SKELETON_COUNT }).map((_, i) => (
                   <div key={i} className="htile" style={{ pointerEvents: 'none' }}>
                     <div className="htile-top">
-                      <div className="htile-skel" style={{ height: 15, width: '45%' }} />
-                      <div className="htile-skel" style={{ height: 15, width: '25%', borderRadius: 4 }} />
+                      <div className="htile-skel" style={{ height: 14, width: '45%' }} />
+                      <div className="htile-skel" style={{ height: 14, width: '25%' }} />
                     </div>
                     <div className="htile-skel" style={{ height: 11, width: '70%', marginBottom: 14 }} />
                     <div className="htile-skel htile-skel-lg" />
                     <div className="htile-skel htile-skel-sm" />
                   </div>
                 ))
-              : entries.map(entry => (
+              : tiles.map(entry => (
                   <HeatmapTile key={entry.item.id} entry={entry} />
                 ))
             }
           </div>
         </>
       )}
-    </>
+    </div>
   );
 };
 

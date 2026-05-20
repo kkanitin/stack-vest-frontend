@@ -35,3 +35,14 @@ export async function addToWatchlist(
     throw new Error(data.errorMessage || 'Failed to add to watchlist');
   }
 }
+
+export async function deleteFromWatchlist(token: string, symbol: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/watchlist/${symbol}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.errorMessage || 'Failed to remove from watchlist');
+  }
+}

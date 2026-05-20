@@ -1,30 +1,72 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+/* StackVest design tokens — dark-default, optional light variant.
+   Source of truth: design-asset/DESIGN.md */
 
 :root {
-  --text: #6b5e52;
-  --text-h: #111111;
-  --bg: #f5f0eb;
-  --card: #ffffff;
-  --sidebar-bg: #111111;
-  --border: #ddd6ce;
-  --code-bg: #ede8e2;
-  --accent: #dc2626;
-  --accent-bg: rgba(220, 38, 38, 0.07);
-  --accent-border: rgba(220, 38, 38, 0.22);
-  --social-bg: #ede8e2;
-  --success: #16a34a;
-  --warning: #d97706;
-  --error: #dc2626;
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  /* Surfaces (Level 0 → Level 4) */
+  --bg: #0b1326;
+  --surface-low: #131b2e;
+  --surface: #171f33;
+  --surface-high: #222a3d;
+  --surface-highest: #2d3449;
+  --card: var(--surface);
+  --sidebar-bg: var(--surface-low);
 
-  --display: 'Bebas Neue', impact, sans-serif;
-  --sans: 'DM Sans', system-ui, -apple-system, sans-serif;
-  --heading: 'DM Sans', system-ui, -apple-system, sans-serif;
+  /* Text */
+  --text: #c0c8ca;
+  --text-h: #dae2fd;
+  --text-dim: #8a9294;
+
+  /* Brand */
+  --primary: #a1ced9;
+  --primary-strong: #2d5a64;
+  --on-primary: #00363f;
+  --primary-container: #2d5a64;
+  --primary-bg: rgba(161, 206, 217, 0.10);
+  --primary-border: rgba(161, 206, 217, 0.30);
+
+  /* Semantic */
+  --success: #4ade80;
+  --success-bg: rgba(74, 222, 128, 0.10);
+  --success-border: rgba(74, 222, 128, 0.30);
+  --warning: #f2bb95;
+  --error: #ffb4ab;
+  --error-bg: rgba(255, 180, 171, 0.10);
+  --error-border: rgba(255, 180, 171, 0.30);
+  --loss: var(--error);
+  --gain: var(--success);
+
+  /* Deprecated aliases — kept for one commit so consumers compile during the
+     accent → primary refactor. TODO(cleanup): remove once every page is migrated. */
+  --accent: var(--primary);
+  --accent-bg: var(--primary-bg);
+  --accent-border: var(--primary-border);
+  --social-bg: var(--surface-high);
+  --code-bg: var(--surface-high);
+
+  /* Lines */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  /* Fonts */
+  --sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --heading: var(--sans);
+  --display: var(--sans);
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* Radii */
+  --r-sm: 2px;
+  --r: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --r-pill: 9999px;
+
+  /* Shadows */
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-pop: 0 0 0 1px var(--border), 0 16px 32px rgba(0, 0, 0, 0.4);
+
   font: 16px/1.6 var(--sans);
-  letter-spacing: -0.01em;
-  color-scheme: light dark;
+  letter-spacing: -0.005em;
+  color-scheme: dark light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -40,23 +82,36 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
+/* Light fallback — derived from the dark palette by inversion.
+   TODO(design): no light mockup exists in design-asset/. Tune once provided. */
+@media (prefers-color-scheme: light) {
   :root {
-    --text: #9a8f83;
-    --text-h: #f0ebe3;
-    --bg: #1c1712;
-    --card: #231e18;
-    --sidebar-bg: #0d0a07;
-    --border: #2e2720;
-    --code-bg: #231e18;
-    --accent: #ef4444;
-    --accent-bg: rgba(239, 68, 68, 0.1);
-    --accent-border: rgba(239, 68, 68, 0.25);
-    --social-bg: #231e18;
-    --success: #4ade80;
-    --warning: #fbbf24;
-    --error: #f87171;
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --bg: #f3f5fb;
+    --surface-low: #e7ebf3;
+    --surface: #ffffff;
+    --surface-high: #f7f9fd;
+    --surface-highest: #eef1f8;
+    --card: var(--surface);
+    --sidebar-bg: #11192b;
+
+    --text: #3c4760;
+    --text-h: #0d1426;
+    --text-dim: #6b7388;
+
+    --primary: #2d5a64;
+    --primary-strong: #2d5a64;
+    --on-primary: #ffffff;
+    --primary-bg: rgba(45, 90, 100, 0.08);
+    --primary-border: rgba(45, 90, 100, 0.25);
+
+    --success: #16a34a;
+    --warning: #b76f3b;
+    --error: #b3261e;
+    --loss: var(--error);
+    --gain: var(--success);
+
+    --border: rgba(13, 20, 38, 0.10);
+    --border-strong: rgba(13, 20, 38, 0.18);
   }
 }
 
@@ -72,36 +127,39 @@ body {
   margin: 0;
 }
 
+/* ── Type ramp (matches DESIGN.md typography scale) ─────────── */
+
 h1 {
   font-family: var(--display);
-  font-weight: 400;
+  font-weight: 600;
   color: var(--text-h);
-  line-height: 1;
-  letter-spacing: .01em;
-  font-size: 3.5rem;
-  margin: 1.5rem 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-size: 48px;
+  margin: 0 0 12px;
   @media (max-width: 1024px) {
-    font-size: 2.5rem;
+    font-size: 38px;
   }
 }
 
 h2 {
   font-family: var(--heading);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-h);
-  line-height: 1.2;
-  font-size: clamp(1.125rem, 3.5vw, 1.5rem);
-  letter-spacing: -0.02em;
-  margin: 0 0 0.5rem;
+  line-height: 1.3;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
 }
 
 h3 {
   font-family: var(--heading);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-h);
-  line-height: 1.2;
-  font-size: clamp(1rem, 2.5vw, 1.125rem);
-  letter-spacing: -0.01em;
+  line-height: 1.4;
+  font-size: 18px;
+  letter-spacing: -0.005em;
+  margin: 0 0 8px;
 }
 
 p {
@@ -110,10 +168,71 @@ p {
 
 code {
   font-family: var(--mono);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 135%;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 2px 6px;
+  border-radius: var(--r);
   background: var(--code-bg);
+  color: var(--text-h);
+}
+
+/* Reusable typography helpers (matches DESIGN.md scale) */
+
+.headline-md {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.headline-sm {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+  font-size: 18px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.body-md {
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.body-sm {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.label-caps {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.data-lg {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-h);
+}
+
+.data-md {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
   color: var(--text-h);
 }
