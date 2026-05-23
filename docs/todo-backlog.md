@@ -11,12 +11,12 @@ Tag legend:
 
 Per-feature task breakdowns live in `docs/todos/`:
 
-1. [Watchlist](./todos/watchlist.md)
-2. [Dashboard / Portfolio Visualisation](./todos/dashboard-visualisation.md)
-3. [Market Heatmap](./todos/heatmap.md)
-4. [Add Asset Flow](./todos/add-asset-flow.md)
-5. [DCA Simulation](./todos/dca-simulation.md)
-6. [Theming & CSS Cleanup](./todos/theming-cleanup.md)
+1. [x] [Watchlist](./todos/watchlist.md)
+2. [x] [Dashboard / Portfolio Visualisation](./todos/dashboard-visualisation.md)
+3. [x] [Market Heatmap](./todos/heatmap.md)
+4. [x] [Add Asset Flow](./todos/add-asset-flow.md)
+5. [x] [DCA Simulation](./todos/dca-simulation.md)
+6. [x] [Theming & CSS Cleanup](./todos/theming-cleanup.md)
 
 ---
 
@@ -51,17 +51,14 @@ Hero numbers on the landing dashboard. Static literals here erode trust quickly.
   The `ACTIVITY` constant (line 46) needs a separate `/activity` feed. Can be
   deferred — it is a "nice to have" beside positions.
 
-## 3. Market Heatmap
+## 3. Market Heatmap ✓ Done
 Tracks watchlist performance at a glance.
 
-- **Category filter (All / Top 100 / DeFi / L1s)** — `src/pages/HeatmapPage.tsx:67`
-  Segmented control is presentational; `tiles` in line 57 is unchanged when
-  filter changes. Needs `category` / `tags` on watchlist items (backend) OR an
-  interim client-side tag map.
-- **Empty-state demo grid** — `src/pages/HeatmapPage.tsx:19` and `:104`
-  `MOCK_TILES` (line 35) and the explanatory banner (lines 103–107) cover the
-  zero-watchlist case. Replace with a real `/popular` / `/suggestions` feed
-  once available.
+- ~~**Category filter**~~ — wired via `CATEGORY_MAP` + `filteredTiles`; `category[]`
+  on watchlist items comes from backend. Empty-category state shows "No assets
+  in this category."
+- ~~**Empty-state demo grid**~~ — `MOCK_TILES` removed; `usePopularAssets` fetches
+  `GET /api/v1/popular` and enriches with live price-change data.
 
 ## 4. Add Asset Flow
 Modal triggered from the Watchlist "+ Add Asset" button.

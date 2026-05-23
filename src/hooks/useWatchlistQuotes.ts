@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getWatchlist } from '../api/watchlist';
-import { getStockPriceChange } from '../api/stocks';
+import { getStockPriceChange, getStockQuote, getStockHistory } from '../api/stocks';
 import type { WatchlistItem } from '../api/watchlist';
-import type { StockPriceChange } from '../api/stocks';
+import type { StockPriceChange, StockQuote, StockHistory } from '../api/stocks';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export interface WatchlistEntry {
   item: WatchlistItem;
   priceChange: StockPriceChange | null;
+  quote: StockQuote | null;
+  history: StockHistory | null;
   status: Status;
   error: string | null;
 }
@@ -45,23 +47,31 @@ export function useWatchlistQuotes(): UseWatchlistQuotesReturn {
     }
 
     setWatchlistStatus('success');
-    setEntries(items.map(item => ({ item, priceChange: null, status: 'loading', error: null })));
+    setEntries(items.map(item => ({
+      item, priceChange: null, quote: null, history: null, status: 'loading', error: null,
+    })));
 
-    const results = await Promise.allSettled(
-      items.map(item => getStockPriceChange(token, item.symbol))
-    );
+    const [priceChangeResults, quoteResults, historyResults] = await Promise.all([
+      Promise.allSettled(items.map(item => getStockPriceChange(token, item.symbol))),
+      Promise.allSettled(items.map(item => getStockQuote(token, item.symbol))),
+      Promise.allSettled(items.map(item => getStockHistory(token, item.symbol, '7d'))),
+    ]);
 
     setEntries(
       items.map((item, i) => {
-        const r = results[i];
-        if (r.status === 'fulfilled') {
-          return { item, priceChange: r.value, status: 'success', error: null };
-        }
+        const pc = priceChangeResults[i];
+        const q = quoteResults[i];
+        const h = historyResults[i];
+        const hasError = pc.status === 'rejected' && q.status === 'rejected';
         return {
           item,
-          priceChange: null,
-          status: 'error',
-          error: r.reason instanceof Error ? r.reason.message : 'Unavailable',
+          priceChange: pc.status === 'fulfilled' ? pc.value : null,
+          quote:       q.status  === 'fulfilled' ? q.value  : null,
+          history:     h.status  === 'fulfilled' ? h.value  : null,
+          status: hasError ? 'error' : 'success',
+          error: hasError
+            ? (pc.reason instanceof Error ? pc.reason.message : 'Unavailable')
+            : null,
         };
       })
     );

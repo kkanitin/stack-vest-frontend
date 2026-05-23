@@ -266,6 +266,74 @@
   color: var(--text-dim);
 }
 
+/* Skeleton shimmer — matches HeatmapPage shimmer pattern */
+@keyframes vizshimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.viz-skel {
+  border-radius: var(--r);
+  background: linear-gradient(
+    90deg,
+    var(--surface-high) 25%,
+    var(--surface-highest) 50%,
+    var(--surface-high) 75%
+  );
+  background-size: 200% 100%;
+  animation: vizshimmer 1.4s ease-in-out infinite;
+}
+
+.viz-skel--value {
+  height: 44px;
+  width: 70%;
+  margin-bottom: 14px;
+}
+
+.viz-skel--activity {
+  height: 36px;
+  width: 100%;
+}
+
+.viz-skel--donut {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+}
+
+.viz-skel--row {
+  height: 44px;
+  margin-bottom: 8px;
+}
+
+/* Empty state */
+
+.viz-value--dim {
+  color: var(--text-dim);
+}
+
+.viz-card--empty {
+  text-align: center;
+  padding: 32px 0;
+}
+
+.viz-empty-text {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0 0 12px;
+}
+
+.viz-empty-cta {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.viz-empty-cta:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 1024px) {
   .viz-row--3 {
     grid-template-columns: repeat(2, 1fr);
