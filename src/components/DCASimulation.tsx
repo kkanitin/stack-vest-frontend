@@ -17,13 +17,13 @@ const FREQ_SEGMENTS: Segment<Frequency>[] = [
   { value: 'monthly', label: 'Monthly' },
 ];
 
-// FMP historical endpoint uses pair format for crypto (e.g. BTCUSD, not BTC).
 const ASSETS = [
-  { value: 'BTCUSD', label: 'BTC — Bitcoin' },
-  { value: 'ETHUSD', label: 'ETH — Ethereum' },
-  { value: 'SOLUSD', label: 'SOL — Solana' },
   { value: 'AAPL', label: 'AAPL — Apple' },
+  { value: 'MSFT', label: 'MSFT — Microsoft' },
+  { value: 'AMZN', label: 'AMZN — Amazon' },
   { value: 'TSLA', label: 'TSLA — Tesla' },
+  { value: 'VOO', label: 'VOO — S&P 500 ETF' },
+  { value: 'SPY', label: 'SPY — SPDR S&P 500' },
 ];
 
 function fmtMoney(n: number): string {
@@ -114,7 +114,7 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 
 const DCASimulation: React.FC = () => {
   const { token } = useAuth();
-  const [asset, setAsset] = useState('BTCUSD');
+  const [asset, setAsset] = useState('AAPL');
   const [amount, setAmount] = useState(100);
   const [freq, setFreq] = useState<Frequency>('weekly');
   const [start, setStart] = useState('2024-01-01');

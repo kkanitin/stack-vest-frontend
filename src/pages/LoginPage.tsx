@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import type { CredentialResponse } from '@react-oauth/google';
 import './LoginPage.css';
@@ -14,12 +14,15 @@ const LogoMark: React.FC = () => (
 );
 
 const LoginPage: React.FC = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isInitializing } = useAuth();
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string })?.from ?? '/dashboard';
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isInitializing) return null;
+  if (isAuthenticated) return <Navigate to={from} replace />;
 
   const handleSuccess = async (r: CredentialResponse) => {
     setError(null);
@@ -27,7 +30,7 @@ const LoginPage: React.FC = () => {
       setLoading(true);
       try {
         await login(r.credential);
-        navigate('/dashboard');
+        navigate(from, { replace: true });
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Sign-in failed. Please try again.');
       } finally {

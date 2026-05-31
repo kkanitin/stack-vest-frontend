@@ -8,7 +8,7 @@ export interface PopularAsset {
 }
 
 export interface GetPopularAssetsParams {
-  type?: 'crypto' | 'stock' | 'all';
+  type?: 'stock' | 'etf' | 'all';
   limit?: number;
 }
 

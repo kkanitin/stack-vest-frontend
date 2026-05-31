@@ -8,19 +8,19 @@ import Button from '../components/ui/Button';
 import type { WatchlistEntry } from '../hooks/useWatchlistQuotes';
 import './HeatmapPage.css';
 
-type FilterValue = 'all' | 'top100' | 'defi' | 'l1';
+type FilterValue = 'all' | 'technology' | 'healthcare' | 'finance';
 
 const FILTERS: Segment<FilterValue>[] = [
   { value: 'all', label: 'All Assets' },
-  { value: 'top100', label: 'Top 100' },
-  { value: 'defi', label: 'DeFi' },
-  { value: 'l1', label: 'L1s' },
+  { value: 'technology', label: 'Technology' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'finance', label: 'Finance' },
 ];
 
 const CATEGORY_MAP: Record<Exclude<FilterValue, 'all'>, string> = {
-  top100: 'Top 100',
-  defi: 'DeFi',
-  l1: 'L1s',
+  technology: 'Technology',
+  healthcare: 'Healthcare',
+  finance: 'Finance',
 };
 
 const SKELETON_COUNT = 8;

@@ -154,8 +154,8 @@ const Visualization: React.FC = () => {
         <Card label="Market Status" className="viz-card">
           <div className="viz-card-title">Bullish Sentiment</div>
           <p className="viz-card-body">
-            BTC and ETH showing sustained recovery in the last 24h with healthy volume.
-            Tracked majors holding above their weekly resistance.
+            S&P 500 and NASDAQ showing sustained momentum with healthy volume.
+            Tracked majors holding above their weekly support levels.
           </p>
           <Badge tone="primary">Live</Badge>
         </Card>
