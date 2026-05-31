@@ -171,6 +171,7 @@
   color: var(--text-dim);
   margin-top: 2px;
   font-family: var(--mono);
+  text-transform: capitalize;
 }
 
 .aam-row-err {

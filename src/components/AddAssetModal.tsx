@@ -2,18 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { searchStocks } from '../api/stocks';
 import { addToWatchlist } from '../api/watchlist';
+import { getPopularAssets } from '../api/popular';
 import type { StockSearchResult } from '../api/stocks';
+import type { PopularAsset } from '../api/popular';
 import './AddAssetModal.css';
-
-// TODO(mock): no /suggestions endpoint exists yet. These are static "popular"
-// rows shown when the search input is empty. Replace once backend ships.
-const SUGGESTED: { symbol: string; name: string; type: string }[] = [
-  { symbol: 'BTC', name: 'Bitcoin', type: 'Crypto' },
-  { symbol: 'ETH', name: 'Ethereum', type: 'Crypto' },
-  { symbol: 'AAPL', name: 'Apple Inc.', type: 'Equity' },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', type: 'Equity' },
-  { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', type: 'ETF' },
-];
 
 interface Props {
   open: boolean;
@@ -30,6 +22,8 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
   const [searchError, setSearchError] = useState<string | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
   const [addError, setAddError] = useState<Record<string, string>>({});
+  const [suggestions, setSuggestions] = useState<PopularAsset[]>([]);
+  const [suggestionsStatus, setSuggestionsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (!open) {
@@ -38,7 +32,14 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
       setSearchStatus('idle');
       setSearchError(null);
       setAddError({});
+      setSuggestions([]);
+      setSuggestionsStatus('idle');
+      return;
     }
+    setSuggestionsStatus('loading');
+    getPopularAssets({ type: 'stock', limit: 10 })
+      .then(data => { setSuggestions(data); setSuggestionsStatus('success'); })
+      .catch(() => setSuggestionsStatus('error'));
   }, [open]);
 
   useEffect(() => {
@@ -156,8 +157,12 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
                 );
               })
             )
+          ) : suggestionsStatus === 'loading' ? (
+            <div className="aam-state">Loading suggestions…</div>
+          ) : suggestionsStatus === 'error' ? (
+            <div className="aam-state aam-state--err">Couldn't load suggestions</div>
           ) : (
-            SUGGESTED.map(s => {
+            suggestions.map(s => {
               const already = addedSymbols.has(s.symbol);
               return (
                 <div key={s.symbol} className="aam-row">
@@ -171,7 +176,7 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
                   </div>
                   <button
                     className={`aam-add${already ? ' added' : ''}`}
-                    onClick={() => handleAdd(s)}
+                    onClick={() => handleAdd({ symbol: s.symbol, name: s.name, type: s.type })}
                     disabled={already || adding === s.symbol}
                     aria-label={already ? `${s.symbol} already added` : `Add ${s.symbol}`}
                   >

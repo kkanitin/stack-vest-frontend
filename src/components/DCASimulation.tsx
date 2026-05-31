@@ -1,14 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { runDcaSimulation } from '../api/simulations';
+import type { DcaResult } from '../api/simulations';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
 import SegmentedControl from './ui/SegmentedControl';
 import type { Segment } from './ui/SegmentedControl';
 import './DCASimulation.css';
-
-// TODO(mock): DCA backtest engine doesn't exist yet. We generate a deterministic
-// portfolio growth curve from the form inputs so the chart and KPI strip behave
-// like the real thing for demo purposes.
 
 type Frequency = 'weekly' | 'biweekly' | 'monthly';
 
@@ -19,45 +18,13 @@ const FREQ_SEGMENTS: Segment<Frequency>[] = [
 ];
 
 const ASSETS = [
-  { value: 'BTC', label: 'BTC — Bitcoin' },
-  { value: 'ETH', label: 'ETH — Ethereum' },
-  { value: 'SOL', label: 'SOL — Solana' },
+  { value: 'AAPL', label: 'AAPL — Apple' },
+  { value: 'MSFT', label: 'MSFT — Microsoft' },
+  { value: 'AMZN', label: 'AMZN — Amazon' },
+  { value: 'TSLA', label: 'TSLA — Tesla' },
+  { value: 'VOO', label: 'VOO — S&P 500 ETF' },
+  { value: 'SPY', label: 'SPY — SPDR S&P 500' },
 ];
-
-interface SimResult {
-  points: { invested: number; value: number; date: string }[];
-  totalInvested: number;
-  currentValue: number;
-  roi: number;
-  avgBuyPrice: number;
-}
-
-function runMockSimulation(amount: number, freq: Frequency, start: string, end: string): SimResult {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const stepDays = freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : 30;
-  const points: SimResult['points'] = [];
-
-  let invested = 0;
-  let units = 0;
-  let value = 0;
-  let price = 26000;
-  // Deterministic-ish drift up with mild oscillation; meant to look like BTC.
-  let t = 0;
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + stepDays)) {
-    const noise = Math.sin(t / 2) * 0.06 + Math.cos(t / 5) * 0.04;
-    price = price * (1 + 0.012 + noise);
-    invested += amount;
-    units += amount / price;
-    value = units * price;
-    points.push({ invested, value, date: d.toISOString().slice(0, 10) });
-    t += 1;
-  }
-
-  const avgBuyPrice = units > 0 ? invested / units : 0;
-  const roi = invested > 0 ? ((value - invested) / invested) * 100 : 0;
-  return { points, totalInvested: invested, currentValue: value, roi, avgBuyPrice };
-}
 
 function fmtMoney(n: number): string {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -68,7 +35,12 @@ function fmtPct(n: number): string {
   return `${sign}${n.toFixed(2)}%`;
 }
 
-function GrowthChart({ points }: { points: SimResult['points'] }) {
+type ChartPoint = { date: string; invested: number; value: number };
+
+function GrowthChart({ points }: { points: ChartPoint[] }) {
+  if (points.length === 0) {
+    return <svg viewBox="0 0 760 260" className="dca-chart" />;
+  }
   const w = 760;
   const h = 260;
   const padL = 48;
@@ -87,7 +59,6 @@ function GrowthChart({ points }: { points: SimResult['points'] }) {
 
   const valuePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.value).toFixed(1)}`).join(' ');
   const investedPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.invested).toFixed(1)}`).join(' ');
-
   const areaPath = `${valuePath} L ${x(points.length - 1).toFixed(1)} ${(padT + innerH).toFixed(1)} L ${x(0).toFixed(1)} ${(padT + innerH).toFixed(1)} Z`;
 
   const ticks = 4;
@@ -122,14 +93,88 @@ function GrowthChart({ points }: { points: SimResult['points'] }) {
   );
 }
 
+function KpiSkeleton() {
+  return (
+    <div className="dca-kpis">
+      {[0, 1, 2, 3].map(i => (
+        <div key={i} className="dca-kpi">
+          <div className="dca-kpi-label dca-skeleton dca-skeleton--label">&nbsp;</div>
+          <div className="dca-kpi-value dca-skeleton dca-skeleton--value">&nbsp;</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChartSkeleton() {
+  return <div className="dca-chart-skeleton dca-skeleton" />;
+}
+
+type Status = 'idle' | 'loading' | 'success' | 'error';
+
 const DCASimulation: React.FC = () => {
-  const [asset, setAsset] = useState('BTC');
+  const { token } = useAuth();
+  const [asset, setAsset] = useState('AAPL');
   const [amount, setAmount] = useState(100);
   const [freq, setFreq] = useState<Frequency>('weekly');
   const [start, setStart] = useState('2024-01-01');
   const [end, setEnd] = useState('2025-12-31');
 
-  const result = useMemo(() => runMockSimulation(amount, freq, start, end), [amount, freq, start, end]);
+  const [status, setStatus] = useState<Status>('idle');
+  const [result, setResult] = useState<DcaResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Guard against stale responses from superseded requests.
+  const reqIdRef = useRef(0);
+  // Skip debounce on the very first effect run (mount).
+  const isFirstRun = useRef(true);
+
+  const fetchSimulation = useCallback(async () => {
+    if (!token) return;
+    const reqId = ++reqIdRef.current;
+    setStatus('loading');
+    setError(null);
+    try {
+      const data = await runDcaSimulation(token, {
+        symbol: asset,
+        startDate: start,
+        endDate: end,
+        amount,
+        frequency: freq,
+      });
+      if (reqId !== reqIdRef.current) return;
+      setResult(data);
+      setStatus('success');
+    } catch (e) {
+      if (reqId !== reqIdRef.current) return;
+      setError(e instanceof Error ? e.message : 'Simulation failed');
+      setStatus('error');
+    }
+  }, [token, asset, start, end, amount, freq]);
+
+  // First run is immediate; subsequent input changes are debounced 300 ms.
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      fetchSimulation();
+      return;
+    }
+    const t = setTimeout(fetchSimulation, 300);
+    return () => clearTimeout(t);
+  }, [fetchSimulation]);
+
+  const isLoading = status === 'loading' || status === 'idle';
+  const showSkeleton = (isLoading || status === 'error') && result === null;
+
+  const chartPoints: ChartPoint[] = result?.dataPoints.map(dp => ({
+    date: dp.date,
+    invested: dp.totalInvested,
+    value: dp.portfolioValue,
+  })) ?? [];
+
+  const avgBuyPrice = result && result.totalUnits > 0
+    ? result.totalInvested / result.totalUnits
+    : 0;
 
   return (
     <div className="dca">
@@ -143,6 +188,19 @@ const DCASimulation: React.FC = () => {
         </div>
         <Button variant="outline">Export CSV</Button>
       </header>
+
+      {error && (
+        <div className="dca-error-banner" role="alert">
+          <span>{error}</span>
+          <button
+            className="dca-error-dismiss"
+            onClick={() => setError(null)}
+            aria-label="Dismiss error"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="dca-grid">
         <Card label="Simulation Parameters" className="dca-form">
@@ -193,46 +251,63 @@ const DCASimulation: React.FC = () => {
             </div>
           </div>
 
-          <Button variant="primary" block className="dca-run">Run Simulation</Button>
-          {/* TODO(mock): live re-runs as inputs change; button is presentational. */}
+          <Button
+            variant="primary"
+            block
+            className="dca-run"
+            onClick={fetchSimulation}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Running…' : 'Run Simulation'}
+          </Button>
         </Card>
 
         <div className="dca-right">
-          <div className="dca-kpis">
-            <div className="dca-kpi">
-              <div className="dca-kpi-label">Total Invested</div>
-              <div className="dca-kpi-value">{fmtMoney(result.totalInvested)}</div>
-            </div>
-            <div className="dca-kpi">
-              <div className="dca-kpi-label">Current Value</div>
-              <div className="dca-kpi-value">{fmtMoney(result.currentValue)}</div>
-            </div>
-            <div className="dca-kpi">
-              <div className="dca-kpi-label">ROI</div>
-              <div className={`dca-kpi-value ${result.roi >= 0 ? 'positive' : 'negative'}`}>
-                {fmtPct(result.roi)}
+          {showSkeleton ? (
+            <KpiSkeleton />
+          ) : (
+            <div className="dca-kpis">
+              <div className="dca-kpi">
+                <div className="dca-kpi-label">Total Invested</div>
+                <div className="dca-kpi-value">{fmtMoney(result?.totalInvested ?? 0)}</div>
+              </div>
+              <div className="dca-kpi">
+                <div className="dca-kpi-label">Current Value</div>
+                <div className="dca-kpi-value">{fmtMoney(result?.finalPortfolioValue ?? 0)}</div>
+              </div>
+              <div className="dca-kpi">
+                <div className="dca-kpi-label">ROI</div>
+                <div className={`dca-kpi-value ${(result?.totalReturnPct ?? 0) >= 0 ? 'positive' : 'negative'}`}>
+                  {fmtPct(result?.totalReturnPct ?? 0)}
+                </div>
+              </div>
+              <div className="dca-kpi">
+                <div className="dca-kpi-label">Avg Buy Price</div>
+                <div className="dca-kpi-value">{fmtMoney(avgBuyPrice)}</div>
               </div>
             </div>
-            <div className="dca-kpi">
-              <div className="dca-kpi-label">Avg Buy Price</div>
-              <div className="dca-kpi-value">{fmtMoney(result.avgBuyPrice)}</div>
-            </div>
-          </div>
+          )}
 
           <Card label="Portfolio Growth" className="dca-chart-card">
             <div className="dca-chart-wrap">
-              <GrowthChart points={result.points} />
+              {showSkeleton ? (
+                <ChartSkeleton />
+              ) : (
+                <GrowthChart points={chartPoints} />
+              )}
             </div>
-            <div className="dca-chart-legend">
-              <span className="dca-legend-item">
-                <span className="dca-legend-swatch" style={{ background: 'var(--primary)' }} />
-                Portfolio Value
-              </span>
-              <span className="dca-legend-item">
-                <span className="dca-legend-swatch dca-legend-swatch--dashed" />
-                Invested
-              </span>
-            </div>
+            {!showSkeleton && (
+              <div className="dca-chart-legend">
+                <span className="dca-legend-item">
+                  <span className="dca-legend-swatch" style={{ background: 'var(--primary)' }} />
+                  Portfolio Value
+                </span>
+                <span className="dca-legend-item">
+                  <span className="dca-legend-swatch dca-legend-swatch--dashed" />
+                  Invested
+                </span>
+              </div>
+            )}
           </Card>
         </div>
       </div>

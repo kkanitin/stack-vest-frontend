@@ -79,7 +79,7 @@ const LandingPage: React.FC = () => {
               <span className="sidebar-brand-mark"><Icon.Logo size={22} /></span>
               <div className="sidebar-brand-text">
                 <div className="sidebar-brand-name">StackVest</div>
-                <div className="sidebar-brand-sub">Premium Portfolio</div>
+                <div className="sidebar-brand-sub">Personal Portfolio</div>
               </div>
               <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">✕</button>
             </div>
@@ -154,13 +154,13 @@ const LandingPage: React.FC = () => {
           </div>
 
           <footer className="main-footer">
-            <span className="main-footer-copy">StackVest Institutional v2.4</span>
+            <span className="main-footer-copy">StackVest Personal</span>
             <span className="main-footer-links">
               <span className="footer-status">
                 <span className="live-dot" />
-                System Status
+                Service Status
               </span>
-              <a href="#" className="footer-link">API Docs</a>
+              <a href="#" className="footer-link">Documentation</a>
             </span>
           </footer>
         </main>

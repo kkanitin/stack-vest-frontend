@@ -49,3 +49,47 @@ export async function getStockPriceChange(
   if (res.ok && data.code === 200) return data.result as StockPriceChange;
   throw new Error(data.errorMessage || `Failed to fetch price change for ${symbol}`);
 }
+
+export interface StockQuote {
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  currency: string;
+  timestamp: string;
+}
+
+export async function getStockQuote(token: string, symbol: string): Promise<StockQuote> {
+  const res = await fetch(
+    `${API_BASE}/stocks/${encodeURIComponent(symbol)}/quote`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await res.json();
+  if (res.ok && data.code === 200) return data.result as StockQuote;
+  throw new Error(data.errorMessage || `Failed to fetch quote for ${symbol}`);
+}
+
+export interface HistoryPoint {
+  date: string;
+  close: number;
+}
+
+export interface StockHistory {
+  symbol: string;
+  range: string;
+  points: HistoryPoint[];
+}
+
+export async function getStockHistory(
+  token: string,
+  symbol: string,
+  range: '7d' | '1M' | '3M' | '6M' | '1Y' | '5Y'
+): Promise<StockHistory> {
+  const res = await fetch(
+    `${API_BASE}/stocks/${encodeURIComponent(symbol)}/history?range=${range}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await res.json();
+  if (res.ok && data.code === 200) return data.result as StockHistory;
+  throw new Error(data.errorMessage || `Failed to fetch history for ${symbol}`);
+}

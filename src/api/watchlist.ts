@@ -7,6 +7,8 @@ export interface WatchlistItem {
   name: string;
   type: string;
   addedAt: string;
+  alertsEnabled: boolean;
+  category: string[];
 }
 
 export async function getWatchlist(token: string): Promise<WatchlistItem[]> {
@@ -44,5 +46,24 @@ export async function deleteFromWatchlist(token: string, symbol: string): Promis
   if (!res.ok) {
     const data = await res.json();
     throw new Error(data.errorMessage || 'Failed to remove from watchlist');
+  }
+}
+
+export async function setWatchlistAlerts(
+  token: string,
+  symbol: string,
+  enabled: boolean
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/watchlist/${encodeURIComponent(symbol)}/alerts`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ enabled }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.errorMessage || 'Failed to update alerts');
   }
 }

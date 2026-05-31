@@ -1,44 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getWatchlist, deleteFromWatchlist } from '../api/watchlist';
-import type { WatchlistItem } from '../api/watchlist';
+import { deleteFromWatchlist, setWatchlistAlerts } from '../api/watchlist';
+import { useWatchlistQuotes } from '../hooks/useWatchlistQuotes';
 import AddAssetModal from '../components/AddAssetModal';
 import Button from '../components/ui/Button';
 import './WatchlistPage.css';
 
-// TODO(mock): price, 24h change, 7d sparkline, and alerts state all need real
-// backend feeds (quotes endpoint + per-symbol historical + alert subscription).
-// We seed deterministic mock values keyed off the symbol so a given asset
-// always renders the same fake values across reloads.
-interface MockMarket {
-  price: number;
-  change: number;
-  series: number[];
-}
-
-function hashSymbol(symbol: string): number {
-  let h = 0;
-  for (let i = 0; i < symbol.length; i++) h = (h * 31 + symbol.charCodeAt(i)) >>> 0;
-  return h;
-}
-
-function mockMarket(symbol: string): MockMarket {
-  const seed = hashSymbol(symbol);
-  const price = 20 + (seed % 47000) / 10;
-  const change = ((seed % 1000) / 100) - 5; // -5..+5
-  const series: number[] = [];
-  let val = price;
-  let s = seed;
-  for (let i = 0; i < 14; i++) {
-    s = (s * 1103515245 + 12345) >>> 0;
-    const step = ((s % 200) - 100) / 1000;
-    val = val * (1 + step);
-    series.push(val);
-  }
-  return { price, change, series };
-}
-
 function Sparkline({ values, positive }: { values: number[]; positive: boolean }) {
+  if (values.length < 2) return <span className="wl-spark-empty" />;
   const w = 80;
   const h = 24;
   const min = Math.min(...values);
@@ -76,46 +45,51 @@ function fmtPct(n: number): string {
 
 const WatchlistPage: React.FC = () => {
   const { token } = useAuth();
+  const { entries, watchlistStatus, watchlistError, refresh } = useWatchlistQuotes();
 
-  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  // TODO(mock): per-row alerts toggle is local-only until backend exists.
   const [alerts, setAlerts] = useState<Record<string, boolean>>({});
 
-  const addedSymbols = useMemo(() => new Set(watchlist.map(w => w.symbol)), [watchlist]);
-
-  const load = useCallback(async () => {
-    if (!token) return;
-    setStatus('loading');
-    setError(null);
-    try {
-      const items = await getWatchlist(token);
-      setWatchlist(items);
-      setStatus('success');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load watchlist');
-      setStatus('error');
+  // Sync alerts state from server values whenever the list loads or refreshes.
+  useEffect(() => {
+    if (watchlistStatus === 'success') {
+      setAlerts(Object.fromEntries(entries.map(e => [e.item.symbol, e.item.alertsEnabled])));
     }
-  }, [token]);
+  }, [entries, watchlistStatus]);
 
-  useEffect(() => { load(); }, [load]);
+  const addedSymbols = useMemo(
+    () => new Set(entries.map(e => e.item.symbol)),
+    [entries]
+  );
 
-  const handleDelete = async (item: WatchlistItem) => {
+  const handleDelete = async (symbol: string) => {
     if (!token || deleting) return;
-    setDeleting(item.symbol);
+    setDeleting(symbol);
+    setDeleteError(null);
     try {
-      await deleteFromWatchlist(token, item.symbol);
-      setWatchlist(prev => prev.filter(w => w.symbol !== item.symbol));
+      await deleteFromWatchlist(token, symbol);
+      refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to remove');
+      setDeleteError(e instanceof Error ? e.message : 'Failed to remove');
     } finally {
       setDeleting(null);
     }
   };
+
+  const handleAlertToggle = async (symbol: string) => {
+    if (!token) return;
+    const next = !alerts[symbol];
+    setAlerts(prev => ({ ...prev, [symbol]: next }));
+    try {
+      await setWatchlistAlerts(token, symbol, next);
+    } catch {
+      setAlerts(prev => ({ ...prev, [symbol]: !next }));
+    }
+  };
+
+  const displayError = watchlistError || deleteError;
 
   return (
     <div className="wl">
@@ -127,11 +101,11 @@ const WatchlistPage: React.FC = () => {
         <Button variant="primary" onClick={() => setModalOpen(true)}>+ Add Asset</Button>
       </header>
 
-      {error && <div className="wl-banner">⚠ {error}</div>}
+      {displayError && <div className="wl-banner">⚠ {displayError}</div>}
 
-      {status === 'loading' ? (
+      {watchlistStatus === 'loading' ? (
         <div className="wl-empty">Loading watchlist…</div>
-      ) : watchlist.length === 0 ? (
+      ) : watchlistStatus === 'error' ? null : entries.length === 0 ? (
         <div className="wl-empty">
           <p className="wl-empty-title">Your watchlist is empty</p>
           <p className="wl-empty-body">Add assets to track their performance over time.</p>
@@ -151,11 +125,13 @@ const WatchlistPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {watchlist.map(item => {
-                const mkt = mockMarket(item.symbol);
-                const positive = mkt.change >= 0;
-                const cls = mkt.change > 0 ? 'positive' : mkt.change < 0 ? 'negative' : 'neutral';
+              {entries.map(({ item, quote, priceChange, history, status }) => {
+                const change = priceChange?.['1D'] ?? null;
+                const positive = change !== null ? change >= 0 : true;
+                const cls = change === null ? 'neutral' : change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral';
+                const sparkValues = history?.points.map(p => p.close) ?? [];
                 const alertOn = !!alerts[item.symbol];
+                const loading = status === 'loading';
                 return (
                   <tr key={item.id} className="wl-tr">
                     <td className="wl-td">
@@ -167,17 +143,21 @@ const WatchlistPage: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="wl-td wl-td--mono wl-td--right">{fmtPrice(mkt.price)}</td>
+                    <td className="wl-td wl-td--mono wl-td--right">
+                      {loading || quote === null ? '—' : fmtPrice(quote.price)}
+                    </td>
                     <td className={`wl-td wl-td--right wl-change ${cls}`}>
-                      <span className="wl-change-chip">{fmtPct(mkt.change)}</span>
+                      <span className="wl-change-chip">
+                        {loading || change === null ? '—' : fmtPct(change)}
+                      </span>
                     </td>
                     <td className="wl-td wl-td--center">
-                      <Sparkline values={mkt.series} positive={positive} />
+                      <Sparkline values={sparkValues} positive={positive} />
                     </td>
                     <td className="wl-td wl-td--center">
                       <button
                         className={`wl-toggle${alertOn ? ' on' : ''}`}
-                        onClick={() => setAlerts(prev => ({ ...prev, [item.symbol]: !alertOn }))}
+                        onClick={() => handleAlertToggle(item.symbol)}
                         role="switch"
                         aria-checked={alertOn}
                         aria-label={`Toggle alerts for ${item.symbol}`}
@@ -188,7 +168,7 @@ const WatchlistPage: React.FC = () => {
                     <td className="wl-td wl-td--right">
                       <button
                         className="wl-remove"
-                        onClick={() => handleDelete(item)}
+                        onClick={() => handleDelete(item.symbol)}
                         disabled={deleting === item.symbol}
                         aria-label={`Remove ${item.symbol}`}
                       >
@@ -206,7 +186,7 @@ const WatchlistPage: React.FC = () => {
       <AddAssetModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onAdded={load}
+        onAdded={refresh}
         addedSymbols={addedSymbols}
       />
     </div>

@@ -10,6 +10,8 @@ const baseItem = {
   name: 'Apple Inc.',
   type: 'Stock',
   addedAt: '2026-01-01',
+  alertsEnabled: false,
+  category: [],
 };
 
 function makePriceChange(oneDay: number): StockPriceChange {
@@ -25,6 +27,8 @@ function makeEntry(overrides: Partial<WatchlistEntry>): WatchlistEntry {
   return {
     item: baseItem,
     priceChange: null,
+    quote: null,
+    history: null,
     status: 'success',
     error: null,
     ...overrides,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useWatchlistQuotes } from '../hooks/useWatchlistQuotes';
+import { usePopularAssets } from '../hooks/usePopularAssets';
 import HeatmapTile from '../components/HeatmapTile';
 import SegmentedControl from '../components/ui/SegmentedControl';
 import type { Segment } from '../components/ui/SegmentedControl';
@@ -7,41 +8,20 @@ import Button from '../components/ui/Button';
 import type { WatchlistEntry } from '../hooks/useWatchlistQuotes';
 import './HeatmapPage.css';
 
-type FilterValue = 'all' | 'top100' | 'defi' | 'l1';
+type FilterValue = 'all' | 'technology' | 'healthcare' | 'finance';
 
 const FILTERS: Segment<FilterValue>[] = [
   { value: 'all', label: 'All Assets' },
-  { value: 'top100', label: 'Top 100' },
-  { value: 'defi', label: 'DeFi' },
-  { value: 'l1', label: 'L1s' },
+  { value: 'technology', label: 'Technology' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'finance', label: 'Finance' },
 ];
 
-// TODO(mock): when the user has no watchlist entries, we render this demo grid
-// so the screen still demonstrates the heatmap pattern. Replace with a real
-// "popular" feed once an endpoint exists.
-function makeMockChange(symbol: string, pct: number) {
-  return { symbol, '1D': pct, '5D': 0, '1M': 0, '3M': 0, '6M': 0, ytd: 0, '1Y': 0, '3Y': 0, '5Y': 0, '10Y': 0, max: 0 };
-}
-
-function mockTile(id: string, symbol: string, name: string, pct: number): WatchlistEntry {
-  return {
-    item: { id, userId: 'mock', symbol, name, type: 'Crypto', addedAt: new Date().toISOString() },
-    priceChange: makeMockChange(symbol, pct),
-    status: 'success',
-    error: null,
-  };
-}
-
-const MOCK_TILES: WatchlistEntry[] = [
-  mockTile('m-btc', 'BTC', 'Bitcoin', 2.34),
-  mockTile('m-eth', 'ETH', 'Ethereum', 1.12),
-  mockTile('m-sol', 'SOL', 'Solana', -0.84),
-  mockTile('m-avax', 'AVAX', 'Avalanche', -3.20),
-  mockTile('m-link', 'LINK', 'Chainlink', 0.42),
-  mockTile('m-uni', 'UNI', 'Uniswap', 4.10),
-  mockTile('m-aave', 'AAVE', 'Aave', -1.55),
-  mockTile('m-doge', 'DOGE', 'Dogecoin', 0.12),
-];
+const CATEGORY_MAP: Record<Exclude<FilterValue, 'all'>, string> = {
+  technology: 'Technology',
+  healthcare: 'Healthcare',
+  finance: 'Finance',
+};
 
 const SKELETON_COUNT = 8;
 
@@ -53,8 +33,14 @@ const HeatmapPage: React.FC = () => {
     ? lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     : null;
 
-  const showMock = watchlistStatus === 'success' && entries.length === 0;
-  const tiles: WatchlistEntry[] = showMock ? MOCK_TILES : entries;
+  const showPopular = watchlistStatus === 'success' && entries.length === 0;
+  const { entries: popularEntries } = usePopularAssets(showPopular);
+
+  const tiles: WatchlistEntry[] = showPopular ? popularEntries : entries;
+
+  const filteredTiles = filter === 'all'
+    ? tiles
+    : tiles.filter(e => e.item.category.includes(CATEGORY_MAP[filter]));
 
   return (
     <div className="hm">
@@ -64,7 +50,6 @@ const HeatmapPage: React.FC = () => {
           <p className="hm-sub">Real-time investment performance across tracked assets.</p>
         </div>
         <div className="hm-toolbar">
-          {/* TODO(mock): segmented filter is presentational; backend filter not wired yet. */}
           <SegmentedControl<FilterValue>
             segments={FILTERS}
             value={filter}
@@ -99,10 +84,9 @@ const HeatmapPage: React.FC = () => {
         </div>
       ) : (
         <>
-          {showMock && (
+          {showPopular && (
             <div className="hm-mock-banner">
-              {/* TODO(mock): empty-state demo grid */}
-              Your watchlist is empty — these tiles are sample data. Add assets to track real performance.
+              Your watchlist is empty — showing popular assets. Add assets to track real performance.
             </div>
           )}
           <div className="hm-grid">
@@ -118,7 +102,11 @@ const HeatmapPage: React.FC = () => {
                     <div className="htile-skel htile-skel-sm" />
                   </div>
                 ))
-              : tiles.map(entry => (
+              : filteredTiles.length === 0 && filter !== 'all'
+              ? (
+                  <div className="hm-empty">No assets in this category.</div>
+                )
+              : filteredTiles.map(entry => (
                   <HeatmapTile key={entry.item.id} entry={entry} />
                 ))
             }

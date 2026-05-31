@@ -8,6 +8,7 @@ import DCASimulation from './components/DCASimulation';
 import HeatmapPage from './pages/HeatmapPage';
 import WatchlistPage from './pages/WatchlistPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import NotFoundPage from './pages/NotFoundPage';
 import './App.css';
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
               <Route path="watchlist" element={<WatchlistPage />} />
             </Route>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Router>
       </AuthProvider>
