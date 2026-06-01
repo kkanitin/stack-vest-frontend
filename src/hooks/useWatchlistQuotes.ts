@@ -1,7 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
+import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getWatchlist } from '../api/watchlist';
-import { getStockPriceChange, getStockQuote, getStockHistory } from '../api/stocks';
+import {
+  getBatchPriceChanges,
+  getStockQuote,
+  getBatchHistory,
+} from '../api/stocks';
 import type { WatchlistItem } from '../api/watchlist';
 import type { StockPriceChange, StockQuote, StockHistory } from '../api/stocks';
 
@@ -26,59 +31,112 @@ export interface UseWatchlistQuotesReturn {
 
 export function useWatchlistQuotes(): UseWatchlistQuotesReturn {
   const { token } = useAuth();
-  const [entries, setEntries] = useState<WatchlistEntry[]>([]);
-  const [watchlistStatus, setWatchlistStatus] = useState<Status>('idle');
-  const [watchlistError, setWatchlistError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchAll = useCallback(async () => {
-    if (!token) return;
+  // 1. Watchlist items
+  const watchlistQuery = useQuery({
+    queryKey: ['watchlist'],
+    queryFn: () => getWatchlist(token!),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
 
-    setWatchlistStatus('loading');
-    setWatchlistError(null);
+  const items: WatchlistItem[] = watchlistQuery.data ?? [];
+  const symbols = useMemo(() => items.map(i => i.symbol).sort(), [items]);
 
-    let items: WatchlistItem[];
-    try {
-      items = await getWatchlist(token);
-    } catch (e) {
-      setWatchlistStatus('error');
-      setWatchlistError(e instanceof Error ? e.message : 'Failed to load watchlist');
-      return;
-    }
+  // 2. Batch price changes — one request for all symbols
+  const priceChangesQuery = useQuery({
+    queryKey: ['batchPriceChanges', symbols],
+    queryFn: () => getBatchPriceChanges(token!, symbols),
+    enabled: !!token && symbols.length > 0,
+    staleTime: 2 * 60 * 1000,
+  });
 
-    setWatchlistStatus('success');
-    setEntries(items.map(item => ({
-      item, priceChange: null, quote: null, history: null, status: 'loading', error: null,
-    })));
+  // 3. Individual quotes (no batch endpoint)
+  const quoteResults = useQueries({
+    queries: items.map(item => ({
+      queryKey: ['stockQuote', item.symbol],
+      queryFn: () => getStockQuote(token!, item.symbol),
+      enabled: !!token,
+      staleTime: 2 * 60 * 1000,
+    })),
+  });
 
-    const [priceChangeResults, quoteResults, historyResults] = await Promise.all([
-      Promise.allSettled(items.map(item => getStockPriceChange(token, item.symbol))),
-      Promise.allSettled(items.map(item => getStockQuote(token, item.symbol))),
-      Promise.allSettled(items.map(item => getStockHistory(token, item.symbol, '7d'))),
-    ]);
+  // 4. Batch 7D history for sparklines
+  const historyQuery = useQuery({
+    queryKey: ['batchHistory', symbols, '7D'],
+    queryFn: () => getBatchHistory(token!, symbols, '7D'),
+    enabled: !!token && symbols.length > 0,
+    staleTime: 10 * 60 * 1000,
+  });
 
-    setEntries(
-      items.map((item, i) => {
-        const pc = priceChangeResults[i];
-        const q = quoteResults[i];
-        const h = historyResults[i];
-        const hasError = pc.status === 'rejected' && q.status === 'rejected';
-        return {
-          item,
-          priceChange: pc.status === 'fulfilled' ? pc.value : null,
-          quote:       q.status  === 'fulfilled' ? q.value  : null,
-          history:     h.status  === 'fulfilled' ? h.value  : null,
-          status: hasError ? 'error' : 'success',
-          error: hasError
-            ? (pc.reason instanceof Error ? pc.reason.message : 'Unavailable')
-            : null,
-        };
-      })
+  // Combine into WatchlistEntry[]
+  const entries: WatchlistEntry[] = useMemo(() => {
+    const priceMap = new Map<string, StockPriceChange>(
+      (priceChangesQuery.data ?? []).map(pc => [pc.symbol, pc])
     );
-    setLastUpdated(new Date());
-  }, [token]);
+    const historyMap = new Map<string, StockHistory>(
+      (historyQuery.data ?? []).map(h => [h.symbol, h])
+    );
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+    return items.map((item, i) => {
+      const priceChange = priceMap.get(item.symbol) ?? null;
+      const quote = (quoteResults[i]?.data as StockQuote | undefined) ?? null;
+      const history = historyMap.get(item.symbol) ?? null;
+      const isLoading =
+        watchlistQuery.isLoading ||
+        priceChangesQuery.isLoading ||
+        (quoteResults[i]?.isLoading ?? false);
+      const isError =
+        priceChangesQuery.isError && (quoteResults[i]?.isError ?? false);
+      return {
+        item,
+        priceChange,
+        quote,
+        history,
+        status: isLoading ? 'loading' : isError ? 'error' : 'success',
+        error: isError ? 'Unavailable' : null,
+      };
+    });
+  }, [
+    items,
+    priceChangesQuery.data,
+    priceChangesQuery.isLoading,
+    priceChangesQuery.isError,
+    quoteResults,
+    historyQuery.data,
+    watchlistQuery.isLoading,
+  ]);
 
-  return { entries, watchlistStatus, watchlistError, lastUpdated, refresh: fetchAll };
+  const lastUpdated = useMemo(() => {
+    return watchlistQuery.dataUpdatedAt
+      ? new Date(watchlistQuery.dataUpdatedAt)
+      : null;
+  }, [watchlistQuery.dataUpdatedAt]);
+
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+    queryClient.invalidateQueries({ queryKey: ['batchPriceChanges'] });
+    queryClient.invalidateQueries({ queryKey: ['batchHistory'] });
+    items.forEach(item => {
+      queryClient.invalidateQueries({ queryKey: ['stockQuote', item.symbol] });
+    });
+  }, [queryClient, items]);
+
+  const watchlistStatus: Status = !token
+    ? 'idle'
+    : watchlistQuery.isLoading
+    ? 'loading'
+    : watchlistQuery.isError
+    ? 'error'
+    : watchlistQuery.isSuccess
+    ? 'success'
+    : 'idle';
+
+  const watchlistError =
+    watchlistQuery.error instanceof Error
+      ? watchlistQuery.error.message
+      : null;
+
+  return { entries, watchlistStatus, watchlistError, lastUpdated, refresh };
 }

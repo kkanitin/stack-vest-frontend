@@ -26,13 +26,14 @@ const Icon: Record<string, React.FC<{ size?: number }>> = {
   ),
   DCA: ({ size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 17l5-5 4 4 8-9" />
-      <path d="M14 7h6v6" />
+      <rect x="3" y="12" width="4" height="9" />
+      <rect x="10" y="7" width="4" height="14" />
+      <rect x="17" y="3" width="4" height="18" />
     </svg>
   ),
   Watchlist: ({ size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 6h18M3 12h18M3 18h12" />
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
     </svg>
   ),
   Calendar: ({ size = 16 }) => (
@@ -86,7 +87,6 @@ const LandingPage: React.FC = () => {
           </div>
 
           <nav className="sidebar-nav">
-            <div className="sidebar-nav-label">Workspace</div>
             <NavLink
               to="/dashboard/visualization"
               end
@@ -96,9 +96,10 @@ const LandingPage: React.FC = () => {
               <span className="sidebar-link-icon"><Icon.Overview /></span>
               Overview
             </NavLink>
+            <div className="sidebar-nav-label sidebar-section-label">Visualization</div>
             <NavLink
               to="/dashboard/visualization/heatmap"
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+              className={({ isActive }) => `sidebar-link sidebar-link--child${isActive ? ' active' : ''}`}
               onClick={() => setSidebarOpen(false)}
             >
               <span className="sidebar-link-icon"><Icon.Heatmap /></span>

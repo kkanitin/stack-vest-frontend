@@ -117,12 +117,20 @@
 .sidebar-link.active::before {
   content: '';
   position: absolute;
-  left: -16px;
+  right: -16px;
   top: 8px;
   bottom: 8px;
   width: 2px;
   background: var(--primary);
-  border-radius: 0 2px 2px 0;
+  border-radius: 2px 0 0 2px;
+}
+
+.sidebar-link--child {
+  padding-left: 28px;
+}
+
+.sidebar-section-label {
+  margin-top: 12px;
 }
 
 .sidebar-link-icon {
