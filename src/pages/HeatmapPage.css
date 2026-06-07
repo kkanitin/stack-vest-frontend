@@ -283,6 +283,212 @@
   }
 }
 
+/* Tile additions */
+.htile--selected {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.htile-top-end {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.htile-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.htile-spark {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.hm-empty {
+  grid-column: 1 / -1;
+  padding: 32px 0;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* Sparkline List */
+.sl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.sl-header {
+  display: grid;
+  grid-template-columns: 32px 1fr 100px 72px;
+  padding: 8px 16px;
+  background: var(--surface-high);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  gap: 12px;
+  align-items: center;
+}
+
+.sl-col-asset { padding-left: 4px; }
+.sl-col-spark { text-align: center; }
+.sl-col-pct { text-align: right; }
+
+.sl-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 100px 72px;
+  padding: 10px 16px;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.sl-row:first-of-type { border-top: none; }
+.sl-row:hover { background: var(--surface-high); }
+
+.sl-check-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl-checkbox {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+.sl-checkbox:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.sl-asset {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sl-symbol {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.sl-name {
+  font-size: 11px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sl-spark-wrap {
+  width: 100%;
+}
+
+.sl-pct {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+}
+.sl-pct.positive { color: var(--success); }
+.sl-pct.negative { color: var(--loss); }
+.sl-pct.neutral { color: var(--text-dim); }
+
+.sl-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* Performance Bar Chart */
+.pbc-wrap {
+  width: 100%;
+}
+
+.pbc-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* Comparison Chart */
+.hm-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hm-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--primary-bg);
+  border: 1px solid var(--primary-border);
+  border-radius: var(--r-pill);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.hm-chip button {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 120ms;
+}
+.hm-chip button:hover { opacity: 1; }
+
+.cc-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.cc-skel {
+  height: 280px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(90deg, var(--surface-high) 25%, var(--surface-highest) 50%, var(--surface-high) 75%);
+  background-size: 200% 100%;
+  animation: hshimmer 1.4s ease-in-out infinite;
+}
+
+.cc-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  color: var(--error);
+  font-size: 13px;
+}
+
 @media (max-width: 640px) {
   .hm-head {
     flex-direction: column;
@@ -299,5 +505,11 @@
   }
   .hm-updated {
     margin-left: 0;
+  }
+
+  .sl-header,
+  .sl-row {
+    grid-template-columns: 28px 1fr 80px 60px;
+    padding: 8px 12px;
   }
 }

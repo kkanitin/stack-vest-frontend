@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import LandingPage from './pages/LandingPage';
@@ -10,6 +11,10 @@ import WatchlistPage from './pages/WatchlistPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotFoundPage from './pages/NotFoundPage';
 import './App.css';
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1 } },
+});
 
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -26,6 +31,7 @@ function App() {
   }
 
   return (
+    <QueryClientProvider client={queryClient}>
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
         <Router>
@@ -51,6 +57,7 @@ function App() {
         </Router>
       </AuthProvider>
     </GoogleOAuthProvider>
+    </QueryClientProvider>
   );
 }
 
