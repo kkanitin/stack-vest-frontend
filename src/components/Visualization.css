@@ -6,8 +6,21 @@
 
 .viz-head {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.viz-head-text {
+  display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+}
+
+.viz-add-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .viz-greeting {
@@ -35,6 +48,10 @@
 }
 
 .viz-row--allocation {
+  grid-template-columns: 1fr 2fr;
+}
+
+.viz-row--sentiment {
   grid-template-columns: 1fr 2fr;
 }
 
@@ -78,6 +95,46 @@
   margin: 0 0 14px;
 }
 
+.viz-status-stats {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.viz-status-stat {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.viz-status-stat--up {
+  color: var(--success);
+}
+
+.viz-status-stat--down {
+  color: var(--loss);
+}
+
+.viz-status-stat--flat {
+  color: var(--text-dim);
+}
+
+.viz-status-badge {
+  display: inline-block;
+}
+
+.viz-skel--title {
+  height: 22px;
+  width: 50%;
+  margin-bottom: 10px;
+}
+
+.viz-skel--body {
+  height: 14px;
+  width: 90%;
+  margin-bottom: 14px;
+}
+
 .viz-activity {
   list-style: none;
   margin: 0;
@@ -114,6 +171,29 @@
   margin-top: 2px;
 }
 
+.viz-activity-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.viz-activity-symbol {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--surface-highest);
+  border-radius: var(--r);
+  padding: 3px 7px;
+  flex-shrink: 0;
+}
+
+.viz-empty-text--sub {
+  font-size: 12px;
+  margin-top: -6px;
+}
+
 /* Allocation */
 
 .viz-allocation {
@@ -122,17 +202,29 @@
   gap: 20px;
 }
 
-.viz-donut {
+.viz-donut-wrap {
+  position: relative;
   width: 160px;
   height: 160px;
   flex-shrink: 0;
+}
+
+.viz-donut-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
 .viz-donut-num {
   font-family: var(--mono);
   font-size: 28px;
   font-weight: 500;
-  fill: var(--text-h);
+  color: var(--text-h);
+  line-height: 1.2;
 }
 
 .viz-donut-lbl {
@@ -140,7 +232,13 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.10em;
-  fill: var(--text-dim);
+  color: var(--text-dim);
+}
+
+.viz-legend-empty {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 6px 0;
 }
 
 .viz-legend {
@@ -266,6 +364,25 @@
   color: var(--text-dim);
 }
 
+.viz-edit-btn {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.viz-edit-btn:hover {
+  color: var(--text-h);
+  border-color: var(--border-strong);
+  background: var(--surface-highest);
+}
+
 /* Skeleton shimmer — matches HeatmapPage shimmer pattern */
 @keyframes vizshimmer {
   0% { background-position: -200% 0; }
@@ -312,6 +429,11 @@
   color: var(--text-dim);
 }
 
+.viz-card--fetching {
+  opacity: 0.7;
+  transition: opacity 150ms ease;
+}
+
 .viz-card--empty {
   text-align: center;
   padding: 32px 0;
@@ -344,6 +466,9 @@
   .viz-row--allocation {
     grid-template-columns: 1fr;
   }
+  .viz-row--sentiment {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -357,10 +482,17 @@
     flex-direction: column;
     align-items: stretch;
   }
-  .viz-donut {
+  .viz-donut-wrap {
     align-self: center;
   }
   .viz-value {
     font-size: 26px;
+  }
+  .viz-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .viz-add-btn {
+    align-self: flex-start;
   }
 }

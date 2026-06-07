@@ -1,0 +1,125 @@
+.fg-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.fg-gauge-chart {
+  position: relative;
+  width: 100%;
+  max-width: 220px;
+  height: 120px;
+}
+
+.fg-needle {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 2px;
+  height: 84px;
+  background: var(--text-h);
+  transform-origin: bottom center;
+  border-radius: 2px;
+}
+
+.fg-pivot {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 10px;
+  height: 10px;
+  background: var(--text-h);
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.fg-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.fg-score {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-h);
+  line-height: 1.1;
+}
+
+.fg-status-badge {
+  display: inline-block;
+}
+
+.fg-descriptor {
+  margin: 8px 0 4px;
+  max-width: 32ch;
+}
+
+.fg-updated {
+  margin: 0;
+}
+
+.viz-skel--gauge {
+  width: 100%;
+  max-width: 220px;
+  height: 120px;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  margin: 0 auto 14px;
+}
+
+/* Signals breakdown */
+
+.fg-signals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fg-signal-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.fg-signal-row:last-child {
+  border-bottom: none;
+}
+
+.fg-signal-label {
+  color: var(--text);
+}
+
+.fg-signal-value {
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--text-h);
+  text-align: right;
+}
+
+.fg-signal-weight {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .fg-signal-row {
+    grid-template-columns: 1fr auto;
+  }
+  .fg-signal-weight {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+}
