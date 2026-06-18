@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, NavLink, Outlet } from 'react-router-dom';
+import { useNavigate, NavLink, Outlet, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
+import ErrorBoundary from '../components/ErrorBoundary';
+import RouteFallback from '../components/RouteFallback';
 import './LandingPage.css';
 
 // Lightweight monoline glyphs (Lucide-style strokes) — kept inline to avoid
@@ -59,6 +61,7 @@ const Icon: Record<string, React.FC<{ size?: number }>> = {
 const LandingPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
@@ -151,7 +154,11 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div className="main-content">
-            <Outlet />
+            <ErrorBoundary key={location.pathname} variant="inline">
+              <Suspense fallback={<RouteFallback variant="inline" />}>
+                <Outlet />
+              </Suspense>
+            </ErrorBoundary>
           </div>
 
           <footer className="main-footer">

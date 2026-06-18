@@ -1,0 +1,35 @@
+.rf-root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.rf-root--page {
+  min-height: 100vh;
+}
+
+.rf-root--inline {
+  min-height: 60vh;
+}
+
+.rf-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid var(--border-strong);
+  border-top-color: var(--primary);
+  animation: rf-spin 700ms linear infinite;
+}
+
+@keyframes rf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rf-spinner {
+    animation-duration: 1800ms;
+  }
+}
