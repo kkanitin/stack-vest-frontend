@@ -7,11 +7,14 @@ import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import RouteFallback from './components/RouteFallback';
+import LandingPage from './pages/LandingPage';
 import './App.css';
 
-// Route components are code-split so heavy deps (Recharts) load only on the routes that use them.
+// Route components are code-split so heavy deps (Recharts) load only on the routes
+// that use them. LandingPage is the dashboard shell rendered on every authenticated
+// route, so it is imported eagerly (part of the entry graph) to avoid an extra
+// request hop on the critical render path.
 const LoginPage = lazy(() => import('./pages/LoginPage'));
-const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Visualization = lazy(() => import('./components/Visualization'));
 const DCASimulation = lazy(() => import('./components/DCASimulation'));
 const HeatmapPage = lazy(() => import('./pages/HeatmapPage'));
