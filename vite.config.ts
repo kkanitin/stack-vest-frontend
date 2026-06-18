@@ -14,4 +14,21 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Explicit budget — kept tight now that vendors are split out.
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        // Isolate heavy vendors into long-cached chunks; Recharts (the largest)
+        // lands in `charts`, pulled only by the routes that render charts.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) return 'charts';
+          if (id.includes('react-router')) return 'router';
+          if (id.includes('@tanstack')) return 'query';
+          if (id.includes('react-dom') || id.includes('scheduler') || id.includes('/react/')) return 'react-vendor';
+        },
+      },
+    },
+  },
 })

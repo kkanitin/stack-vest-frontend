@@ -1,60 +1,3 @@
-.pfm-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 300;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.pfm-panel {
-  width: 100%;
-  max-width: 460px;
-  max-height: min(640px, calc(100vh - 40px));
-  display: flex;
-  flex-direction: column;
-  background: var(--surface-high);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-lg);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-}
-
-.pfm-head {
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.pfm-title {
-  font-family: var(--sans);
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--text-h);
-  margin: 0;
-}
-
-.pfm-close {
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: var(--r);
-  transition: color 150ms ease, background-color 150ms ease;
-}
-
-.pfm-close:hover {
-  color: var(--text-h);
-  background: var(--surface-highest);
-}
-
 .pfm-body {
   padding: 18px 20px 20px;
   overflow-y: auto;
@@ -311,19 +254,6 @@
 }
 
 @media (max-width: 600px) {
-  .pfm-backdrop {
-    padding: 0;
-    align-items: stretch;
-  }
-
-  .pfm-panel {
-    max-width: none;
-    max-height: none;
-    height: 100%;
-    border-radius: 0;
-    border: none;
-  }
-
   .pfm-row {
     grid-template-columns: 1fr;
   }

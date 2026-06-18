@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { searchStocks } from '../api/stocks';
 import { addToWatchlist } from '../api/watchlist';
+import type { WatchlistItem } from '../api/watchlist';
 import { getPopularAssets } from '../api/popular';
+import { useToast } from '../context/ToastContext';
+import Modal from './ui/Modal';
 import type { StockSearchResult } from '../api/stocks';
 import type { PopularAsset } from '../api/popular';
 import './AddAssetModal.css';
+
+type AddItem = { symbol: string; name: string; type: string };
 
 interface Props {
   open: boolean;
@@ -16,11 +22,12 @@ interface Props {
 
 const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const toast = useToast();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<StockSearchResult[]>([]);
   const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [adding, setAdding] = useState<string | null>(null);
   const [addError, setAddError] = useState<Record<string, string>>({});
   const [suggestions, setSuggestions] = useState<PopularAsset[]>([]);
   const [suggestionsStatus, setSuggestionsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -41,15 +48,6 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
       .then(data => { setSuggestions(data); setSuggestionsStatus('success'); })
       .catch(() => setSuggestionsStatus('error'));
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
 
   // Debounced live search
   useEffect(() => {
@@ -75,22 +73,44 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
     return () => window.clearTimeout(handle);
   }, [query, token]);
 
-  const handleAdd = async (item: { symbol: string; name: string; type: string }) => {
-    if (!token || adding) return;
-    if (addedSymbols.has(item.symbol)) return;
-    setAdding(item.symbol);
-    setAddError(prev => { const n = { ...prev }; delete n[item.symbol]; return n; });
-    try {
-      await addToWatchlist(token, item);
+  const addMutation = useMutation({
+    mutationFn: (item: AddItem) => addToWatchlist(token!, item),
+    onMutate: async (item: AddItem) => {
+      setAddError(prev => { const n = { ...prev }; delete n[item.symbol]; return n; });
+      await queryClient.cancelQueries({ queryKey: ['watchlist'] });
+      const previous = queryClient.getQueryData<WatchlistItem[]>(['watchlist']);
+      const optimistic: WatchlistItem = {
+        id: `temp-${item.symbol}`,
+        userId: '',
+        symbol: item.symbol,
+        name: item.name,
+        type: item.type,
+        addedAt: new Date().toISOString(),
+        alertsEnabled: false,
+        category: [],
+      };
+      queryClient.setQueryData<WatchlistItem[]>(['watchlist'], old => [...(old ?? []), optimistic]);
+      return { previous };
+    },
+    onError: (err, item, context) => {
+      if (context?.previous) queryClient.setQueryData(['watchlist'], context.previous);
+      const message = err instanceof Error ? err.message : 'Failed to add';
+      setAddError(prev => ({ ...prev, [item.symbol]: message }));
+      toast.error(message);
+    },
+    onSuccess: (_data, item) => {
+      toast.success(`${item.symbol} added to watchlist`);
       onAdded();
-    } catch (err) {
-      setAddError(prev => ({
-        ...prev,
-        [item.symbol]: err instanceof Error ? err.message : 'Failed to add',
-      }));
-    } finally {
-      setAdding(null);
-    }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+    },
+  });
+
+  const handleAdd = (item: AddItem) => {
+    if (!token || addMutation.isPending) return;
+    if (addedSymbols.has(item.symbol)) return;
+    addMutation.mutate(item);
   };
 
   if (!open) return null;
@@ -98,13 +118,7 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
   const showingResults = query.trim().length > 0;
 
   return (
-    <div className="aam-backdrop" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="aam-panel" onClick={e => e.stopPropagation()}>
-        <header className="aam-head">
-          <h2 className="aam-title">Add Asset</h2>
-          <button className="aam-close" onClick={onClose} aria-label="Close">✕</button>
-        </header>
-
+    <Modal open={open} onClose={onClose} title="Add Asset" maxWidth={480}>
         <div className="aam-search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="aam-search-icon">
             <circle cx="11" cy="11" r="7" />
@@ -148,7 +162,7 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
                     <button
                       className={`aam-add${already ? ' added' : ''}`}
                       onClick={() => handleAdd({ symbol: r.symbol, name: r.name, type: r.type })}
-                      disabled={already || adding === r.symbol}
+                      disabled={already || (addMutation.isPending && addMutation.variables?.symbol === r.symbol)}
                       aria-label={already ? `${r.symbol} already added` : `Add ${r.symbol}`}
                     >
                       {already ? '✓' : '+'}
@@ -177,7 +191,7 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
                   <button
                     className={`aam-add${already ? ' added' : ''}`}
                     onClick={() => handleAdd({ symbol: s.symbol, name: s.name, type: s.type })}
-                    disabled={already || adding === s.symbol}
+                    disabled={already || (addMutation.isPending && addMutation.variables?.symbol === s.symbol)}
                     aria-label={already ? `${s.symbol} already added` : `Add ${s.symbol}`}
                   >
                     {already ? '✓' : '+'}
@@ -187,8 +201,7 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
             })
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

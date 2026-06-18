@@ -3,7 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { searchStocks } from '../api/stocks';
 import { addPosition, updatePosition } from '../api/portfolio';
+import type { PortfolioPosition } from '../api/portfolio';
 import { usePortfolioPositions } from '../hooks/usePortfolioPositions';
+import { useToast } from '../context/ToastContext';
+import Modal from './ui/Modal';
+import Input from './ui/Input';
 import type { StockSearchResult } from '../api/stocks';
 import './PositionFormModal.css';
 
@@ -21,6 +25,7 @@ function fmtMoney(n: number): string {
 const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const { data: positions } = usePortfolioPositions();
   const isEdit = !!editSymbol;
   const editing = useMemo(
@@ -55,15 +60,6 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
       setAvgCost(String(editing.avgCost));
     }
   }, [open, isEdit, editing]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
 
   // Debounced symbol search (add mode only)
   useEffect(() => {
@@ -105,25 +101,44 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
       }
       return addPosition(token, { symbol: selected.symbol, name: selected.name, shares: sharesNum, avgCost: avgCostNum });
     },
+    // Optimistic update for edits only — the server computes valueUsd/change24h on add.
+    onMutate: async () => {
+      if (!isEdit || !selected) return;
+      await queryClient.cancelQueries({ queryKey: ['portfolio', 'positions'] });
+      const previous = queryClient.getQueryData<PortfolioPosition[]>(['portfolio', 'positions']);
+      const sharesNum = Number(shares);
+      const avgCostNum = Number(avgCost);
+      queryClient.setQueryData<PortfolioPosition[]>(['portfolio', 'positions'], old =>
+        (old ?? []).map(p =>
+          p.symbol === selected.symbol ? { ...p, shares: sharesNum, avgCost: avgCostNum } : p
+        )
+      );
+      return { previous };
+    },
     onSuccess: () => {
-      invalidate();
+      toast.success(isEdit ? `${selected?.symbol} updated` : `${selected?.symbol} added to portfolio`);
       onClose();
     },
-    onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : 'Something went wrong';
-      if (/session expired|unauthorized|401/i.test(message)) {
-        setFormError('Session expired, please log in again.');
-      } else if (/already hold|already exists|409/i.test(message)) {
-        setFormError(`You already hold ${selected?.symbol} — edit it instead.`);
-      } else if (/not found|404/i.test(message)) {
-        setFormError('This position no longer exists. It may have been removed elsewhere.');
-      } else {
-        setFormError(message);
+    onError: (err: unknown, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['portfolio', 'positions'], context.previous);
       }
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      let friendly = message;
+      if (/session expired|unauthorized|401/i.test(message)) {
+        friendly = 'Session expired, please log in again.';
+      } else if (/already hold|already exists|409/i.test(message)) {
+        friendly = `You already hold ${selected?.symbol} — edit it instead.`;
+      } else if (/not found|404/i.test(message)) {
+        friendly = 'This position no longer exists. It may have been removed elsewhere.';
+      }
+      setFormError(friendly);
+      toast.error(friendly);
+    },
+    onSettled: () => {
+      invalidate();
     },
   });
-
-  if (!open) return null;
 
   const sharesNum = Number(shares);
   const avgCostNum = Number(avgCost);
@@ -158,13 +173,7 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
   const showingResults = !isEdit && query.trim().length > 0;
 
   return (
-    <div className="pfm-backdrop" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="pfm-panel" onClick={e => e.stopPropagation()}>
-        <header className="pfm-head">
-          <h2 className="pfm-title">{isEdit ? `Edit ${editSymbol}` : 'Add Position'}</h2>
-          <button className="pfm-close" onClick={onClose} aria-label="Close">✕</button>
-        </header>
-
+    <Modal open={open} onClose={onClose} title={isEdit ? `Edit ${editSymbol}` : 'Add Position'}>
         <form className="pfm-body" onSubmit={handleSubmit}>
           <div className="pfm-field">
             <label className="pfm-label">Asset</label>
@@ -229,34 +238,30 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
           </div>
 
           <div className="pfm-row">
-            <div className="pfm-field">
-              <label className="pfm-label" htmlFor="pfm-shares">Shares</label>
-              <input
-                id="pfm-shares"
-                className={`pfm-input pfm-input--mono${shares && !sharesValid ? ' pfm-input--invalid' : ''}`}
-                type="number"
-                min="0"
-                step="any"
-                placeholder="0.00"
-                value={shares}
-                onChange={e => setShares(e.target.value)}
-              />
-              {shares && !sharesValid && <span className="pfm-hint pfm-hint--err">Must be greater than 0.</span>}
-            </div>
-            <div className="pfm-field">
-              <label className="pfm-label" htmlFor="pfm-avgcost">Average Cost (USD)</label>
-              <input
-                id="pfm-avgcost"
-                className={`pfm-input pfm-input--mono${avgCost && !avgCostValid ? ' pfm-input--invalid' : ''}`}
-                type="number"
-                min="0"
-                step="any"
-                placeholder="0.00"
-                value={avgCost}
-                onChange={e => setAvgCost(e.target.value)}
-              />
-              {avgCost && !avgCostValid && <span className="pfm-hint pfm-hint--err">Must be 0 or greater.</span>}
-            </div>
+            <Input
+              id="pfm-shares"
+              label="Shares"
+              mono
+              type="number"
+              min="0"
+              step="any"
+              placeholder="0.00"
+              value={shares}
+              onChange={e => setShares(e.target.value)}
+              error={shares && !sharesValid ? 'Must be greater than 0.' : undefined}
+            />
+            <Input
+              id="pfm-avgcost"
+              label="Average Cost (USD)"
+              mono
+              type="number"
+              min="0"
+              step="any"
+              placeholder="0.00"
+              value={avgCost}
+              onChange={e => setAvgCost(e.target.value)}
+              error={avgCost && !avgCostValid ? 'Must be 0 or greater.' : undefined}
+            />
           </div>
 
           <div className="pfm-preview">
@@ -273,8 +278,7 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

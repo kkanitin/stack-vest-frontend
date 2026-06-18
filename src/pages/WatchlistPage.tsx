@@ -1,7 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { deleteFromWatchlist, setWatchlistAlerts } from '../api/watchlist';
+import type { WatchlistItem } from '../api/watchlist';
 import { useWatchlistQuotes } from '../hooks/useWatchlistQuotes';
+import { useToast } from '../context/ToastContext';
 import AddAssetModal from '../components/AddAssetModal';
 import Button from '../components/ui/Button';
 import './WatchlistPage.css';
@@ -45,10 +48,10 @@ function fmtPct(n: number): string {
 
 const WatchlistPage: React.FC = () => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const toast = useToast();
   const { entries, watchlistStatus, watchlistError, refresh } = useWatchlistQuotes();
 
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [alerts, setAlerts] = useState<Record<string, boolean>>({});
 
@@ -64,18 +67,31 @@ const WatchlistPage: React.FC = () => {
     [entries]
   );
 
-  const handleDelete = async (symbol: string) => {
-    if (!token || deleting) return;
-    setDeleting(symbol);
-    setDeleteError(null);
-    try {
-      await deleteFromWatchlist(token, symbol);
-      refresh();
-    } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : 'Failed to remove');
-    } finally {
-      setDeleting(null);
-    }
+  const deleteMutation = useMutation({
+    mutationFn: (symbol: string) => deleteFromWatchlist(token!, symbol),
+    onMutate: async (symbol: string) => {
+      await queryClient.cancelQueries({ queryKey: ['watchlist'] });
+      const previous = queryClient.getQueryData<WatchlistItem[]>(['watchlist']);
+      queryClient.setQueryData<WatchlistItem[]>(['watchlist'], old =>
+        (old ?? []).filter(i => i.symbol !== symbol)
+      );
+      return { previous };
+    },
+    onError: (err, _symbol, context) => {
+      if (context?.previous) queryClient.setQueryData(['watchlist'], context.previous);
+      toast.error(err instanceof Error ? err.message : 'Failed to remove from watchlist');
+    },
+    onSuccess: (_data, symbol) => {
+      toast.success(`${symbol} removed from watchlist`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+    },
+  });
+
+  const handleDelete = (symbol: string) => {
+    if (!token || deleteMutation.isPending) return;
+    deleteMutation.mutate(symbol);
   };
 
   const handleAlertToggle = async (symbol: string) => {
@@ -84,12 +100,13 @@ const WatchlistPage: React.FC = () => {
     setAlerts(prev => ({ ...prev, [symbol]: next }));
     try {
       await setWatchlistAlerts(token, symbol, next);
-    } catch {
+    } catch (e) {
       setAlerts(prev => ({ ...prev, [symbol]: !next }));
+      toast.error(e instanceof Error ? e.message : `Couldn't update alerts for ${symbol}`);
     }
   };
 
-  const displayError = watchlistError || deleteError;
+  const displayError = watchlistError;
 
   return (
     <div className="wl">
@@ -169,10 +186,10 @@ const WatchlistPage: React.FC = () => {
                       <button
                         className="wl-remove"
                         onClick={() => handleDelete(item.symbol)}
-                        disabled={deleting === item.symbol}
+                        disabled={deleteMutation.isPending && deleteMutation.variables === item.symbol}
                         aria-label={`Remove ${item.symbol}`}
                       >
-                        {deleting === item.symbol ? '…' : '✕'}
+                        {deleteMutation.isPending && deleteMutation.variables === item.symbol ? '…' : '✕'}
                       </button>
                     </td>
                   </tr>
