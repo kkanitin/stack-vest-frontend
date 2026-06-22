@@ -43,7 +43,7 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, title, children, maxWidth 
             <button className="sv-modal-close" onClick={onClose} aria-label="Close">✕</button>
           </div>
         )}
-        {children}
+        <div className="sv-modal-body">{children}</div>
       </div>
     </div>,
     document.body

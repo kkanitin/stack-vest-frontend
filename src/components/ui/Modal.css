@@ -29,6 +29,20 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+/* The header stays fixed; the body scrolls when content overflows the panel's
+   capped height (and the full-screen panel on mobile). It's a flex column so
+   existing children that use `flex: 1` to fill and scroll internally
+   (e.g. AddAssetModal's pinned search + scrolling list) keep working — this
+   mirrors the layout context they previously had as direct panel children. */
+.sv-modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .sv-modal-title {

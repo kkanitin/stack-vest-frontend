@@ -1,0 +1,101 @@
+.apc {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.apc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.apc-title {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.apc-ranges {
+  display: flex;
+  gap: 4px;
+}
+
+.apc-range {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.apc-range:hover {
+  color: var(--text);
+  background: var(--surface-highest);
+}
+
+.apc-range--on {
+  color: var(--primary);
+  background: var(--primary-bg);
+  border-color: var(--primary-border);
+}
+
+.apc-range:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* The chart owns the trend color; the line/dot use currentColor so they stay
+   theme-aware (a var() in an SVG presentation attribute would not resolve). */
+.apc-chart {
+  height: 300px;
+}
+
+.apc-chart--up {
+  color: var(--gain);
+}
+
+.apc-chart--down {
+  color: var(--loss);
+}
+
+.apc-skel {
+  height: 100%;
+  border-radius: var(--r-lg);
+  background: linear-gradient(90deg, var(--surface-high) 25%, var(--surface-highest) 50%, var(--surface-high) 75%);
+  background-size: 200% 100%;
+  animation: apc-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes apc-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.apc-error,
+.apc-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  font-size: 13px;
+  text-align: center;
+}
+
+.apc-error {
+  color: var(--error);
+}
+
+.apc-empty {
+  color: var(--text-dim);
+}
