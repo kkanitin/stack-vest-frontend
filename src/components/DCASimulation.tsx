@@ -186,7 +186,6 @@ const DCASimulation: React.FC = () => {
           </div>
           <p className="dca-sub">Backtest dollar-cost averaging across any tracked asset.</p>
         </div>
-        <Button variant="outline">Export CSV</Button>
       </header>
 
       {error && (

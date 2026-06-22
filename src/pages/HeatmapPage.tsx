@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useWatchlistQuotes } from '../hooks/useWatchlistQuotes';
-import { usePopularAssets } from '../hooks/usePopularAssets';
 import { useSparklineData } from '../hooks/useSparklineData';
 import HeatmapTile from '../components/HeatmapTile';
 import SparklineList from '../components/SparklineList';
@@ -93,9 +92,7 @@ const HeatmapPage: React.FC = () => {
 
   const maxCompare = Number(import.meta.env.VITE_MAX_COMPARE_ASSETS) || 5;
 
-  const showPopular = watchlistStatus === 'success' && entries.length === 0;
-  const { entries: popularEntries } = usePopularAssets(showPopular);
-  const tiles: WatchlistEntry[] = showPopular ? popularEntries : entries;
+  const tiles: WatchlistEntry[] = entries;
 
   const allSymbols = useMemo(() => tiles.map(e => e.item.symbol).sort(), [tiles]);
 
@@ -211,13 +208,7 @@ const HeatmapPage: React.FC = () => {
         <>
           {/* Heatmap view */}
           {viewMode === 'heatmap' && (
-            <>
-              {showPopular && (
-                <div className="hm-mock-banner">
-                  Your watchlist is empty — showing popular assets. Add assets to track real performance.
-                </div>
-              )}
-              <div className="hm-grid">
+            <div className="hm-grid">
                 {watchlistStatus === 'loading'
                   ? Array.from({ length: SKELETON_COUNT }).map((_, i) => (
                       <div key={i} className="htile" style={{ pointerEvents: 'none' }}>
@@ -243,28 +234,20 @@ const HeatmapPage: React.FC = () => {
                       />
                     ))
                 }
-              </div>
-            </>
+            </div>
           )}
 
           {/* List view */}
           {viewMode === 'list' && (
-            <>
-              {showPopular && (
-                <div className="hm-mock-banner">
-                  Showing popular assets — add assets to your watchlist to track real performance.
-                </div>
-              )}
-              <SparklineList
-                entries={tiles}
-                sparklineMap={sparklineMap}
-                period={period}
-                selectedSymbols={selectedSymbols}
-                onSelectSymbol={handleToggleSymbol}
-                maxCompare={maxCompare}
-                onTileClick={setDetailSymbol}
-              />
-            </>
+            <SparklineList
+              entries={tiles}
+              sparklineMap={sparklineMap}
+              period={period}
+              selectedSymbols={selectedSymbols}
+              onSelectSymbol={handleToggleSymbol}
+              maxCompare={maxCompare}
+              onTileClick={setDetailSymbol}
+            />
           )}
 
           {/* Performance view */}

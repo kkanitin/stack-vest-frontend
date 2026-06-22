@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { searchStocks } from '../api/stocks';
 import { addPosition, updatePosition } from '../api/portfolio';
 import type { PortfolioPosition } from '../api/portfolio';
 import { usePortfolioPositions } from '../hooks/usePortfolioPositions';
 import { useToast } from '../context/ToastContext';
+import { useStockSearch } from '../hooks/useStockSearch';
 import Modal from './ui/Modal';
 import Input from './ui/Input';
-import type { StockSearchResult } from '../api/stocks';
 import './PositionFormModal.css';
 
 interface Props {
@@ -34,20 +33,20 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
   );
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<StockSearchResult[]>([]);
-  const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [searchError, setSearchError] = useState<string | null>(null);
   const [selected, setSelected] = useState<{ symbol: string; name: string } | null>(null);
   const [shares, setShares] = useState('');
   const [avgCost, setAvgCost] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Debounced symbol search (add mode only, while open)
+  const { results, status: searchStatus, error: searchError } = useStockSearch(
+    query,
+    open && !isEdit
+  );
+
   useEffect(() => {
     if (!open) {
       setQuery('');
-      setResults([]);
-      setSearchStatus('idle');
-      setSearchError(null);
       setSelected(null);
       setShares('');
       setAvgCost('');
@@ -60,30 +59,6 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
       setAvgCost(String(editing.avgCost));
     }
   }, [open, isEdit, editing]);
-
-  // Debounced symbol search (add mode only)
-  useEffect(() => {
-    if (!open || isEdit || !token) return;
-    const trimmed = query.trim();
-    if (!trimmed) {
-      setResults([]);
-      setSearchStatus('idle');
-      return;
-    }
-    setSearchStatus('loading');
-    setSearchError(null);
-    const handle = window.setTimeout(async () => {
-      try {
-        const data = await searchStocks(token, trimmed);
-        setResults(data);
-        setSearchStatus('success');
-      } catch (err) {
-        setSearchError(err instanceof Error ? err.message : 'Search failed');
-        setSearchStatus('error');
-      }
-    }, 300);
-    return () => window.clearTimeout(handle);
-  }, [query, token, open, isEdit]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['portfolio', 'positions'] });

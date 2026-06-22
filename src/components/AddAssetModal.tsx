@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { searchStocks } from '../api/stocks';
 import { addToWatchlist } from '../api/watchlist';
 import type { WatchlistItem } from '../api/watchlist';
 import { getPopularAssets } from '../api/popular';
 import { useToast } from '../context/ToastContext';
+import { useStockSearch } from '../hooks/useStockSearch';
 import Modal from './ui/Modal';
-import type { StockSearchResult } from '../api/stocks';
 import type { PopularAsset } from '../api/popular';
 import './AddAssetModal.css';
 
@@ -25,19 +24,15 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
   const queryClient = useQueryClient();
   const toast = useToast();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<StockSearchResult[]>([]);
-  const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [searchError, setSearchError] = useState<string | null>(null);
   const [addError, setAddError] = useState<Record<string, string>>({});
   const [suggestions, setSuggestions] = useState<PopularAsset[]>([]);
   const [suggestionsStatus, setSuggestionsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
+  const { results, status: searchStatus, error: searchError } = useStockSearch(query, open);
+
   useEffect(() => {
     if (!open) {
       setQuery('');
-      setResults([]);
-      setSearchStatus('idle');
-      setSearchError(null);
       setAddError({});
       setSuggestions([]);
       setSuggestionsStatus('idle');
@@ -48,30 +43,6 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
       .then(data => { setSuggestions(data); setSuggestionsStatus('success'); })
       .catch(() => setSuggestionsStatus('error'));
   }, [open]);
-
-  // Debounced live search
-  useEffect(() => {
-    if (!token) return;
-    const trimmed = query.trim();
-    if (!trimmed) {
-      setResults([]);
-      setSearchStatus('idle');
-      return;
-    }
-    setSearchStatus('loading');
-    setSearchError(null);
-    const handle = window.setTimeout(async () => {
-      try {
-        const data = await searchStocks(token, trimmed);
-        setResults(data);
-        setSearchStatus('success');
-      } catch (err) {
-        setSearchError(err instanceof Error ? err.message : 'Search failed');
-        setSearchStatus('error');
-      }
-    }, 300);
-    return () => window.clearTimeout(handle);
-  }, [query, token]);
 
   const addMutation = useMutation({
     mutationFn: (item: AddItem) => addToWatchlist(token!, item),

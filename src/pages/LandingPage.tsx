@@ -5,6 +5,8 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import ErrorBoundary from '../components/ErrorBoundary';
 import RouteFallback from '../components/RouteFallback';
+import TopbarSearch from '../components/TopbarSearch';
+import AssetDetailModal from '../components/AssetDetailModal';
 import './LandingPage.css';
 
 // Lightweight monoline glyphs (Lucide-style strokes) — kept inline to avoid
@@ -38,12 +40,6 @@ const Icon: Record<string, React.FC<{ size?: number }>> = {
       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
     </svg>
   ),
-  Calendar: ({ size = 16 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M16 3v4M8 3v4M3 10h18" />
-    </svg>
-  ),
   Plus: ({ size = 14 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <path d="M12 5v14M5 12h14" />
@@ -63,6 +59,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [detailSymbol, setDetailSymbol] = useState<string | null>(null);
 
   const handleLogout = () => {
     logout();
@@ -133,7 +130,6 @@ const LandingPage: React.FC = () => {
             </Button>
 
             <div className="sidebar-foot-links">
-              <button className="sidebar-foot-link" type="button">Settings</button>
               <button className="sidebar-foot-link" type="button" onClick={handleLogout}>Log out</button>
             </div>
           </div>
@@ -144,9 +140,7 @@ const LandingPage: React.FC = () => {
             <button className="hamburger" onClick={() => setSidebarOpen(true)} aria-label="Open menu">☰</button>
             <span className="main-topbar-brand">StackVest</span>
             <div className="main-topbar-right">
-              <button className="topbar-icon-btn" aria-label="Calendar">
-                <Icon.Calendar />
-              </button>
+              <TopbarSearch onSelect={setDetailSymbol} />
               {user?.picture && (
                 <img src={user.picture} alt={user.name ?? 'User'} className="topbar-avatar" />
               )}
@@ -176,6 +170,7 @@ const LandingPage: React.FC = () => {
       {sidebarOpen && (
         <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
       )}
+      <AssetDetailModal symbol={detailSymbol} onClose={() => setDetailSymbol(null)} />
     </>
   );
 };
