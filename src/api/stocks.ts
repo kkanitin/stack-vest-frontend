@@ -15,23 +15,39 @@ export interface StockPriceChange {
   max: number;
 }
 
+/** Mirrors the backend `domain.Match` shape returned by `GET /stocks/search`.
+ *  `type` is the exchange code and `region` the exchange full name (FMP-derived). */
 export interface StockSearchResult {
   symbol: string;
   name: string;
   type: string;
   region: string;
   currency: string;
-  matchScore: string;
 }
 
+export interface SearchOptions {
+  /** Abort the request (used by the debounced hook to drop stale responses). */
+  signal?: AbortSignal;
+  /** 1-based page (backend default 1). */
+  page?: number;
+  /** Results per page (backend default 20, max 100). */
+  size?: number;
+}
+
+/** `GET /stocks/search?keywords=…&page=&size=`. The endpoint is paginated
+ *  (`response.OKList`); the typeahead intentionally consumes the default first page. */
 export async function searchStocks(
   token: string,
-  keywords: string
+  keywords: string,
+  options: SearchOptions = {}
 ): Promise<StockSearchResult[]> {
-  const res = await fetch(
-    `${API_BASE}/stocks/search?keywords=${encodeURIComponent(keywords)}`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+  const params = new URLSearchParams({ keywords });
+  if (options.page != null) params.set('page', String(options.page));
+  if (options.size != null) params.set('size', String(options.size));
+  const res = await fetch(`${API_BASE}/stocks/search?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: options.signal,
+  });
   const data = await res.json();
   if (res.ok && data.code === 200) return data.results as StockSearchResult[];
   throw new Error(data.errorMessage || 'Search failed');
@@ -123,36 +139,39 @@ export async function getBatchHistory(
   throw new Error(data.errorMessage || 'Failed to fetch batch history');
 }
 
-export type DetailRange = '1D' | '1W' | '1M' | '1Y' | 'All';
-
-export interface DetailPoint {
-  date: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
-
-export interface AssetDetail {
+/** Mirrors the backend `domain.CompanyProfile` returned by `GET /stocks/:symbol/profile`.
+ *  Many fields are optional in practice (e.g. ETFs return empty ceo/sector/employees). */
+export interface CompanyProfile {
   symbol: string;
-  name: string;
+  companyName: string;
   currency: string;
-  range: string;
-  interval: 'intraday' | 'daily';
-  points: DetailPoint[];
+  exchange: string;
+  exchangeFullName: string;
+  industry: string;
+  sector: string;
+  country: string;
+  ceo: string;
+  website: string;
+  description: string;
+  image: string;
+  price: number;
+  marketCap: number;
+  beta: number;
+  ipoDate: string;
+  fullTimeEmployees: string;
+  isEtf: boolean;
+  isActivelyTrading: boolean;
 }
 
-export async function getAssetDetail(
+export async function getCompanyProfile(
   token: string,
-  symbol: string,
-  range: DetailRange
-): Promise<AssetDetail> {
+  symbol: string
+): Promise<CompanyProfile> {
   const res = await fetch(
-    `${API_BASE}/stocks/${encodeURIComponent(symbol)}/detail?range=${range}`,
+    `${API_BASE}/stocks/${encodeURIComponent(symbol)}/profile`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const data = await res.json();
-  if (res.ok && data.code === 200) return data.result as AssetDetail;
-  throw new Error(data.errorMessage || `Failed to fetch detail for ${symbol}`);
+  if (res.ok && data.code === 200) return data.result as CompanyProfile;
+  throw new Error(data.errorMessage || `Failed to fetch profile for ${symbol}`);
 }

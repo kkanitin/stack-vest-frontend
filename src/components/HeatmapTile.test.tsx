@@ -47,7 +47,7 @@ describe('HeatmapTile', () => {
     render(<HeatmapTile entry={makeEntry({ status: 'loading' })} />);
 
     expect(screen.queryByText(/unavailable/i)).not.toBeInTheDocument();
-    expect(screen.queryByText('24h')).not.toBeInTheDocument();
+    expect(screen.queryByText('1D')).not.toBeInTheDocument();
   });
 
   it('shows "unavailable" on error', () => {
@@ -65,7 +65,7 @@ describe('HeatmapTile', () => {
     );
 
     expect(screen.getByText('+2.50%')).toBeInTheDocument();
-    expect(screen.getByText('24h')).toBeInTheDocument();
+    expect(screen.getByText('1D')).toBeInTheDocument();
 
     const changeEl = screen.getByText('+2.50%');
     expect(changeEl).toHaveClass('positive');
