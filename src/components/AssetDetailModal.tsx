@@ -1,4 +1,6 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
+import AssetPriceChart from './AssetPriceChart';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
 import type { CompanyProfile } from '../api/stocks';
@@ -72,6 +74,18 @@ const ProfileBody: React.FC<{ profile: CompanyProfile }> = ({ profile: p }) => {
   const meta = buildMeta(p);
   const exchange = p.exchangeFullName || p.exchange;
 
+  const descRef = useRef<HTMLParagraphElement>(null);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [descClamped, setDescClamped] = useState(false);
+
+  // Only offer the toggle when the collapsed text is actually being truncated
+  // (full content taller than the 5-line clamp). Re-measure per description.
+  useLayoutEffect(() => {
+    setDescExpanded(false);
+    const el = descRef.current;
+    if (el) setDescClamped(el.scrollHeight > el.clientHeight + 1);
+  }, [p.description]);
+
   return (
     <div className="adm-profile">
       <div className="adm-profile-head">
@@ -105,6 +119,8 @@ const ProfileBody: React.FC<{ profile: CompanyProfile }> = ({ profile: p }) => {
         </div>
       )}
 
+      <AssetPriceChart symbol={p.symbol} currency={p.currency} />
+
       {meta.length > 0 && (
         <dl className="adm-meta">
           {meta.map(m => (
@@ -116,7 +132,26 @@ const ProfileBody: React.FC<{ profile: CompanyProfile }> = ({ profile: p }) => {
         </dl>
       )}
 
-      {p.description && <p className="adm-desc">{p.description}</p>}
+      {p.description && (
+        <div className="adm-desc-wrap">
+          <p
+            ref={descRef}
+            className={`adm-desc${descExpanded ? ' adm-desc--expanded' : ''}`}
+          >
+            {p.description}
+          </p>
+          {descClamped && (
+            <button
+              type="button"
+              className="adm-desc-toggle"
+              aria-expanded={descExpanded}
+              onClick={() => setDescExpanded(v => !v)}
+            >
+              {descExpanded ? 'View less' : 'View more'}
+            </button>
+          )}
+        </div>
+      )}
 
       {p.website && (
         <a className="adm-website" href={p.website} target="_blank" rel="noopener noreferrer">
@@ -134,7 +169,7 @@ const AssetDetailModal: React.FC<AssetDetailModalProps> = ({ symbol, onClose }) 
     <Modal
       open={!!symbol}
       onClose={onClose}
-      maxWidth={560}
+      maxWidth={880}
       ariaLabel={`Company profile — ${symbol ?? ''}`}
       title={
         <div className="adm-title-wrap">
