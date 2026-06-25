@@ -1,0 +1,137 @@
+.pf-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  min-height: 180px;
+  transition: border-color 200ms ease, background-color 200ms ease, transform 200ms ease;
+}
+
+.pf-card:hover {
+  border-color: var(--primary-border);
+  background: var(--surface-high);
+  transform: translateY(-2px);
+}
+
+.pf-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pf-card-headings {
+  min-width: 0;
+}
+
+.pf-card-name {
+  font-family: var(--heading);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.pf-card-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  opacity: 0.8;
+  margin: 4px 0 0;
+}
+
+.pf-card-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pf-card-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--r);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.pf-card-menu-btn:hover {
+  color: var(--primary);
+  background: var(--surface-highest);
+}
+
+.pf-card-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 140px;
+  background: var(--surface-high);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pf-card-dropdown-item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--r);
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.pf-card-dropdown-item:hover {
+  background: var(--surface-highest);
+  color: var(--text-h);
+}
+
+.pf-card-dropdown-item--danger:hover {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.pf-card-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.pf-card-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pf-card-stat--right {
+  text-align: right;
+}
+
+.pf-card-stat-label {
+  font-size: 10px;
+}
+
+.pf-card-stat-value--accent {
+  color: var(--primary);
+}

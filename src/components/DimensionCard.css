@@ -1,0 +1,62 @@
+.dc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--surface-high);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  min-height: 150px;
+}
+
+.dc-label {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.dc-score {
+  font-family: var(--mono);
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+}
+
+.dc-unit {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-left: 4px;
+  letter-spacing: 0;
+}
+
+/* Color is sentiment-driven (see SENTIMENT map), never derived from the score. */
+.dc-score--success { color: var(--success); }
+.dc-score--error { color: var(--error); }
+.dc-score--neutral { color: var(--text-h); }
+
+.dc-note {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.dc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.dc-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.dc-icon--success { color: var(--success); }
+.dc-icon--error { color: var(--error); }
+.dc-icon--neutral { color: var(--text-dim); }

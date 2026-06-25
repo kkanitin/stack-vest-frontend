@@ -1,0 +1,89 @@
+.pfm2-body {
+  padding: 18px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pfm2-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pfm2-textarea {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-h);
+  background: var(--surface-low);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 76px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.pfm2-textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.pfm2-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-bg);
+}
+
+.pfm2-error {
+  font-size: 12px;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--r);
+  padding: 10px 12px;
+}
+
+.pfm2-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pfm2-btn {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--r);
+  padding: 10px 18px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: filter 150ms ease, background-color 150ms ease;
+}
+
+.pfm2-btn--ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.pfm2-btn--ghost:hover {
+  background: var(--surface-highest);
+}
+
+.pfm2-btn--primary {
+  background: var(--primary-strong);
+  color: #ffffff;
+}
+
+.pfm2-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.pfm2-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

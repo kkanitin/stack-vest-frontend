@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { addPosition, updatePosition } from '../api/portfolio';
 import type { PortfolioPosition } from '../api/portfolio';
-import { usePortfolioPositions } from '../hooks/usePortfolioPositions';
+import {
+  addPortfolioPosition,
+  updatePortfolioPosition,
+} from '../api/portfolios';
 import { useToast } from '../context/ToastContext';
 import { useStockSearch } from '../hooks/useStockSearch';
 import Modal from './ui/Modal';
@@ -15,21 +17,24 @@ interface Props {
   onClose: () => void;
   /** When set, the modal opens in edit mode for this symbol (shares/avgCost editable, symbol locked). */
   editSymbol?: string;
+  /** The portfolio whose scoped /portfolios/{id}/positions endpoints the modal operates on. */
+  portfolioId: string;
 }
 
 function fmtMoney(n: number): string {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
+const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol, portfolioId }) => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const { data: positions } = usePortfolioPositions();
   const isEdit = !!editSymbol;
-  const editing = useMemo(
-    () => (editSymbol ? positions?.find(p => p.symbol === editSymbol) ?? null : null),
-    [positions, editSymbol]
+
+  // Query key for this portfolio's positions list.
+  const positionsKey = useMemo<QueryKey>(
+    () => ['portfolio', portfolioId, 'positions'],
+    [portfolioId]
   );
 
   const [query, setQuery] = useState('');
@@ -53,17 +58,24 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
       setFormError(null);
       return;
     }
-    if (isEdit && editing) {
-      setSelected({ symbol: editing.symbol, name: editing.name });
-      setShares(String(editing.shares));
-      setAvgCost(String(editing.avgCost));
+    if (isEdit && editSymbol) {
+      const positions = queryClient.getQueryData<PortfolioPosition[]>(positionsKey);
+      const editing = positions?.find(p => p.symbol === editSymbol);
+      if (editing) {
+        setSelected({ symbol: editing.symbol, name: editing.name });
+        setShares(String(editing.shares));
+        setAvgCost(String(editing.avgCost));
+      } else {
+        setSelected({ symbol: editSymbol, name: editSymbol });
+      }
     }
-  }, [open, isEdit, editing]);
+  }, [open, isEdit, editSymbol, positionsKey, queryClient]);
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['portfolio', 'positions'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolio', 'summary'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolio', 'activity'] });
+    queryClient.invalidateQueries({ queryKey: positionsKey });
+    // The card/list value + assetCount and the header stats derive from holdings.
+    queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+    queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
   };
 
   const mutation = useMutation({
@@ -72,18 +84,19 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
       const sharesNum = Number(shares);
       const avgCostNum = Number(avgCost);
       if (isEdit) {
-        return updatePosition(token, selected.symbol, { shares: sharesNum, avgCost: avgCostNum });
+        return updatePortfolioPosition(token, portfolioId, selected.symbol, { shares: sharesNum, avgCost: avgCostNum });
       }
-      return addPosition(token, { symbol: selected.symbol, name: selected.name, shares: sharesNum, avgCost: avgCostNum });
+      const body = { symbol: selected.symbol, name: selected.name, shares: sharesNum, avgCost: avgCostNum };
+      return addPortfolioPosition(token, portfolioId, body);
     },
     // Optimistic update for edits only — the server computes valueUsd/change24h on add.
     onMutate: async () => {
       if (!isEdit || !selected) return;
-      await queryClient.cancelQueries({ queryKey: ['portfolio', 'positions'] });
-      const previous = queryClient.getQueryData<PortfolioPosition[]>(['portfolio', 'positions']);
+      await queryClient.cancelQueries({ queryKey: positionsKey });
+      const previous = queryClient.getQueryData<PortfolioPosition[]>(positionsKey);
       const sharesNum = Number(shares);
       const avgCostNum = Number(avgCost);
-      queryClient.setQueryData<PortfolioPosition[]>(['portfolio', 'positions'], old =>
+      queryClient.setQueryData<PortfolioPosition[]>(positionsKey, old =>
         (old ?? []).map(p =>
           p.symbol === selected.symbol ? { ...p, shares: sharesNum, avgCost: avgCostNum } : p
         )
@@ -96,7 +109,7 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol }) => {
     },
     onError: (err: unknown, _vars, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(['portfolio', 'positions'], context.previous);
+        queryClient.setQueryData(positionsKey, context.previous);
       }
       const message = err instanceof Error ? err.message : 'Something went wrong';
       let friendly = message;

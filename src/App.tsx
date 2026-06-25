@@ -19,6 +19,8 @@ const Visualization = lazy(() => import('./components/Visualization'));
 const DCASimulation = lazy(() => import('./components/DCASimulation'));
 const HeatmapPage = lazy(() => import('./pages/HeatmapPage'));
 const WatchlistPage = lazy(() => import('./pages/WatchlistPage'));
+const PortfoliosPage = lazy(() => import('./pages/PortfoliosPage'));
+const PortfolioDetailPage = lazy(() => import('./pages/PortfolioDetailPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const queryClient = new QueryClient({
@@ -59,6 +61,8 @@ function App() {
             >
               <Route index element={<Navigate to="visualization" replace />} />
               <Route path="visualization" element={<Visualization />} />
+              <Route path="portfolios" element={<PortfoliosPage />} />
+              <Route path="portfolios/:id" element={<PortfolioDetailPage />} />
               <Route path="dca" element={<DCASimulation />} />
               <Route path="visualization/heatmap" element={<HeatmapPage />} />
               <Route path="watchlist" element={<WatchlistPage />} />

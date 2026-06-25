@@ -20,6 +20,13 @@ const Icon: Record<string, React.FC<{ size?: number }>> = {
       <rect x="3" y="16" width="7" height="5" />
     </svg>
   ),
+  Portfolios: ({ size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="6" width="20" height="14" rx="2" />
+      <path d="M16 6V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1" />
+      <path d="M2 12h20" />
+    </svg>
+  ),
   Heatmap: ({ size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
       <rect x="3" y="3" width="6" height="6" />
@@ -95,6 +102,14 @@ const LandingPage: React.FC = () => {
             >
               <span className="sidebar-link-icon"><Icon.Overview /></span>
               Overview
+            </NavLink>
+            <NavLink
+              to="/dashboard/portfolios"
+              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <span className="sidebar-link-icon"><Icon.Portfolios /></span>
+              Portfolios
             </NavLink>
             <div className="sidebar-nav-label sidebar-section-label">Visualization</div>
             <NavLink
