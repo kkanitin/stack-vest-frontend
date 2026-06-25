@@ -15,9 +15,10 @@ interface PortfolioCardProps {
   portfolio: Portfolio;
   onEdit: (portfolio: Portfolio) => void;
   onDelete: (portfolio: Portfolio) => void;
+  onAnalyze: (portfolio: Portfolio) => void;
 }
 
-const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio, onEdit, onDelete }) => {
+const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio, onEdit, onDelete, onAnalyze }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +74,18 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio, onEdit, onDele
           </button>
           {menuOpen && (
             <div className="pf-card-dropdown" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="pf-card-dropdown-item"
+                onClick={e => {
+                  stop(e);
+                  setMenuOpen(false);
+                  onAnalyze(portfolio);
+                }}
+              >
+                Analyze
+              </button>
               <button
                 type="button"
                 role="menuitem"

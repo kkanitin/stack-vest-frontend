@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { addPosition, updatePosition } from '../api/portfolio';
 import type { PortfolioPosition } from '../api/portfolio';
 import {
   addPortfolioPosition,
@@ -18,12 +17,8 @@ interface Props {
   onClose: () => void;
   /** When set, the modal opens in edit mode for this symbol (shares/avgCost editable, symbol locked). */
   editSymbol?: string;
-  /**
-   * When set, the position is scoped to this portfolio and the scoped
-   * /portfolios/{id}/positions endpoints are used. When omitted, the modal
-   * operates on the user's global /portfolio/positions (Overview dashboard).
-   */
-  portfolioId?: string;
+  /** The portfolio whose scoped /portfolios/{id}/positions endpoints the modal operates on. */
+  portfolioId: string;
 }
 
 function fmtMoney(n: number): string {
@@ -36,9 +31,9 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol, portfol
   const toast = useToast();
   const isEdit = !!editSymbol;
 
-  // Query key for the relevant positions list (global vs. portfolio-scoped).
+  // Query key for this portfolio's positions list.
   const positionsKey = useMemo<QueryKey>(
-    () => (portfolioId ? ['portfolio', portfolioId, 'positions'] : ['portfolio', 'positions']),
+    () => ['portfolio', portfolioId, 'positions'],
     [portfolioId]
   );
 
@@ -78,14 +73,9 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol, portfol
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: positionsKey });
-    if (portfolioId) {
-      // The card/list value + assetCount and the header stats derive from holdings.
-      queryClient.invalidateQueries({ queryKey: ['portfolios'] });
-      queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
-    } else {
-      queryClient.invalidateQueries({ queryKey: ['portfolio', 'summary'] });
-      queryClient.invalidateQueries({ queryKey: ['portfolio', 'activity'] });
-    }
+    // The card/list value + assetCount and the header stats derive from holdings.
+    queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+    queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
   };
 
   const mutation = useMutation({
@@ -94,14 +84,10 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol, portfol
       const sharesNum = Number(shares);
       const avgCostNum = Number(avgCost);
       if (isEdit) {
-        return portfolioId
-          ? updatePortfolioPosition(token, portfolioId, selected.symbol, { shares: sharesNum, avgCost: avgCostNum })
-          : updatePosition(token, selected.symbol, { shares: sharesNum, avgCost: avgCostNum });
+        return updatePortfolioPosition(token, portfolioId, selected.symbol, { shares: sharesNum, avgCost: avgCostNum });
       }
       const body = { symbol: selected.symbol, name: selected.name, shares: sharesNum, avgCost: avgCostNum };
-      return portfolioId
-        ? addPortfolioPosition(token, portfolioId, body)
-        : addPosition(token, body);
+      return addPortfolioPosition(token, portfolioId, body);
     },
     // Optimistic update for edits only — the server computes valueUsd/change24h on add.
     onMutate: async () => {

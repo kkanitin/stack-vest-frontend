@@ -16,13 +16,17 @@ function makePortfolio(overrides: Partial<Portfolio> = {}): Portfolio {
   };
 }
 
-function renderCard(portfolio: Portfolio, handlers?: { onEdit?: () => void; onDelete?: () => void }) {
+function renderCard(
+  portfolio: Portfolio,
+  handlers?: { onEdit?: () => void; onDelete?: () => void; onAnalyze?: () => void }
+) {
   return render(
     <MemoryRouter>
       <PortfolioCard
         portfolio={portfolio}
         onEdit={handlers?.onEdit ?? (() => {})}
         onDelete={handlers?.onDelete ?? (() => {})}
+        onAnalyze={handlers?.onAnalyze ?? (() => {})}
       />
     </MemoryRouter>
   );
@@ -61,5 +65,14 @@ describe('PortfolioCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Actions for Institutional Growth/i }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires onAnalyze from the actions menu', () => {
+    const onAnalyze = vi.fn();
+    renderCard(makePortfolio(), { onAnalyze });
+
+    fireEvent.click(screen.getByRole('button', { name: /Actions for Institutional Growth/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Analyze' }));
+    expect(onAnalyze).toHaveBeenCalledTimes(1);
   });
 });

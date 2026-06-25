@@ -11,6 +11,7 @@ import Button from '../components/ui/Button';
 import PortfolioStatsHeader from '../components/PortfolioStatsHeader';
 import PortfolioCard from '../components/PortfolioCard';
 import PortfolioFormModal from '../components/PortfolioFormModal';
+import AnalyzePortfolioModal from '../components/AnalyzePortfolioModal';
 import './PortfoliosPage.css';
 
 const PortfoliosPage: React.FC = () => {
@@ -23,6 +24,7 @@ const PortfoliosPage: React.FC = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Portfolio | null>(null);
+  const [analyzing, setAnalyzing] = useState<Portfolio | null>(null);
 
   const list = portfolios ?? [];
   const atLimit = list.length >= MAX_PORTFOLIOS;
@@ -110,6 +112,7 @@ const PortfoliosPage: React.FC = () => {
               portfolio={p}
               onEdit={openEdit}
               onDelete={handleDelete}
+              onAnalyze={setAnalyzing}
             />
           ))}
 
@@ -136,6 +139,12 @@ const PortfoliosPage: React.FC = () => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         portfolio={editing}
+      />
+
+      <AnalyzePortfolioModal
+        open={!!analyzing}
+        onClose={() => setAnalyzing(null)}
+        portfolio={analyzing}
       />
     </div>
   );

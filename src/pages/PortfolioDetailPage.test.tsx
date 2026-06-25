@@ -1,13 +1,22 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import PortfolioDetailPage from './PortfolioDetailPage';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { usePortfolioPositionsById } from '../hooks/usePortfolioPositionsById';
+import { removePortfolioPosition } from '../api/portfolios';
 import type { PortfolioPosition } from '../api/portfolio';
 
 vi.mock('../hooks/usePortfolio', () => ({ usePortfolio: vi.fn() }));
 vi.mock('../hooks/usePortfolioPositionsById', () => ({ usePortfolioPositionsById: vi.fn() }));
+vi.mock('../api/portfolios', async importActual => {
+  const actual = await importActual<typeof import('../api/portfolios')>();
+  return {
+    ...actual,
+    deletePortfolio: vi.fn(),
+    removePortfolioPosition: vi.fn().mockResolvedValue(undefined),
+  };
+});
 vi.mock('../hooks/useStockSearch', () => ({
   useStockSearch: () => ({ results: [], status: 'idle', error: null }),
 }));
@@ -22,6 +31,7 @@ vi.mock('react-router-dom', async importOriginal => {
 
 const mockedUsePortfolio = vi.mocked(usePortfolio);
 const mockedUsePositions = vi.mocked(usePortfolioPositionsById);
+const mockedRemovePosition = vi.mocked(removePortfolioPosition);
 
 function makePositions(n: number): PortfolioPosition[] {
   return Array.from({ length: n }, (_, i) => ({
@@ -66,7 +76,7 @@ describe('PortfolioDetailPage', () => {
     renderPage();
 
     expect(screen.getByRole('button', { name: /add asset/i })).toBeDisabled();
-    expect(screen.getByText('20 / 20')).toBeInTheDocument();
+    expect(screen.getByText('/ 20 Slots Used')).toBeInTheDocument();
   });
 
   it('enables "Add Asset" below the cap', () => {
@@ -78,5 +88,37 @@ describe('PortfolioDetailPage', () => {
     renderPage();
 
     expect(screen.getByRole('button', { name: /add asset/i })).toBeEnabled();
+  });
+
+  it('removes a position via the portfolio-scoped endpoint when confirmed', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockedUsePositions.mockReturnValue({
+      data: makePositions(2),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof usePortfolioPositionsById>);
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /delete SYM0 position/i }));
+
+    await waitFor(() =>
+      expect(mockedRemovePosition).toHaveBeenCalledWith('test-token', 'p1', 'SYM0')
+    );
+    confirmSpy.mockRestore();
+  });
+
+  it('does not call the API when the confirmation is dismissed', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    mockedUsePositions.mockReturnValue({
+      data: makePositions(2),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof usePortfolioPositionsById>);
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /delete SYM0 position/i }));
+
+    expect(mockedRemovePosition).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
   });
 });
