@@ -7,6 +7,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import RouteFallback from '../components/RouteFallback';
 import TopbarSearch from '../components/TopbarSearch';
 import AssetDetailModal from '../components/AssetDetailModal';
+import DividendScheduleModal from '../components/DividendScheduleModal';
 import './LandingPage.css';
 
 // Lightweight monoline glyphs (Lucide-style strokes) — kept inline to avoid
@@ -52,6 +53,12 @@ const Icon: Record<string, React.FC<{ size?: number }>> = {
       <path d="M12 5v14M5 12h14" />
     </svg>
   ),
+  Calendar: ({ size = 18 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="17" rx="2" />
+      <path d="M8 2v4M16 2v4M3 10h18" />
+    </svg>
+  ),
   Logo: ({ size = 18 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 21h18" />
@@ -67,6 +74,7 @@ const LandingPage: React.FC = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [detailSymbol, setDetailSymbol] = useState<string | null>(null);
+  const [dividendOpen, setDividendOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -155,6 +163,13 @@ const LandingPage: React.FC = () => {
             <button className="hamburger" onClick={() => setSidebarOpen(true)} aria-label="Open menu">☰</button>
             <span className="main-topbar-brand">StackVest</span>
             <div className="main-topbar-right">
+              <button
+                className="topbar-icon-btn"
+                onClick={() => setDividendOpen(true)}
+                aria-label="Dividend schedule"
+              >
+                <Icon.Calendar />
+              </button>
               <TopbarSearch onSelect={setDetailSymbol} />
               {user?.picture && (
                 <img src={user.picture} alt={user.name ?? 'User'} className="topbar-avatar" />
@@ -186,6 +201,7 @@ const LandingPage: React.FC = () => {
         <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
       )}
       <AssetDetailModal symbol={detailSymbol} onClose={() => setDetailSymbol(null)} />
+      <DividendScheduleModal open={dividendOpen} onClose={() => setDividendOpen(false)} />
     </>
   );
 };

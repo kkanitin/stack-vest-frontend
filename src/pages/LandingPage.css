@@ -238,6 +238,26 @@
   letter-spacing: -0.005em;
 }
 
+.topbar-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.topbar-icon-btn:hover {
+  background: var(--surface-high);
+  color: var(--text-h);
+  border-color: var(--border-strong);
+}
+
 .main-topbar-right {
   margin-left: auto;
   display: flex;
