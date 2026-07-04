@@ -26,16 +26,18 @@ const LoginPage: React.FC = () => {
 
   const handleSuccess = async (r: CredentialResponse) => {
     setError(null);
-    if (r.credential) {
-      setLoading(true);
-      try {
-        await login(r.credential);
-        navigate(from, { replace: true });
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Sign-in failed. Please try again.');
-      } finally {
-        setLoading(false);
-      }
+    if (!r.credential) {
+      setError('Sign-in failed. Please try again.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await login(r.credential);
+      navigate(from, { replace: true });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
   const handleError = () => setError('Sign-in failed. Ensure your account is registered.');

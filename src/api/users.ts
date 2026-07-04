@@ -11,9 +11,10 @@ export async function getMe(token: string): Promise<User | null> {
   const res = await fetch(`${API_BASE}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   if (res.ok && data.code === 200) return data.result as User;
-  return null;
+  if (res.status === 404) return null; // confirmed: no user record yet
+  throw new Error(data.errorMessage || 'Failed to load user profile');
 }
 
 export async function createMe(token: string): Promise<User> {
