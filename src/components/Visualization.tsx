@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import Card from './ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PortfolioValueCard from './PortfolioValueCard';
 import MarketStatusCard from './MarketStatusCard';
 import RecentActivityCard from './RecentActivityCard';
@@ -31,11 +31,21 @@ const Visualization: React.FC = () => {
       </div>
 
       <div className="viz-row viz-row--sentiment">
-        <Card label="Fear & Greed Index" className="viz-card viz-card--gauge">
-          <FearGreedGauge data={sentiment} isLoading={loadingSentiment} isError={sentimentError} />
+        <Card className="viz-card viz-card--gauge">
+          <CardHeader>
+            <CardTitle className="label-caps">Fear &amp; Greed Index</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FearGreedGauge data={sentiment} isLoading={loadingSentiment} isError={sentimentError} />
+          </CardContent>
         </Card>
-        <Card label="What's driving this score" className="viz-card viz-card--signals">
-          <FearGreedSignals data={sentiment} isLoading={loadingSentiment} isError={sentimentError} />
+        <Card className="viz-card viz-card--signals">
+          <CardHeader>
+            <CardTitle className="label-caps">What's driving this score</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FearGreedSignals data={sentiment} isLoading={loadingSentiment} isError={sentimentError} />
+          </CardContent>
         </Card>
       </div>
     </div>

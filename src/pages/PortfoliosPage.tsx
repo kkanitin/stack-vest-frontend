@@ -7,7 +7,7 @@ import { usePortfoliosSummary } from '../hooks/usePortfoliosSummary';
 import { deletePortfolio } from '../api/portfolios';
 import type { Portfolio } from '../api/portfolios';
 import { MAX_PORTFOLIOS } from '../config';
-import Button from '../components/ui/Button';
+import { Button } from '@/components/ui/button';
 import PortfolioStatsHeader from '../components/PortfolioStatsHeader';
 import PortfolioCard from '../components/PortfolioCard';
 import PortfolioFormModal from '../components/PortfolioFormModal';
@@ -81,7 +81,7 @@ const PortfoliosPage: React.FC = () => {
           <h1 className="pf-title">Portfolios</h1>
           <p className="pf-sub">Organize your assets into focused strategies.</p>
         </div>
-        <Button variant="primary" onClick={openCreate} disabled={atLimit}>
+        <Button onClick={openCreate} disabled={atLimit}>
           + New Portfolio
         </Button>
       </header>

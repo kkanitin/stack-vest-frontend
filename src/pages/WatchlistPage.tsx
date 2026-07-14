@@ -6,7 +6,7 @@ import type { WatchlistItem } from '../api/watchlist';
 import { useWatchlistQuotes } from '../hooks/useWatchlistQuotes';
 import { useToast } from '../context/ToastContext';
 import AddAssetModal from '../components/AddAssetModal';
-import Button from '../components/ui/Button';
+import { Button } from '@/components/ui/button';
 import './WatchlistPage.css';
 
 function Sparkline({ values, positive }: { values: number[]; positive: boolean }) {
@@ -115,7 +115,7 @@ const WatchlistPage: React.FC = () => {
           <h1 className="wl-title">Watchlist</h1>
           <p className="wl-sub">Track your high-conviction investment assets.</p>
         </div>
-        <Button variant="primary" onClick={() => setModalOpen(true)}>+ Add Asset</Button>
+        <Button onClick={() => setModalOpen(true)}>+ Add Asset</Button>
       </header>
 
       {displayError && <div className="wl-banner">⚠ {displayError}</div>}
@@ -126,7 +126,7 @@ const WatchlistPage: React.FC = () => {
         <div className="wl-empty">
           <p className="wl-empty-title">Your watchlist is empty</p>
           <p className="wl-empty-body">Add assets to track their performance over time.</p>
-          <Button variant="primary" onClick={() => setModalOpen(true)}>+ Add your first asset</Button>
+          <Button onClick={() => setModalOpen(true)}>+ Add your first asset</Button>
         </div>
       ) : (
         <div className="wl-table-wrap">

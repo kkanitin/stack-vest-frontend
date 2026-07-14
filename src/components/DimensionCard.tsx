@@ -1,5 +1,5 @@
 import React from 'react';
-import Badge from './ui/Badge';
+import { Badge } from '@/components/ui/badge';
 import type { AnalysisDimension, AnalysisSentiment } from '../api/portfolios';
 import './DimensionCard.css';
 
@@ -26,7 +26,7 @@ const DimensionCard: React.FC<{ dimension: AnalysisDimension }> = ({ dimension }
       </div>
       {dimension.note && <p className="dc-note">{dimension.note}</p>}
       <div className="dc-foot">
-        {dimension.rating && <Badge tone={tone}>{dimension.rating}</Badge>}
+        {dimension.rating && <Badge variant={tone}>{dimension.rating}</Badge>}
         <span className={`dc-icon dc-icon--${tone}`} aria-hidden="true">{icon}</span>
       </div>
     </div>

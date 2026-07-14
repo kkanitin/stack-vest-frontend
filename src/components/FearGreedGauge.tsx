@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import Badge from './ui/Badge';
+import { Badge } from '@/components/ui/badge';
 import { FEAR_GREED_BANDS, STATUS_TONE, descriptorForStatus, scoreToNeedleAngle } from '../utils/fearGreed';
 import type { FearGreedIndex } from '../api/sentiment';
 import './FearGreedGauge.css';
@@ -69,7 +69,7 @@ const FearGreedGauge: React.FC<FearGreedGaugeProps> = ({ data, isLoading, isErro
       </div>
       <div className="fg-readout">
         <span className="fg-score">{data.score}</span>
-        <Badge tone={STATUS_TONE[data.status]} className="fg-status-badge">
+        <Badge variant={STATUS_TONE[data.status]} className="fg-status-badge">
           {data.status}
         </Badge>
       </div>

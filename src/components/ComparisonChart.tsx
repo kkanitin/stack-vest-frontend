@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { normalizeBase100 } from '../utils/normalizeBase100';
 import { useComparisonData } from '../hooks/useComparisonData';
-import Button from './ui/Button';
+import { Button } from '@/components/ui/button';
 
 const LINE_COLORS = ['#a1ced9', '#4ade80', '#f2bb95', '#c084fc', '#f97316', '#38bdf8'];
 

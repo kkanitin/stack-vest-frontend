@@ -1,6 +1,6 @@
 import React from 'react';
-import Card from './ui/Card';
-import Button from './ui/Button';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import './EmptyPortfolioState.css';
 
 interface EmptyPortfolioStateProps {
@@ -21,7 +21,7 @@ const EmptyPortfolioState: React.FC<EmptyPortfolioStateProps> = ({ onAddPosition
         Add the assets you hold — shares and average cost — and we'll track live value,
         allocation, and performance for you.
       </p>
-      <Button variant="primary" onClick={onAddPosition} className="eps-cta">
+      <Button onClick={onAddPosition} className="eps-cta">
         Add Your First Position
       </Button>
     </Card>

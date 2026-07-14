@@ -6,9 +6,8 @@ import SparklineList from '../components/SparklineList';
 import PerformanceBarChart from '../components/PerformanceBarChart';
 import ComparisonChart from '../components/ComparisonChart';
 import AssetDetailModal from '../components/AssetDetailModal';
-import SegmentedControl from '../components/ui/SegmentedControl';
-import Button from '../components/ui/Button';
-import type { Segment } from '../components/ui/SegmentedControl';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button } from '@/components/ui/button';
 import type { WatchlistEntry } from '../hooks/useWatchlistQuotes';
 import type { HistoryPoint } from '../api/stocks';
 import type { Period } from '../components/HeatmapTile';
@@ -19,6 +18,7 @@ type ViewMode = 'heatmap' | 'list' | 'performance' | 'compare';
 type SparklineLookback = '7D' | '30D' | '90D';
 type CompareRange = '7D' | '30D' | '90D' | '1Y' | 'All';
 type FilterValue = 'all' | 'technology' | 'healthcare' | 'finance';
+type Segment<T extends string> = { value: T; label: string };
 
 const VIEW_SEGS: Segment<ViewMode>[] = [
   { value: 'heatmap', label: 'Heatmap' },
@@ -141,43 +141,68 @@ const HeatmapPage: React.FC = () => {
           <p className="hm-sub">Real-time investment performance across tracked assets.</p>
         </div>
         <div className="hm-toolbar">
-          <SegmentedControl<ViewMode>
-            segments={VIEW_SEGS}
-            value={viewMode}
-            onChange={setViewMode}
+          <ToggleGroup
+            type="single"
+            variant="outline"
             size="sm"
-          />
+            value={viewMode}
+            onValueChange={(v) => v && setViewMode(v as ViewMode)}
+          >
+            {VIEW_SEGS.map((s) => (
+              <ToggleGroupItem key={s.value} value={s.value}>{s.label}</ToggleGroupItem>
+            ))}
+          </ToggleGroup>
           {viewMode !== 'compare' && (
-            <SegmentedControl<Period>
-              segments={PERIOD_SEGS}
-              value={period}
-              onChange={setPeriod}
+            <ToggleGroup
+              type="single"
+              variant="outline"
               size="sm"
-            />
+              value={period}
+              onValueChange={(v) => v && setPeriod(v as Period)}
+            >
+              {PERIOD_SEGS.map((s) => (
+                <ToggleGroupItem key={s.value} value={s.value}>{s.label}</ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           )}
           {(viewMode === 'heatmap' || viewMode === 'list') && (
-            <SegmentedControl<SparklineLookback>
-              segments={LOOKBACK_SEGS}
-              value={sparklineLookback}
-              onChange={setSparklineLookback}
+            <ToggleGroup
+              type="single"
+              variant="outline"
               size="sm"
-            />
+              value={sparklineLookback}
+              onValueChange={(v) => v && setSparklineLookback(v as SparklineLookback)}
+            >
+              {LOOKBACK_SEGS.map((s) => (
+                <ToggleGroupItem key={s.value} value={s.value}>{s.label}</ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           )}
           {viewMode === 'compare' && (
-            <SegmentedControl<CompareRange>
-              segments={COMPARE_RANGE_SEGS}
-              value={comparisonRange}
-              onChange={setComparisonRange}
+            <ToggleGroup
+              type="single"
+              variant="outline"
               size="sm"
-            />
+              value={comparisonRange}
+              onValueChange={(v) => v && setComparisonRange(v as CompareRange)}
+            >
+              {COMPARE_RANGE_SEGS.map((s) => (
+                <ToggleGroupItem key={s.value} value={s.value}>{s.label}</ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           )}
           {viewMode === 'heatmap' && (
-            <SegmentedControl<FilterValue>
-              segments={CATEGORY_SEGS}
-              value={filter}
-              onChange={setFilter}
+            <ToggleGroup
+              type="single"
+              variant="outline"
               size="sm"
-            />
+              value={filter}
+              onValueChange={(v) => v && setFilter(v as FilterValue)}
+            >
+              {CATEGORY_SEGS.map((s) => (
+                <ToggleGroupItem key={s.value} value={s.value}>{s.label}</ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           )}
           <Button variant="outline" onClick={refresh} className="hm-refresh">
             ↻ Refresh

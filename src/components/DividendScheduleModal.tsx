@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Modal from './ui/Modal';
-import Button from './ui/Button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useDividendCalendar } from '../hooks/useDividendCalendar';
 import type { DividendEvent } from '../api/dividends';
 import { fmtMoney } from '../utils/format';
@@ -236,18 +236,16 @@ const DividendScheduleModal: React.FC<DividendScheduleModalProps> = ({ open, onC
   const { data, isLoading, isError, refetch } = useDividendCalendar();
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      maxWidth={1040}
-      ariaLabel="Dividend schedule"
-      title={
-        <div className="dsm-title-wrap">
-          <span className="dsm-title">Dividend Schedule</span>
-          <span className="dsm-subtitle">Projected payouts for your portfolio</span>
-        </div>
-      }
-    >
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-[1040px]">
+        <DialogHeader>
+          <DialogTitle asChild>
+            <div className="dsm-title-wrap">
+              <span className="dsm-title">Dividend Schedule</span>
+              <span className="dsm-subtitle">Projected payouts for your portfolio</span>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
       <div className="dsm-body">
         {isLoading ? (
           <div className="dsm-state dsm-skel" />
@@ -264,7 +262,8 @@ const DividendScheduleModal: React.FC<DividendScheduleModalProps> = ({ open, onC
           </div>
         )}
       </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

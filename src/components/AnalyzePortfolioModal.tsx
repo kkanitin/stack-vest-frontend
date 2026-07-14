@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import Modal from './ui/Modal';
-import Button from './ui/Button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import DimensionCard from './DimensionCard';
 import { usePortfolioAnalysis } from '../hooks/usePortfolioAnalysis';
 import type { Portfolio } from '../api/portfolios';
@@ -33,19 +33,17 @@ const AnalyzePortfolioModal: React.FC<Props> = ({ open, onClose, portfolio }) =>
   }, [open, start, reset]);
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      ariaLabel="AI Strategy Analysis"
-      maxWidth={960}
-      title={
-        <span className="apm-head-title">
-          <SparkleIcon />
-          AI Strategy Analysis
-        </span>
-      }
-    >
-      <div className="apm">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-[960px]">
+        <DialogHeader>
+          <DialogTitle>
+            <span className="apm-head-title">
+              <SparkleIcon />
+              AI Strategy Analysis
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="apm">
         {status === 'error' ? (
           <section className="apm-section">
             <h3 className="apm-label">Analysis Summary</h3>
@@ -89,7 +87,8 @@ const AnalyzePortfolioModal: React.FC<Props> = ({ open, onClose, portfolio }) =>
           </>
         )}
       </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

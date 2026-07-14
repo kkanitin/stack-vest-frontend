@@ -1,38 +1,21 @@
-import React from 'react';
-import './Input.css';
+import * as React from "react"
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  hint?: string;
-  error?: string;
-  mono?: boolean;
+import { cn } from "@/lib/utils"
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30",
+        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-const Input: React.FC<InputProps> = ({ label, hint, error, mono = false, id, className = '', ...rest }) => {
-  const inputClasses = [
-    'sv-input',
-    mono ? 'sv-input--mono' : '',
-    error ? 'sv-input--invalid' : '',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  return (
-    <div className="sv-field">
-      {label && (
-        <label className="sv-label" htmlFor={id}>
-          {label}
-        </label>
-      )}
-      <input id={id} className={inputClasses} aria-invalid={!!error} {...rest} />
-      {error ? (
-        <span className="sv-hint sv-hint--err">{error}</span>
-      ) : hint ? (
-        <span className="sv-hint">{hint}</span>
-      ) : null}
-    </div>
-  );
-};
-
-export default Input;
+export { Input }

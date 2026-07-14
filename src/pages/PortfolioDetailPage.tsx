@@ -8,9 +8,9 @@ import { usePortfolioPositionsById } from '../hooks/usePortfolioPositionsById';
 import { deletePortfolio, removePortfolioPosition } from '../api/portfolios';
 import type { PortfolioPosition } from '../api/portfolio';
 import { MAX_ASSETS_PER_PORTFOLIO } from '../config';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import TopAssetsTable from '../components/TopAssetsTable';
 import EmptyPortfolioState from '../components/EmptyPortfolioState';
 import PositionFormModal from '../components/PositionFormModal';
@@ -133,7 +133,7 @@ const PortfolioDetailPage: React.FC = () => {
       <header className="pfd-head">
         <div className="pfd-head-text">
           <div className="pfd-strategy">
-            <Badge tone="primary" pill>Active Strategy</Badge>
+            <Badge variant="primary">Active Strategy</Badge>
             <h1 className="pfd-title">{portfolio?.name ?? '…'}</h1>
           </div>
           {portfolio?.description && <p className="pfd-sub">{portfolio.description}</p>}
@@ -149,7 +149,6 @@ const PortfolioDetailPage: React.FC = () => {
             Delete
           </Button>
           <Button
-            variant="primary"
             onClick={openAddModal}
             disabled={atAssetLimit}
             title={atAssetLimit ? `Maximum of ${MAX_ASSETS_PER_PORTFOLIO} assets reached` : undefined}
@@ -164,16 +163,23 @@ const PortfolioDetailPage: React.FC = () => {
           <div className="pfd-stats">
             {[0, 1, 2].map(i => (
               <Card key={i} className="pfd-stat">
-                <div className="pfd-skel pfd-skel--value" />
+                <CardContent>
+                  <div className="pfd-skel pfd-skel--value" />
+                </CardContent>
               </Card>
             ))}
           </div>
-          <Card label="Current Holdings">
-            <div className="pfh-wrap">
-              {[0, 1, 2, 3].map(i => (
-                <div key={i} className="pfd-skel pfd-skel--row" />
-              ))}
-            </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="label-caps">Current Holdings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="pfh-wrap">
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} className="pfd-skel pfd-skel--row" />
+                ))}
+              </div>
+            </CardContent>
           </Card>
         </>
       )}
@@ -181,37 +187,57 @@ const PortfolioDetailPage: React.FC = () => {
       {hasPositions && (
         <>
           <div className="pfd-stats">
-            <Card label="Total Net Value" className="pfd-stat">
-              <div className="pfd-stat-value">
-                {fmtMoney(netValue)}
-                <span className="pfd-stat-suffix">USD</span>
-              </div>
+            <Card className="pfd-stat">
+              <CardHeader>
+                <CardTitle className="label-caps">Total Net Value</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="pfd-stat-value">
+                  {fmtMoney(netValue)}
+                  <span className="pfd-stat-suffix">USD</span>
+                </div>
+              </CardContent>
             </Card>
-            <Card label="24h Performance" className="pfd-stat">
-              <div className={`pfd-stat-value ${perf.deltaUsd >= 0 ? 'pfd-perf--pos' : 'pfd-perf--neg'}`}>
-                {perf.hasData ? (
-                  <>
-                    {perf.deltaUsd >= 0 ? '+' : '-'}{fmtMoney(perf.deltaUsd)}
-                    <span className="pfd-stat-suffix">({fmtPct(perf.pct)})</span>
-                  </>
-                ) : (
-                  <span className="pfh-dim">—</span>
-                )}
-              </div>
+            <Card className="pfd-stat">
+              <CardHeader>
+                <CardTitle className="label-caps">24h Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`pfd-stat-value ${perf.deltaUsd >= 0 ? 'pfd-perf--pos' : 'pfd-perf--neg'}`}>
+                  {perf.hasData ? (
+                    <>
+                      {perf.deltaUsd >= 0 ? '+' : '-'}{fmtMoney(perf.deltaUsd)}
+                      <span className="pfd-stat-suffix">({fmtPct(perf.pct)})</span>
+                    </>
+                  ) : (
+                    <span className="pfh-dim">—</span>
+                  )}
+                </div>
+              </CardContent>
             </Card>
-            <Card label="Asset Allocation" className="pfd-stat">
-              <div className="pfd-stat-value">
-                {fmtCount(list.length)}
-                <span className="pfd-stat-suffix">/ {MAX_ASSETS_PER_PORTFOLIO} Slots Used</span>
-              </div>
-              <div className="pfd-progress">
-                <div className="pfd-progress-fill" style={{ width: `${slotPct}%` }} />
-              </div>
+            <Card className="pfd-stat">
+              <CardHeader>
+                <CardTitle className="label-caps">Asset Allocation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="pfd-stat-value">
+                  {fmtCount(list.length)}
+                  <span className="pfd-stat-suffix">/ {MAX_ASSETS_PER_PORTFOLIO} Slots Used</span>
+                </div>
+                <div className="pfd-progress">
+                  <div className="pfd-progress-fill" style={{ width: `${slotPct}%` }} />
+                </div>
+              </CardContent>
             </Card>
           </div>
 
-          <Card label="Current Holdings">
-            <TopAssetsTable positions={list} isLoading={false} onEdit={openEditModal} onDelete={handleDeletePosition} />
+          <Card>
+            <CardHeader>
+              <CardTitle className="label-caps">Current Holdings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TopAssetsTable positions={list} isLoading={false} onEdit={openEditModal} onDelete={handleDeletePosition} />
+            </CardContent>
           </Card>
         </>
       )}

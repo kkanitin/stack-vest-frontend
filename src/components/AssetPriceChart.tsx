@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 import { useStockHistory } from '../hooks/useStockHistory';
 import type { HistoryRange } from '../hooks/useStockHistory';
-import Button from './ui/Button';
+import { Button } from '@/components/ui/button';
 import './AssetPriceChart.css';
 
 const RANGES: HistoryRange[] = ['1M', '3M', '6M', '1Y'];
