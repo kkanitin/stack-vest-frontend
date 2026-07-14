@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import Button from '../components/ui/Button';
+import { Button } from '@/components/ui/button';
 import './NotFoundPage.css';
 
 export default function NotFoundPage() {
@@ -30,7 +30,7 @@ export default function NotFoundPage() {
       </p>
 
       <div className="nfp-actions">
-        <Button variant="primary" onClick={() => navigate('/dashboard')}>
+        <Button onClick={() => navigate('/dashboard')}>
           Go to Dashboard
         </Button>
       </div>

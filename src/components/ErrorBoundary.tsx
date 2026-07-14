@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from './ui/Button';
+import { Button } from '@/components/ui/button';
 import './ErrorBoundary.css';
 
 type Variant = 'page' | 'inline';
@@ -73,11 +73,11 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
         <div className="eb-actions">
           {isPage ? (
-            <Button variant="primary" onClick={() => window.location.reload()}>
+            <Button onClick={() => window.location.reload()}>
               Reload page
             </Button>
           ) : (
-            <Button variant="primary" onClick={this.reset}>
+            <Button onClick={this.reset}>
               Try again
             </Button>
           )}

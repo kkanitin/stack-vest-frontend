@@ -1,8 +1,8 @@
 import React, { useState, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, NavLink, Outlet, useLocation } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '../components/ErrorBoundary';
 import RouteFallback from '../components/RouteFallback';
 import TopbarSearch from '../components/TopbarSearch';
@@ -135,7 +135,7 @@ const LandingPage: React.FC = () => {
             >
               <span className="sidebar-link-icon"><Icon.DCA /></span>
               DCA Simulation
-              <Badge tone="primary" pill className="sidebar-link-badge">Beta</Badge>
+              <Badge variant="primary" className="sidebar-link-badge">Beta</Badge>
             </NavLink>
             <NavLink
               to="/dashboard/watchlist"
@@ -148,7 +148,7 @@ const LandingPage: React.FC = () => {
           </nav>
 
           <div className="sidebar-foot">
-            <Button variant="primary" block onClick={handleNewSimulation} className="sidebar-cta">
+            <Button onClick={handleNewSimulation} className="w-full sidebar-cta">
               <Icon.Plus /> New Simulation
             </Button>
 

@@ -2,14 +2,14 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { runDcaSimulation } from '../api/simulations';
 import type { DcaResult } from '../api/simulations';
-import Card from './ui/Card';
-import Button from './ui/Button';
-import Badge from './ui/Badge';
-import SegmentedControl from './ui/SegmentedControl';
-import type { Segment } from './ui/SegmentedControl';
+import { Card, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import './DCASimulation.css';
 
 type Frequency = 'weekly' | 'biweekly' | 'monthly';
+type Segment<T extends string> = { value: T; label: string };
 
 const FREQ_SEGMENTS: Segment<Frequency>[] = [
   { value: 'weekly', label: 'Weekly' },
@@ -182,7 +182,7 @@ const DCASimulation: React.FC = () => {
         <div className="dca-head-text">
           <div className="dca-title-row">
             <h1 className="dca-title">DCA Simulation</h1>
-            <Badge tone="primary" pill>Beta</Badge>
+            <Badge variant="primary">Beta</Badge>
           </div>
           <p className="dca-sub">Backtest dollar-cost averaging across any tracked asset.</p>
         </div>
@@ -202,7 +202,8 @@ const DCASimulation: React.FC = () => {
       )}
 
       <div className="dca-grid">
-        <Card label="Simulation Parameters" className="dca-form">
+        <Card className="dca-form px-6">
+          <CardTitle className="label-caps">Simulation Parameters</CardTitle>
           <div className="dca-field">
             <label className="dca-label">Target Asset</label>
             <select className="dca-select" value={asset} onChange={e => setAsset(e.target.value)}>
@@ -226,7 +227,16 @@ const DCASimulation: React.FC = () => {
 
           <div className="dca-field">
             <label className="dca-label">Frequency</label>
-            <SegmentedControl<Frequency> segments={FREQ_SEGMENTS} value={freq} onChange={setFreq} />
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              value={freq}
+              onValueChange={(v) => v && setFreq(v as Frequency)}
+            >
+              {FREQ_SEGMENTS.map((s) => (
+                <ToggleGroupItem key={s.value} value={s.value}>{s.label}</ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
 
           <div className="dca-field-row">
@@ -251,9 +261,7 @@ const DCASimulation: React.FC = () => {
           </div>
 
           <Button
-            variant="primary"
-            block
-            className="dca-run"
+            className="w-full dca-run"
             onClick={fetchSimulation}
             disabled={isLoading}
           >
@@ -287,7 +295,8 @@ const DCASimulation: React.FC = () => {
             </div>
           )}
 
-          <Card label="Portfolio Growth" className="dca-chart-card">
+          <Card className="dca-chart-card px-6">
+            <CardTitle className="label-caps">Portfolio Growth</CardTitle>
             <div className="dca-chart-wrap">
               {showSkeleton ? (
                 <ChartSkeleton />

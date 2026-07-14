@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import AssetPriceChart from './AssetPriceChart';
-import Button from './ui/Button';
-import Modal from './ui/Modal';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { CompanyProfile } from '../api/stocks';
 import './AssetDetailModal.css';
 
@@ -166,19 +166,17 @@ const AssetDetailModal: React.FC<AssetDetailModalProps> = ({ symbol, onClose }) 
   const { data, isLoading, isError, refetch } = useCompanyProfile(symbol);
 
   return (
-    <Modal
-      open={!!symbol}
-      onClose={onClose}
-      maxWidth={880}
-      ariaLabel={`Company profile — ${symbol ?? ''}`}
-      title={
-        <div className="adm-title-wrap">
-          <span className="adm-symbol">{symbol}</span>
-          {data?.companyName && <span className="adm-name">{data.companyName}</span>}
-          {data?.currency && <span className="adm-currency">{data.currency}</span>}
-        </div>
-      }
-    >
+    <Dialog open={!!symbol} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-[880px]">
+        <DialogHeader>
+          <DialogTitle asChild>
+            <div className="adm-title-wrap">
+              <span className="adm-symbol">{symbol}</span>
+              {data?.companyName && <span className="adm-name">{data.companyName}</span>}
+              {data?.currency && <span className="adm-currency">{data.currency}</span>}
+            </div>
+          </DialogTitle>
+        </DialogHeader>
       <div className="adm-body">
         {isLoading ? (
           <div className="adm-skel" />
@@ -191,7 +189,8 @@ const AssetDetailModal: React.FC<AssetDetailModalProps> = ({ symbol, onClose }) 
           <ProfileBody profile={data} />
         ) : null}
       </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

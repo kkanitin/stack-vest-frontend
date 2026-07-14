@@ -6,12 +6,6 @@
 }
 .apm-sparkle { color: var(--primary); flex-shrink: 0; }
 
-/* Align this modal's header inset with the padded body content below (full-width
-   divider, inset content). Scoped to this modal only via :has. */
-.sv-modal-head:has(.apm-head-title) {
-  padding: 20px 32px;
-}
-
 .apm {
   display: flex;
   flex-direction: column;

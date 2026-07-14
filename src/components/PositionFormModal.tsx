@@ -8,8 +8,9 @@ import {
 } from '../api/portfolios';
 import { useToast } from '../context/ToastContext';
 import { useStockSearch } from '../hooks/useStockSearch';
-import Modal from './ui/Modal';
-import Input from './ui/Input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import './PositionFormModal.css';
 
 interface Props {
@@ -161,7 +162,11 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol, portfol
   const showingResults = !isEdit && query.trim().length > 0;
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? `Edit ${editSymbol}` : 'Add Position'}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? `Edit ${editSymbol}` : 'Add Position'}</DialogTitle>
+        </DialogHeader>
         <form className="pfm-body" onSubmit={handleSubmit}>
           <div className="pfm-field">
             <label className="pfm-label">Asset</label>
@@ -226,30 +231,40 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol, portfol
           </div>
 
           <div className="pfm-row">
-            <Input
-              id="pfm-shares"
-              label="Shares"
-              mono
-              type="number"
-              min="0"
-              step="any"
-              placeholder="0.00"
-              value={shares}
-              onChange={e => setShares(e.target.value)}
-              error={shares && !sharesValid ? 'Must be greater than 0.' : undefined}
-            />
-            <Input
-              id="pfm-avgcost"
-              label="Average Cost (USD)"
-              mono
-              type="number"
-              min="0"
-              step="any"
-              placeholder="0.00"
-              value={avgCost}
-              onChange={e => setAvgCost(e.target.value)}
-              error={avgCost && !avgCostValid ? 'Must be 0 or greater.' : undefined}
-            />
+            <div className="grid gap-2">
+              <Label htmlFor="pfm-shares">Shares</Label>
+              <Input
+                id="pfm-shares"
+                className="font-mono"
+                type="number"
+                min="0"
+                step="any"
+                placeholder="0.00"
+                value={shares}
+                onChange={e => setShares(e.target.value)}
+                aria-invalid={!!(shares && !sharesValid)}
+              />
+              {shares && !sharesValid && (
+                <p className="text-sm text-[var(--error)]">Must be greater than 0.</p>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="pfm-avgcost">Average Cost (USD)</Label>
+              <Input
+                id="pfm-avgcost"
+                className="font-mono"
+                type="number"
+                min="0"
+                step="any"
+                placeholder="0.00"
+                value={avgCost}
+                onChange={e => setAvgCost(e.target.value)}
+                aria-invalid={!!(avgCost && !avgCostValid)}
+              />
+              {avgCost && !avgCostValid && (
+                <p className="text-sm text-[var(--error)]">Must be 0 or greater.</p>
+              )}
+            </div>
           </div>
 
           <div className="pfm-preview">
@@ -266,7 +281,8 @@ const PositionFormModal: React.FC<Props> = ({ open, onClose, editSymbol, portfol
             </button>
           </div>
         </form>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

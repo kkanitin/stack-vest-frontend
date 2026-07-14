@@ -5,8 +5,9 @@ import { useToast } from '../context/ToastContext';
 import { createPortfolio, updatePortfolio, PortfolioLimitError } from '../api/portfolios';
 import type { Portfolio } from '../api/portfolios';
 import { MAX_PORTFOLIOS } from '../config';
-import Modal from './ui/Modal';
-import Input from './ui/Input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import './PortfolioFormModal.css';
 
 interface Props {
@@ -91,22 +92,31 @@ const PortfolioFormModal: React.FC<Props> = ({ open, onClose, portfolio }) => {
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Edit Portfolio' : 'New Portfolio'}>
-      <form className="pfm2-body" onSubmit={handleSubmit}>
-        <Input
-          id="pfm2-name"
-          label="Portfolio Name"
-          type="text"
-          placeholder="e.g. Retirement 2045"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          error={formError && !nameValid ? 'Portfolio name is required.' : undefined}
-          autoFocus
-          maxLength={120}
-        />
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? 'Edit Portfolio' : 'New Portfolio'}</DialogTitle>
+        </DialogHeader>
+        <form className="pfm2-body" onSubmit={handleSubmit}>
+          <div className="grid gap-2">
+            <Label htmlFor="pfm2-name">Portfolio Name</Label>
+            <Input
+              id="pfm2-name"
+              type="text"
+              placeholder="e.g. Retirement 2045"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              aria-invalid={!!(formError && !nameValid)}
+              autoFocus
+              maxLength={120}
+            />
+            {formError && !nameValid && (
+              <p className="text-sm text-[var(--error)]">Portfolio name is required.</p>
+            )}
+          </div>
 
         <div className="pfm2-field">
-          <label className="sv-label" htmlFor="pfm2-desc">Description (optional)</label>
+          <Label htmlFor="pfm2-desc">Description (optional)</Label>
           <textarea
             id="pfm2-desc"
             className="pfm2-textarea"
@@ -131,7 +141,8 @@ const PortfolioFormModal: React.FC<Props> = ({ open, onClose, portfolio }) => {
           </button>
         </div>
       </form>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

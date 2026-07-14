@@ -6,7 +6,7 @@ import type { WatchlistItem } from '../api/watchlist';
 import { getPopularAssets } from '../api/popular';
 import { useToast } from '../context/ToastContext';
 import { useStockSearch } from '../hooks/useStockSearch';
-import Modal from './ui/Modal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { PopularAsset } from '../api/popular';
 import './AddAssetModal.css';
 
@@ -89,7 +89,11 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
   const showingResults = query.trim().length > 0;
 
   return (
-    <Modal open={open} onClose={onClose} title="Add Asset" maxWidth={480}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>Add Asset</DialogTitle>
+        </DialogHeader>
         <div className="aam-search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="aam-search-icon">
             <circle cx="11" cy="11" r="7" />
@@ -172,7 +176,8 @@ const AddAssetModal: React.FC<Props> = ({ open, onClose, onAdded, addedSymbols }
             })
           )}
         </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 
