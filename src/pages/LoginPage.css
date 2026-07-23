@@ -78,10 +78,20 @@
 }
 
 .lp-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   font-size: 13px;
   color: var(--text);
   letter-spacing: 0.04em;
   padding: 12px 0;
+}
+
+.lp-loading .rf-spinner {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
 }
 
 .lp-err {

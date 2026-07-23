@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import type { CredentialResponse } from '@react-oauth/google';
+import '../components/RouteFallback.css';
 import './LoginPage.css';
 
 const LogoMark: React.FC = () => (
@@ -58,7 +59,10 @@ const LoginPage: React.FC = () => {
           {error && <div className="lp-err">{error}</div>}
 
           {loading ? (
-            <div className="lp-loading">Signing in…</div>
+            <div className="lp-loading" role="status" aria-live="polite">
+              <span className="rf-spinner" aria-hidden />
+              <span>Signing in…</span>
+            </div>
           ) : (
             <div className="lp-google-btn">
               <GoogleLogin
