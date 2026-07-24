@@ -136,4 +136,5 @@
 }
 @media (max-width: 480px) {
   .apm-dims { grid-template-columns: 1fr; }
+  .apm-section { padding: 0 16px; }
 }

@@ -6,6 +6,7 @@ import { Card, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useElementSize } from '../hooks/useElementSize';
 import './DCASimulation.css';
 
 type Frequency = 'weekly' | 'biweekly' | 'monthly';
@@ -37,12 +38,12 @@ function fmtPct(n: number): string {
 
 type ChartPoint = { date: string; invested: number; value: number };
 
-function GrowthChart({ points }: { points: ChartPoint[] }) {
+function GrowthChart({ points, width, height }: { points: ChartPoint[]; width: number; height: number }) {
   if (points.length === 0) {
-    return <svg viewBox="0 0 760 260" className="dca-chart" />;
+    return <svg viewBox={`0 0 ${width} ${height}`} className="dca-chart" />;
   }
-  const w = 760;
-  const h = 260;
+  const w = width;
+  const h = height;
   const padL = 48;
   const padR = 16;
   const padT = 16;
@@ -128,6 +129,13 @@ const DCASimulation: React.FC = () => {
   const reqIdRef = useRef(0);
   // Skip debounce on the very first effect run (mount).
   const isFirstRun = useRef(true);
+
+  // Measures the chart wrapper's actual rendered box so the SVG viewBox can match it
+  // exactly, avoiding the non-uniform stretch that squishes axis-label text.
+  const [chartWrapRef, chartSize] = useElementSize<HTMLDivElement>({
+    initialWidth: 760,
+    initialHeight: 260,
+  });
 
   const fetchSimulation = useCallback(async () => {
     if (!token) return;
@@ -297,11 +305,11 @@ const DCASimulation: React.FC = () => {
 
           <Card className="dca-chart-card px-6">
             <CardTitle className="label-caps">Portfolio Growth</CardTitle>
-            <div className="dca-chart-wrap">
+            <div className="dca-chart-wrap" ref={chartWrapRef}>
               {showSkeleton ? (
                 <ChartSkeleton />
               ) : (
-                <GrowthChart points={chartPoints} />
+                <GrowthChart points={chartPoints} width={chartSize.width} height={chartSize.height} />
               )}
             </div>
             {!showSkeleton && (

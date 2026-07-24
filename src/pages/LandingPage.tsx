@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -75,6 +75,13 @@ const LandingPage: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [detailSymbol, setDetailSymbol] = useState<string | null>(null);
   const [dividendOpen, setDividendOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = sidebarOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [sidebarOpen]);
 
   const handleLogout = () => {
     logout();

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import type { CredentialResponse } from '@react-oauth/google';
+import { useElementSize } from '../hooks/useElementSize';
 import '../components/RouteFallback.css';
 import './LoginPage.css';
 
@@ -14,6 +15,11 @@ const LogoMark: React.FC = () => (
   </svg>
 );
 
+// The GSI button renders a real fixed-width iframe (no fluid/percentage option),
+// so its width is measured from the wrapper and clamped instead of hardcoded.
+const MIN_GOOGLE_BTN_WIDTH = 200;
+const MAX_GOOGLE_BTN_WIDTH = 320;
+
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated, isInitializing } = useAuth();
   const [error, setError] = React.useState<string | null>(null);
@@ -21,6 +27,18 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string })?.from ?? '/dashboard';
+
+  // `width` is passed straight into <GoogleLogin>, which is in that library's own
+  // effect dependency array — every distinct value re-runs its init (and, with
+  // useOneTap, cancels + re-prompts One Tap). A live drag-resize fires the observer
+  // once per frame with a genuinely different width each time, so a 150ms debounce
+  // keeps the button in sync with its container without re-initializing GSI on
+  // every intermediate frame of a resize gesture.
+  const [googleBtnWrapRef, googleBtnBox] = useElementSize<HTMLDivElement>({
+    initialWidth: MAX_GOOGLE_BTN_WIDTH,
+    debounceMs: 150,
+  });
+  const googleBtnWidth = Math.min(MAX_GOOGLE_BTN_WIDTH, Math.max(MIN_GOOGLE_BTN_WIDTH, Math.floor(googleBtnBox.width)));
 
   if (isInitializing) return null;
   if (isAuthenticated) return <Navigate to={from} replace />;
@@ -64,7 +82,7 @@ const LoginPage: React.FC = () => {
               <span>Signing in…</span>
             </div>
           ) : (
-            <div className="lp-google-btn">
+            <div className="lp-google-btn" ref={googleBtnWrapRef}>
               <GoogleLogin
                 onSuccess={handleSuccess}
                 onError={handleError}
@@ -73,7 +91,7 @@ const LoginPage: React.FC = () => {
                 shape="rectangular"
                 size="large"
                 text="continue_with"
-                width="320"
+                width={String(googleBtnWidth)}
               />
             </div>
           )}

@@ -25,7 +25,7 @@
   background: var(--surface-low);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 8px 12px 8px 32px;
+  padding: 11px 12px 11px 32px;
   outline: none;
   box-sizing: border-box;
   transition: border-color 150ms ease, box-shadow 150ms ease;
@@ -123,5 +123,6 @@
 @media (max-width: 767px) {
   .tbs {
     width: 160px;
+    min-width: 0;
   }
 }
