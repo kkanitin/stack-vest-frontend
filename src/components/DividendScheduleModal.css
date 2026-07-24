@@ -316,4 +316,9 @@
   .dsm-panel-scroll {
     overflow-y: visible;
   }
+
+  .dsm-nav-btn {
+    width: var(--tap-min-compact);
+    height: var(--tap-min-compact);
+  }
 }

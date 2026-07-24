@@ -15,7 +15,7 @@
 .aam-input {
   width: 100%;
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-h);
   background: var(--surface-low);
   border: 1px solid var(--border);
@@ -126,8 +126,8 @@
 }
 
 .aam-add {
-  width: 28px;
-  height: 28px;
+  width: var(--tap-min-compact);
+  height: var(--tap-min-compact);
   border-radius: 50%;
   background: var(--primary-strong);
   color: #ffffff;
