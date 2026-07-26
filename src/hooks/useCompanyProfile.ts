@@ -13,6 +13,7 @@ export function useCompanyProfile(
     queryFn: () => getCompanyProfile(token!, symbol!),
     enabled: !!token && !!symbol,
     staleTime: 30 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   return { data: q.data, isLoading: q.isLoading, isError: q.isError, refetch: q.refetch };

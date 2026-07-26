@@ -65,7 +65,7 @@ const SKELETON_COUNT = 8;
 
 const HeatmapPage: React.FC = () => {
   const { entries, watchlistStatus, watchlistError, lastUpdated, refresh } =
-    useWatchlistQuotes();
+    useWatchlistQuotes({ withQuotes: false, withHistory: false });
 
   const [viewMode, setViewMode] = useState<ViewMode>('heatmap');
   const [period, setPeriod] = useState<Period>('1D');

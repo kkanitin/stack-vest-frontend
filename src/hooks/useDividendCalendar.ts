@@ -7,7 +7,7 @@ import type { DividendEvent } from '../api/dividends';
  *  `GET /dividends/calendar`. The window is small (~75 days) and the endpoint returns
  *  the full default window when unparameterized, so we fetch once (stable key) and
  *  group/filter client-side. Refreshed ~daily server-side, hence the long staleTime. */
-export function useDividendCalendar(): {
+export function useDividendCalendar(enabled = true): {
   data: DividendEvent[] | undefined;
   isLoading: boolean;
   isError: boolean;
@@ -18,8 +18,9 @@ export function useDividendCalendar(): {
   const q = useQuery({
     queryKey: ['dividendCalendar'],
     queryFn: () => getDividendCalendar(token!),
-    enabled: !!token,
+    enabled: !!token && enabled,
     staleTime: 60 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 
   return {

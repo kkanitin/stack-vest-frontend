@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
-import AssetPriceChart from './AssetPriceChart';
+
+const AssetPriceChart = lazy(() => import('./AssetPriceChart'));
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { CompanyProfile } from '../api/stocks';
@@ -119,7 +120,9 @@ const ProfileBody: React.FC<{ profile: CompanyProfile }> = ({ profile: p }) => {
         </div>
       )}
 
-      <AssetPriceChart symbol={p.symbol} currency={p.currency} />
+      <Suspense fallback={<div className="apc-chart"><div className="apc-skel" /></div>}>
+        <AssetPriceChart symbol={p.symbol} currency={p.currency} />
+      </Suspense>
 
       {meta.length > 0 && (
         <dl className="adm-meta">

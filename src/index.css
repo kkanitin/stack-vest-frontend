@@ -1,5 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@fontsource-variable/geist";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -45,7 +49,7 @@
   --border-strong: rgba(255, 255, 255, 0.12);
 
   /* Fonts */
-  --sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --sans: 'Geist Variable', system-ui, -apple-system, sans-serif;
   --heading: var(--sans);
   --display: var(--sans);
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;

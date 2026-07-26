@@ -3,7 +3,7 @@ import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getWatchlist } from '../api/watchlist';
 import {
-  getBatchPriceChanges,
+  getStockPriceChange,
   getStockQuote,
   getBatchHistory,
 } from '../api/stocks';
@@ -21,6 +21,11 @@ export interface WatchlistEntry {
   error: string | null;
 }
 
+export interface UseWatchlistQuotesOptions {
+  withQuotes?: boolean;
+  withHistory?: boolean;
+}
+
 export interface UseWatchlistQuotesReturn {
   entries: WatchlistEntry[];
   watchlistStatus: Status;
@@ -29,7 +34,9 @@ export interface UseWatchlistQuotesReturn {
   refresh: () => void;
 }
 
-export function useWatchlistQuotes(): UseWatchlistQuotesReturn {
+export function useWatchlistQuotes(
+  { withQuotes = true, withHistory = true }: UseWatchlistQuotesOptions = {}
+): UseWatchlistQuotesReturn {
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
@@ -44,51 +51,54 @@ export function useWatchlistQuotes(): UseWatchlistQuotesReturn {
   const items: WatchlistItem[] = watchlistQuery.data ?? [];
   const symbols = useMemo(() => items.map(i => i.symbol).sort(), [items]);
 
-  // 2. Batch price changes — one request for all symbols
-  const priceChangesQuery = useQuery({
-    queryKey: ['batchPriceChanges', symbols],
-    queryFn: () => getBatchPriceChanges(token!, symbols),
-    enabled: !!token && symbols.length > 0,
-    staleTime: 2 * 60 * 1000,
-  });
-
-  // 3. Individual quotes (no batch endpoint)
-  const quoteResults = useQueries({
+  // 2. Per-symbol price changes (no batch endpoint)
+  const priceChangeResults = useQueries({
     queries: items.map(item => ({
-      queryKey: ['stockQuote', item.symbol],
-      queryFn: () => getStockQuote(token!, item.symbol),
+      queryKey: ['stockPriceChange', item.symbol],
+      queryFn: () => getStockPriceChange(token!, item.symbol),
       enabled: !!token,
       staleTime: 2 * 60 * 1000,
     })),
   });
 
-  // 4. Batch 7D history for sparklines
+  // 3. Individual quotes (no batch endpoint); skipped entirely when the consumer
+  // (e.g. HeatmapPage) never reads `entry.quote`.
+  const quoteResults = useQueries({
+    queries: items.map(item => ({
+      queryKey: ['stockQuote', item.symbol],
+      queryFn: () => getStockQuote(token!, item.symbol),
+      enabled: !!token && withQuotes,
+      staleTime: 2 * 60 * 1000,
+    })),
+  });
+
+  // 4. Batch 7D history for sparklines; skipped when the consumer fetches its own
+  // (e.g. HeatmapPage uses useSparklineData instead).
   const historyQuery = useQuery({
     queryKey: ['batchHistory', symbols, '7D'],
     queryFn: () => getBatchHistory(token!, symbols, '7D'),
-    enabled: !!token && symbols.length > 0,
+    enabled: !!token && withHistory && symbols.length > 0,
     staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   // Combine into WatchlistEntry[]
   const entries: WatchlistEntry[] = useMemo(() => {
-    const priceMap = new Map<string, StockPriceChange>(
-      (priceChangesQuery.data ?? []).map(pc => [pc.symbol, pc])
-    );
     const historyMap = new Map<string, StockHistory>(
       (historyQuery.data ?? []).map(h => [h.symbol, h])
     );
 
     return items.map((item, i) => {
-      const priceChange = priceMap.get(item.symbol) ?? null;
-      const quote = (quoteResults[i]?.data as StockQuote | undefined) ?? null;
+      const priceChange = priceChangeResults[i]?.data ?? null;
+      const quote = quoteResults[i]?.data ?? null;
       const history = historyMap.get(item.symbol) ?? null;
       const isLoading =
         watchlistQuery.isLoading ||
-        priceChangesQuery.isLoading ||
-        (quoteResults[i]?.isLoading ?? false);
-      const isError =
-        priceChangesQuery.isError && (quoteResults[i]?.isError ?? false);
+        (priceChangeResults[i]?.isLoading ?? false) ||
+        (withQuotes && (quoteResults[i]?.isLoading ?? false));
+      const isError = withQuotes
+        ? (priceChangeResults[i]?.isError ?? false) && (quoteResults[i]?.isError ?? false)
+        : (priceChangeResults[i]?.isError ?? false);
       return {
         item,
         priceChange,
@@ -98,15 +108,7 @@ export function useWatchlistQuotes(): UseWatchlistQuotesReturn {
         error: isError ? 'Unavailable' : null,
       };
     });
-  }, [
-    items,
-    priceChangesQuery.data,
-    priceChangesQuery.isLoading,
-    priceChangesQuery.isError,
-    quoteResults,
-    historyQuery.data,
-    watchlistQuery.isLoading,
-  ]);
+  }, [items, priceChangeResults, quoteResults, historyQuery.data, watchlistQuery.isLoading, withQuotes]);
 
   const lastUpdated = useMemo(() => {
     return watchlistQuery.dataUpdatedAt
@@ -116,9 +118,9 @@ export function useWatchlistQuotes(): UseWatchlistQuotesReturn {
 
   const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-    queryClient.invalidateQueries({ queryKey: ['batchPriceChanges'] });
     queryClient.invalidateQueries({ queryKey: ['batchHistory'] });
     items.forEach(item => {
+      queryClient.invalidateQueries({ queryKey: ['stockPriceChange', item.symbol] });
       queryClient.invalidateQueries({ queryKey: ['stockQuote', item.symbol] });
     });
   }, [queryClient, items]);

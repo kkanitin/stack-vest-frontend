@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
@@ -15,10 +15,11 @@ import TopAssetsTable from '../components/TopAssetsTable';
 import EmptyPortfolioState from '../components/EmptyPortfolioState';
 import PositionFormModal from '../components/PositionFormModal';
 import PortfolioFormModal from '../components/PortfolioFormModal';
-import AnalyzePortfolioModal from '../components/AnalyzePortfolioModal';
 import { fmtMoney, fmtPct, fmtCount } from '../utils/format';
 import { totalNetValue, change24h } from '../utils/portfolioStats';
 import './PortfolioDetailPage.css';
+
+const AnalyzePortfolioModal = lazy(() => import('../components/AnalyzePortfolioModal'));
 
 const PortfolioDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +39,7 @@ const PortfolioDetailPage: React.FC = () => {
   const [editSymbol, setEditSymbol] = useState<string | undefined>(undefined);
   const [editPortfolioOpen, setEditPortfolioOpen] = useState(false);
   const [analyzeOpen, setAnalyzeOpen] = useState(false);
+  const [analyzeMounted, setAnalyzeMounted] = useState(false);
 
   const list = positions ?? [];
   const hasPositions = !loadingPositions && list.length > 0;
@@ -139,7 +141,11 @@ const PortfolioDetailPage: React.FC = () => {
           {portfolio?.description && <p className="pfd-sub">{portfolio.description}</p>}
         </div>
         <div className="pfd-head-actions">
-          <Button variant="outline" onClick={() => setAnalyzeOpen(true)} disabled={!portfolio}>
+          <Button
+            variant="outline"
+            onClick={() => { setAnalyzeMounted(true); setAnalyzeOpen(true); }}
+            disabled={!portfolio}
+          >
             Analyze
           </Button>
           <Button variant="outline" onClick={() => setEditPortfolioOpen(true)} disabled={!portfolio}>
@@ -261,11 +267,15 @@ const PortfolioDetailPage: React.FC = () => {
         onClose={() => setEditPortfolioOpen(false)}
         portfolio={portfolio ?? null}
       />
-      <AnalyzePortfolioModal
-        open={analyzeOpen}
-        onClose={() => setAnalyzeOpen(false)}
-        portfolio={portfolio ?? null}
-      />
+      {analyzeMounted && (
+        <Suspense fallback={null}>
+          <AnalyzePortfolioModal
+            open={analyzeOpen}
+            onClose={() => setAnalyzeOpen(false)}
+            portfolio={portfolio ?? null}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

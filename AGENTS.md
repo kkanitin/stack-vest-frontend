@@ -81,8 +81,6 @@ return <><style>{S}</style>...</>;
 import './MyComponent.css';
 ```
 
-Existing components (`WatchlistPage`, `Visualization`, `HeatmapPage`, `DCASimulation`) still use inline strings pending a future cleanup pass. Do not introduce new ones.
-
 ## Environment Variables
 
 - `.env`: Default configuration. Must be kept in sync with `.env.local` and contain all required keys with example/non-sensitive values.

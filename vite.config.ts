@@ -26,10 +26,14 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        // Isolate heavy vendors into long-cached chunks; Recharts (the largest)
-        // lands in `charts`, pulled only by the routes that render charts.
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
+          // clsx is a shared low-level dep of both recharts and the app's own `cn()`
+          // helper. Pin it to the always-eager react-vendor chunk so recharts's
+          // internal usage imports it from there instead of Rollup hoisting a
+          // cross-chunk import that would drag the whole `charts` chunk (and
+          // recharts) onto the eager entry graph.
+          if (id.includes('clsx')) return 'react-vendor';
           if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) return 'charts';
           if (id.includes('react-router')) return 'router';
           if (id.includes('@tanstack')) return 'query';

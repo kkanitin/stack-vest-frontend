@@ -19,6 +19,7 @@ export function useStockHistory(
     queryFn: () => getStockHistory(token!, symbol!, range),
     enabled: !!token && !!symbol,
     staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
 

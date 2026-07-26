@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import ToastViewport from '../components/ToastViewport';
 
@@ -12,7 +12,6 @@ export interface Toast {
 }
 
 interface ToastContextType {
-  toasts: Toast[];
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
@@ -75,8 +74,13 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
   }, []);
 
+  const value = useMemo(
+    () => ({ success, error, info, dismiss }),
+    [success, error, info, dismiss]
+  );
+
   return (
-    <ToastContext.Provider value={{ toasts, success, error, info, dismiss }}>
+    <ToastContext.Provider value={value}>
       {children}
       <ToastViewport toasts={toasts} onDismiss={dismiss} />
     </ToastContext.Provider>

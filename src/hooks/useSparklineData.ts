@@ -16,6 +16,7 @@ export function useSparklineData(
     queryFn: () => getBatchHistory(token!, sorted, lookback),
     enabled: !!token && sorted.length > 0,
     staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   return { data: q.data, isLoading: q.isLoading };

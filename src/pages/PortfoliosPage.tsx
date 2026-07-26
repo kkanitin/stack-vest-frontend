@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -11,8 +11,9 @@ import { Button } from '@/components/ui/button';
 import PortfolioStatsHeader from '../components/PortfolioStatsHeader';
 import PortfolioCard from '../components/PortfolioCard';
 import PortfolioFormModal from '../components/PortfolioFormModal';
-import AnalyzePortfolioModal from '../components/AnalyzePortfolioModal';
 import './PortfoliosPage.css';
+
+const AnalyzePortfolioModal = lazy(() => import('../components/AnalyzePortfolioModal'));
 
 const PortfoliosPage: React.FC = () => {
   const { token } = useAuth();
@@ -25,6 +26,7 @@ const PortfoliosPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Portfolio | null>(null);
   const [analyzing, setAnalyzing] = useState<Portfolio | null>(null);
+  const [analyzeMounted, setAnalyzeMounted] = useState(false);
 
   const list = portfolios ?? [];
   const atLimit = list.length >= MAX_PORTFOLIOS;
@@ -112,7 +114,7 @@ const PortfoliosPage: React.FC = () => {
               portfolio={p}
               onEdit={openEdit}
               onDelete={handleDelete}
-              onAnalyze={setAnalyzing}
+              onAnalyze={p => { setAnalyzeMounted(true); setAnalyzing(p); }}
             />
           ))}
 
@@ -141,11 +143,15 @@ const PortfoliosPage: React.FC = () => {
         portfolio={editing}
       />
 
-      <AnalyzePortfolioModal
-        open={!!analyzing}
-        onClose={() => setAnalyzing(null)}
-        portfolio={analyzing}
-      />
+      {analyzeMounted && (
+        <Suspense fallback={null}>
+          <AnalyzePortfolioModal
+            open={!!analyzing}
+            onClose={() => setAnalyzing(null)}
+            portfolio={analyzing}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
