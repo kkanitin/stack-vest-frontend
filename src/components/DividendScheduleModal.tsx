@@ -233,7 +233,7 @@ const DividendBody: React.FC<{ events: DividendEvent[] }> = ({ events }) => {
 };
 
 const DividendScheduleModal: React.FC<DividendScheduleModalProps> = ({ open, onClose }) => {
-  const { data, isLoading, isError, refetch } = useDividendCalendar();
+  const { data, isLoading, isError, refetch } = useDividendCalendar(open);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>

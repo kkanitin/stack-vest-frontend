@@ -57,9 +57,14 @@ const WatchlistPage: React.FC = () => {
 
   // Sync alerts state from server values whenever the list loads or refreshes.
   useEffect(() => {
-    if (watchlistStatus === 'success') {
-      setAlerts(Object.fromEntries(entries.map(e => [e.item.symbol, e.item.alertsEnabled])));
-    }
+    if (watchlistStatus !== 'success') return;
+    setAlerts(prev => {
+      const next = Object.fromEntries(entries.map(e => [e.item.symbol, e.item.alertsEnabled]));
+      const keys = Object.keys(next);
+      return keys.length === Object.keys(prev).length && keys.every(s => prev[s] === next[s])
+        ? prev
+        : next;
+    });
   }, [entries, watchlistStatus]);
 
   const addedSymbols = useMemo(

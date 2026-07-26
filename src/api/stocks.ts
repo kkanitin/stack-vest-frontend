@@ -116,14 +116,6 @@ export interface BatchHistoryItem {
   points: HistoryPoint[];
 }
 
-export async function getBatchPriceChanges(
-  token: string,
-  symbols: string[]
-): Promise<StockPriceChange[]> {
-  if (!symbols.length) return [];
-  return Promise.all(symbols.map(symbol => getStockPriceChange(token, symbol)));
-}
-
 export async function getBatchHistory(
   token: string,
   symbols: string[],
