@@ -1,4 +1,4 @@
-import { getMe } from './users';
+import { getMe, AuthError } from './users';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -38,6 +38,30 @@ describe('getMe', () => {
       } as unknown as Response)
     );
     await expect(getMe('t')).rejects.toThrow('server exploded');
+  });
+
+  it.each([401, 403])('throws AuthError on a %i so the caller can drop the session', async (status) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status,
+        json: async () => ({ errorMessage: 'token revoked' }),
+      } as unknown as Response)
+    );
+    await expect(getMe('t')).rejects.toBeInstanceOf(AuthError);
+  });
+
+  it('does not throw AuthError on a 500, so a transient failure keeps the session', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: async () => ({ errorMessage: 'server exploded' }),
+      } as unknown as Response)
+    );
+    await expect(getMe('t')).rejects.not.toBeInstanceOf(AuthError);
   });
 
   it('surfaces a fallback message instead of a JSON parse error on a non-JSON error body', async () => {

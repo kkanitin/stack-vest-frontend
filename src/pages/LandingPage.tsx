@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useNavigate, NavLink, Outlet, useLocation } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '../components/ErrorBoundary';

@@ -1,4 +1,4 @@
-const API_BASE = `${import.meta.env.VITE_API_URL}/api/v1`;
+import { API_BASE } from './config';
 
 export interface WatchlistItem {
   id: string;
@@ -39,7 +39,7 @@ export async function addToWatchlist(
 }
 
 export async function deleteFromWatchlist(token: string, symbol: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/watchlist/${symbol}`, {
+  const res = await fetch(`${API_BASE}/watchlist/${encodeURIComponent(symbol)}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
