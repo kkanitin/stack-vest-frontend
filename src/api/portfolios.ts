@@ -4,7 +4,7 @@ import type {
   UpdatePositionBody,
 } from './portfolio';
 
-const API_BASE = `${import.meta.env.VITE_API_URL}/api/v1`;
+import { API_BASE } from './config';
 
 /**
  * A named portfolio belonging to the authenticated user.

@@ -8,11 +8,12 @@ This file provides guidance to AI coding agents when working with code in this r
 npm run dev       # Start dev server with HMR
 npm run build     # Type-check then bundle for production (tsc -b && vite build)
 npm run lint      # Run ESLint
+npm test          # Run the Vitest suite (watch mode; `npx vitest run` for one pass)
 npm run preview   # Serve the production build locally
 npm run deploy    # Deploy the dist folder to Cloudflare Pages
 ```
 
-No test runner is configured yet.
+Tests run under Vitest + Testing Library — see `vitest.config.ts` (jsdom environment, setup in `src/test/setup.ts`).
 
 ## Deployment
 
@@ -44,7 +45,7 @@ Connect this repository to Cloudflare Pages for automatic deployments on push:
 
 ## Architecture
 
-This is a feature-complete SPA. `src/main.tsx` mounts `src/App.tsx`, which wires the provider stack (React Query → Google OAuth → Auth → Toast) and a code-split React Router tree under a protected `/dashboard` shell (`src/pages/LandingPage.tsx`). Routing uses **React Router 7**, server state uses **TanStack Query 5** (feature hooks in `src/hooks/*` over a thin per-resource API layer in `src/api/*`, based at `${VITE_API_URL}/api/v1`), and auth is Google OAuth / One Tap with JWT session handling in `src/context/AuthContext.tsx`. See [`README.md`](./README.md) for the feature and architecture overview.
+This is a feature-complete SPA. `src/main.tsx` mounts `src/App.tsx`, which wires the provider stack (React Query → Google OAuth → Auth → Toast) and a code-split React Router tree under a protected `/dashboard` shell (`src/pages/LandingPage.tsx`). Routing uses **React Router 8**, server state uses **TanStack Query 5** (feature hooks in `src/hooks/*` over a thin per-resource API layer in `src/api/*`, based at `${VITE_API_URL}/api/v1`), and auth is Google OAuth / One Tap with JWT session handling in `src/context/AuthContext.tsx`. See [`README.md`](./README.md) for the feature and architecture overview.
 
 When adding features, keep in mind the React Compiler is intentionally disabled (noted in the project README) — do not enable it without discussion.
 

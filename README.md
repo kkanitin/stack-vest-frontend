@@ -37,7 +37,7 @@ StackVest is a single-page application that helps retail investors track their h
 |---|---|
 | UI | React 19.2, TypeScript ~5.6 |
 | Build | Vite 6 (Oxc transformer via `@vitejs/plugin-react-oxc`) |
-| Routing | React Router 7 |
+| Routing | React Router 8 |
 | Server state | TanStack Query 5 |
 | Charts | Recharts 3 |
 | Markdown | react-markdown |

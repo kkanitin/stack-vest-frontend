@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { useGoogleOneTapLogin } from '@react-oauth/google';
 import type { CredentialResponse } from '@react-oauth/google';
-import { getMe, createMe } from '../api/users';
+import { useQueryClient } from '@tanstack/react-query';
+import { getMe, createMe, AuthError } from '../api/users';
 import type { User } from '../api/users';
 
 /**
@@ -86,6 +87,10 @@ function readCachedSession(): { user: User | null; token: string | null } {
 }
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Read from context rather than importing the client from App.tsx — App.tsx
+  // imports this module, so a direct import would be a circular dependency.
+  // QueryClientProvider is mounted above AuthProvider, so the hook resolves.
+  const queryClient = useQueryClient();
   // Hydrate from cache up front so authenticated routes can paint immediately.
   const [{ user: cachedUser, token: cachedToken }] = useState(readCachedSession);
   const [user, setUser] = useState<User | null>(cachedUser);
@@ -99,8 +104,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // logout has already happened, and a ref's `.current` is always read live
   // at call time regardless of which render's closure ends up invoked.
   const loggedOutRef = useRef(false);
-  // Fallback logout scheduled for the token's real expiry when silent renewal
-  // fails but the current token is still valid (see `handleRenewFailed`).
+  // Hard logout scheduled for the current token's real expiry. Armed for every
+  // token by the token-keyed effect below, not only when renewal fails.
   const expiryLogoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearExpiryLogoutTimer = () => {
     if (expiryLogoutTimerRef.current) {
@@ -120,28 +125,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       handleRenewFailed();
       return;
     }
-    clearExpiryLogoutTimer();
     setToken(resp.credential);
     localStorage.setItem('token', resp.credential);
-    // The token-keyed effect below reschedules the next renewal automatically.
+    // The token-keyed effect below rearms both timers automatically.
   };
 
   // Silent renewal isn't possible right now (no live Google session, FedCM/
-  // third-party cookies blocked, etc). If the current token is still valid,
-  // don't punish the user with an early logout — let them keep working and
-  // log out only once the token actually expires.
+  // third-party cookies blocked, etc). Nothing to do: the current token is
+  // left to run out on its own, and the hard-expiry logout armed by the
+  // token-keyed effect below fires when it actually expires. Deliberately does
+  // not read `token` — that closure can be stale when a renewal callback
+  // resolves late, and the effect already owns the authoritative expiry.
   const handleRenewFailed = () => {
     setRenewing(false);
-    if (loggedOutRef.current) return;
-    const expMs = getTokenExpMs(token);
-    if (expMs !== null && expMs > Date.now()) {
-      clearExpiryLogoutTimer();
-      expiryLogoutTimerRef.current = setTimeout(() => {
-        if (!loggedOutRef.current) logout();
-      }, expMs - Date.now());
-      return;
-    }
-    logout();
   };
 
   useGoogleOneTapLogin({
@@ -156,20 +152,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     },
   });
 
-  // Schedule a silent renewal shortly before the current token expires. Re-runs
-  // whenever the token changes (login or a successful renewal), so each fresh
-  // token arms the next cycle.
+  // Arm both timers for the current token: a silent renewal shortly before it
+  // expires, and a hard logout at the real expiry. The hard logout is armed
+  // unconditionally — it previously lived only in the renewal-failure path, so
+  // a One Tap prompt the user simply ignored (which fires no callback at all
+  // under `cancel_on_tap_outside: false`) left the session authenticated long
+  // past the token's expiry, since `isAuthenticated` derives from `user`, not
+  // from token validity. Re-runs whenever the token changes (login or a
+  // successful renewal), so each fresh token arms the next cycle.
   useEffect(() => {
     if (!token) return;
     const expMs = getTokenExpMs(token);
     if (expMs === null) return;
-    const delay = expMs - Date.now() - RENEW_BUFFER_MS;
-    if (delay <= 0) {
-      setRenewing(true);
+
+    const untilExpiry = expMs - Date.now();
+    if (untilExpiry <= 0) {
+      logout();
       return;
     }
-    const id = setTimeout(() => setRenewing(true), delay);
-    return () => clearTimeout(id);
+
+    clearExpiryLogoutTimer();
+    expiryLogoutTimerRef.current = setTimeout(() => {
+      if (!loggedOutRef.current) logout();
+    }, untilExpiry);
+
+    const renewDelay = untilExpiry - RENEW_BUFFER_MS;
+    if (renewDelay <= 0) {
+      setRenewing(true);
+      return clearExpiryLogoutTimer;
+    }
+    const renewTimer = setTimeout(() => setRenewing(true), renewDelay);
+    return () => {
+      clearTimeout(renewTimer);
+      clearExpiryLogoutTimer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   useEffect(() => {
@@ -178,7 +195,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
     // Background revalidation: confirm the cached token is still accepted by the
-    // server and refresh the user. An invalid/revoked token logs the user out.
+    // server and refresh the user. A token the server rejects logs the user out.
     let cancelled = false;
     (async () => {
       try {
@@ -188,11 +205,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(freshUser);
           localStorage.setItem('user', JSON.stringify(freshUser));
         } else {
+          // Confirmed 404 — the token is fine, there is just no user record.
           logout();
         }
-      } catch {
-        // Network error or non-404 API failure: keep the optimistic session
-        // rather than logging out (getMe only resolves null on a confirmed 404).
+      } catch (e) {
+        if (cancelled) return;
+        // A rejected token (expired, revoked, wrong audience) is the one case
+        // where the cached session is provably dead. Anything else — offline,
+        // DNS, CORS, a 5xx — keeps the optimistic session rather than punting
+        // the user to the login screen over a transient failure.
+        if (e instanceof AuthError) logout();
       } finally {
         if (!cancelled) setIsInitializing(false);
       }
@@ -220,6 +242,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setToken(null);
     clearStoredSession();
+    // Every query key here is user-agnostic (['portfolios'], ['watchlist'], …),
+    // and signing out does not reload the page, so without this the next
+    // account to sign in inside this tab would be served the previous
+    // account's cached data from staleTime before its own refetch resolves.
+    // Cleared after setToken(null) so no in-flight refetch can repopulate it.
+    queryClient.clear();
   };
 
   return (
