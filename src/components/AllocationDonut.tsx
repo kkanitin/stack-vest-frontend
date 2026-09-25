@@ -56,7 +56,8 @@ const AllocationDonut: React.FC<AllocationDonutProps> = ({ positions, isLoading 
             </Pie>
             {slices.length > 0 && (
               <Tooltip
-                formatter={(_value: number, name: string) => {
+                formatter={(_value, rawName) => {
+                  const name = String(rawName);
                   const slice = slices.find(s => s.symbol === name);
                   return [`${slice ? slice.pct.toFixed(1) : '0.0'}%`, name];
                 }}

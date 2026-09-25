@@ -19,6 +19,10 @@ export default defineConfig([
     ],
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // React Compiler rules added in eslint-plugin-react-hooks v7. Existing code
+      // predates them; kept as warnings until those effects are refactored.
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },

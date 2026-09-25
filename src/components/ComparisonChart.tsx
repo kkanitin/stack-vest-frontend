@@ -86,8 +86,8 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({ symbols, range }) => 
         />
         <Tooltip
           contentStyle={{ background: 'var(--surface-high)', border: '1px solid var(--border-strong)', borderRadius: 6, fontSize: 12 }}
-          labelFormatter={fmtDate}
-          formatter={(v: number, name: string) => [`${v.toFixed(2)}`, name]}
+          labelFormatter={label => fmtDate(String(label))}
+          formatter={(v, name) => [`${Number(v).toFixed(2)}`, String(name)]}
         />
         <Legend
           wrapperStyle={{ fontSize: 12, fontFamily: 'var(--mono)', paddingTop: 8 }}

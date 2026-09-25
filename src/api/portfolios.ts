@@ -272,7 +272,7 @@ export async function analyzePortfolio(
       if (payload === '[DONE]') return;
       // Each frame is an OpenAI/Groq chat-completion chunk; the text we want is the
       // streamed content delta. Skip keepalives / chunks without a content delta.
-      let content = '';
+      let content: string;
       try {
         const parsed = JSON.parse(payload);
         content = parsed?.choices?.[0]?.delta?.content ?? '';
