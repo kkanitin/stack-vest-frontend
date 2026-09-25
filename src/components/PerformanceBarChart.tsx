@@ -69,7 +69,10 @@ const PerformanceBarChart: React.FC<PerformanceBarChartProps> = ({ entries, peri
           <Tooltip
             cursor={{ fill: 'var(--surface-high)' }}
             contentStyle={{ background: 'var(--surface-high)', border: '1px solid var(--border-strong)', borderRadius: 6, fontSize: 12 }}
-            formatter={(v: number) => [`${v > 0 ? '+' : ''}${v.toFixed(2)}%`, period]}
+            formatter={raw => {
+              const v = Number(raw);
+              return [`${v > 0 ? '+' : ''}${v.toFixed(2)}%`, period];
+            }}
           />
           <Bar dataKey="value" radius={[0, 3, 3, 0]} isAnimationActive={false}>
             {sortedData.map((d, i) => {

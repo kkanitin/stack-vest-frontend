@@ -99,8 +99,8 @@ const AssetPriceChart: React.FC<AssetPriceChartProps> = ({ symbol, currency }) =
                   fontSize: 12,
                   fontFamily: 'var(--mono)',
                 }}
-                labelFormatter={fmtDate}
-                formatter={(v: number) => [fmtTooltip(v), 'Close']}
+                labelFormatter={label => fmtDate(String(label))}
+                formatter={v => [fmtTooltip(Number(v)), 'Close']}
               />
               <Line
                 type="monotone"

@@ -260,7 +260,7 @@ const PortfolioDetailPage: React.FC = () => {
         open={assetModalOpen}
         onClose={() => setAssetModalOpen(false)}
         editSymbol={editSymbol}
-        portfolioId={id}
+        portfolioId={id!}
       />
       <PortfolioFormModal
         open={editPortfolioOpen}

@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), cloudflare()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   server: {
@@ -24,20 +24,23 @@ export default defineConfig({
   build: {
     // Explicit budget — kept tight now that vendors are split out.
     chunkSizeWarningLimit: 600,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-          // clsx is a shared low-level dep of both recharts and the app's own `cn()`
-          // helper. Pin it to the always-eager react-vendor chunk so recharts's
-          // internal usage imports it from there instead of Rollup hoisting a
-          // cross-chunk import that would drag the whole `charts` chunk (and
-          // recharts) onto the eager entry graph.
-          if (id.includes('clsx')) return 'react-vendor';
-          if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) return 'charts';
-          if (id.includes('react-router')) return 'router';
-          if (id.includes('@tanstack')) return 'query';
-          if (id.includes('react-dom') || id.includes('scheduler') || id.includes('/react/')) return 'react-vendor';
+        // Rolldown groups pull their dependencies in recursively, and the
+        // higher-priority group wins a contested module. react-vendor must rank
+        // highest: otherwise `charts` (recharts depends on react) absorbs React and
+        // the whole charts chunk lands on the eager entry graph.
+        codeSplitting: {
+          groups: [
+            // clsx is a shared low-level dep of both recharts and the app's own
+            // `cn()` helper. Pin it to the always-eager react-vendor chunk so
+            // recharts's internal usage imports it from there instead of dragging
+            // the `charts` chunk onto the eager entry graph.
+            { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|scheduler|clsx)[\\/]/, priority: 40 },
+            { name: 'router', test: /node_modules[\\/]react-router/, priority: 30 },
+            { name: 'query', test: /node_modules[\\/]@tanstack[\\/]/, priority: 20 },
+            { name: 'charts', test: /node_modules[\\/](recharts|d3-|victory)/, priority: 10 },
+          ],
         },
       },
     },

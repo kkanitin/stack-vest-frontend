@@ -35,12 +35,12 @@ Connect this repository to Cloudflare Pages for automatic deployments on push:
 - **Build Output Directory**: `dist`
 - **Root Directory**: `/` (or `frontend/` if in a monorepo)
 
-*Note: With `wrangler.toml` present, Cloudflare Pages can also use `wrangler deploy` to perform the deployment, but standard Git integration is preferred. If updating to Wrangler v4+, ensure your build environment uses Node.js v22 or higher.*
+*Note: With `wrangler.toml` present, Cloudflare Pages can also use `wrangler deploy` to perform the deployment, but standard Git integration is preferred. If updating to Wrangler v4+, ensure your build environment uses Node.js v22.12 or higher (also required by Vite 8 and Vitest 5).*
 
 ## Stack
 
-- **React 19** + **TypeScript 5.6** + **Vite 6** (with Oxc transformer via `@vitejs/plugin-react-oxc`)
-- ESLint v9 flat config (`eslint.config.js`) — typescript-eslint, react-hooks, react-refresh plugins
+- **React 19** + **TypeScript 6.0** + **Vite 8** (Rolldown bundler, Oxc transforms via `@vitejs/plugin-react`)
+- ESLint v10 flat config (`eslint.config.js`) — typescript-eslint, react-hooks, react-refresh plugins
 - `tsconfig.app.json` enforces `noUnusedLocals`, `noUnusedParameters`, strict mode, `ES2023` target, `bundler` module resolution
 
 ## Architecture
