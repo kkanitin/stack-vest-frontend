@@ -45,7 +45,25 @@ Connect this repository to Cloudflare Pages for automatic deployments on push:
 
 ## Architecture
 
-This is a feature-complete SPA. `src/main.tsx` mounts `src/App.tsx`, which wires the provider stack (React Query → Google OAuth → Auth → Toast) and a code-split React Router tree under a protected `/dashboard` shell (`src/pages/LandingPage.tsx`). Routing uses **React Router 8**, server state uses **TanStack Query 5** (feature hooks in `src/hooks/*` over a thin per-resource API layer in `src/api/*`, based at `${VITE_API_URL}/api/v1`), and auth is Google OAuth / One Tap with JWT session handling in `src/context/AuthContext.tsx`. See [`README.md`](./README.md) for the feature and architecture overview.
+See the [docs index](./docs/index.md):
+- [`docs/architecture.md`](./docs/architecture.md) — provider stack, routing, data layer (`src/api/*` → `src/hooks/*`), auth flow, code-splitting, client-side limits.
+- [`docs/features/`](./docs/features/index.md) — one page per user-facing feature: route, entry point, components, hooks, and API calls.
+
+### Read the Docs First (Mandatory)
+
+**Before implementing or changing a feature, start at [`docs/index.md`](./docs/index.md).** Read the relevant page in `docs/features/` and `docs/architecture.md` to find the route, entry point, components, hooks, and API calls involved, then confirm against the source — the code is the source of truth if the two disagree (and fix the docs as part of your change).
+
+### Documentation Maintenance (Mandatory)
+
+**Every change MUST keep the `docs/` directory in sync with the code.** Treat docs updates as part of the change, not a follow-up. Before finishing any task, check whether it affects documented behavior and update the docs in the same change:
+
+- **New feature** → add `docs/features/<feature-name>.md` and a row in `docs/features/index.md`.
+- **Changed feature** (route, entry point, components, hooks, API calls, limits, behavior) → update that feature's page.
+- **Removed feature** → delete its page and remove it from `docs/features/index.md`.
+- **Architectural change** (provider stack, routing, data layer, auth flow, code-splitting, client-side limits, project structure, stack/dependency versions) → update `docs/architecture.md`.
+- **New or renamed doc** → link it from `docs/index.md`.
+
+Docs must describe the code as it is — verify names and paths against the source, and never leave a link pointing to a moved or deleted file.
 
 When adding features, keep in mind the React Compiler is intentionally disabled (noted in the project README) — do not enable it without discussion.
 
