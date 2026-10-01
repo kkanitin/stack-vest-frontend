@@ -34,6 +34,18 @@ export function makeKey(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
+/** First and last day of month `m` (1-12) as `YYYY-MM-DD` — the `from`/`to` of a
+ *  one-month calendar request. Day 0 of the next month is the last day of this one. */
+export function monthRange(y: number, m: number): { from: string; to: string } {
+  return { from: makeKey(y, m, 1), to: makeKey(y, m, new Date(y, m, 0).getDate()) };
+}
+
+/** The calendar key the backend sorts and filters an event on: its payment date, or
+ *  the ex-date when the provider supplied no payment date. */
+export function referenceKey(ev: { paymentDate: string; exDate: string }): string {
+  return ymd(isAbsent(ev.paymentDate) ? ev.exDate : ev.paymentDate);
+}
+
 /** Long heading for the side panel, e.g. "Monday, March 11". Safe because the Date is
  *  constructed from integers (local), not parsed from a UTC string. */
 export function formatLongDate(y: number, m: number, d: number): string {

@@ -90,6 +90,31 @@ describe('PortfolioDetailPage', () => {
     expect(screen.getByRole('button', { name: /add asset/i })).toBeEnabled();
   });
 
+  it('shows a flat day as neutral: unsigned and without the gain colour', () => {
+    mockedUsePositions.mockReturnValue({
+      data: makePositions(2),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof usePortfolioPositionsById>);
+    const { container } = renderPage();
+
+    expect(screen.getByText('(0.00%)')).toBeInTheDocument();
+    expect(container.querySelector('.pfd-perf--pos')).toBeNull();
+    expect(container.querySelector('.pfd-perf--neg')).toBeNull();
+  });
+
+  it('colours a losing day as a loss', () => {
+    mockedUsePositions.mockReturnValue({
+      data: makePositions(2).map(p => ({ ...p, change24h: -5 })),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof usePortfolioPositionsById>);
+    const { container } = renderPage();
+
+    expect(container.querySelector('.pfd-perf--neg')).not.toBeNull();
+    expect(screen.getByText('(-5.00%)')).toBeInTheDocument();
+  });
+
   it('removes a position via the portfolio-scoped endpoint when confirmed', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     mockedUsePositions.mockReturnValue({

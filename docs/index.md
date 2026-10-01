@@ -9,4 +9,3 @@
 
 - [AGENTS.md](../AGENTS.md) — agent guidance: commands, deployment, CSS conventions, env vars, Git policy
 - [README.md](../README.md) — project overview and getting started
-- [StackVest UI Skill](../skills/stackvest-ui/SKILL.md) — design system and UI review checklist

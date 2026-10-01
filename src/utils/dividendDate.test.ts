@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { ymd, isAbsent, parseYmd, makeKey, formatLongDate, formatMonthLabel } from './dividendDate';
+import {
+  ymd,
+  isAbsent,
+  parseYmd,
+  makeKey,
+  monthRange,
+  referenceKey,
+  formatLongDate,
+  formatMonthLabel,
+} from './dividendDate';
 
 describe('dividendDate', () => {
   it('takes the calendar-date prefix regardless of time/zone', () => {
@@ -22,6 +31,22 @@ describe('dividendDate', () => {
   it('builds a zero-padded key', () => {
     expect(makeKey(2026, 7, 5)).toBe('2026-07-05');
     expect(makeKey(2026, 12, 31)).toBe('2026-12-31');
+  });
+
+  it('spans the first to the last day of a month', () => {
+    expect(monthRange(2028, 2)).toEqual({ from: '2028-02-01', to: '2028-02-29' }); // leap year
+    expect(monthRange(2026, 4)).toEqual({ from: '2026-04-01', to: '2026-04-30' });
+    // December must not roll into the next year.
+    expect(monthRange(2026, 12)).toEqual({ from: '2026-12-01', to: '2026-12-31' });
+  });
+
+  it('keys an event by its payment date, else its ex-date', () => {
+    expect(
+      referenceKey({ paymentDate: '2026-07-15T00:00:00Z', exDate: '2026-07-13T00:00:00Z' })
+    ).toBe('2026-07-15');
+    expect(
+      referenceKey({ paymentDate: '0001-01-01T00:00:00Z', exDate: '2026-07-13T00:00:00Z' })
+    ).toBe('2026-07-13');
   });
 
   it('formats labels from integers (no UTC parse)', () => {

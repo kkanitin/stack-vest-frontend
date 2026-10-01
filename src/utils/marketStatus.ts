@@ -1,4 +1,4 @@
-import type { PortfolioPosition } from '../api/portfolio';
+import { changeTone } from './format';
 
 export type MarketSentiment = 'bullish' | 'bearish' | 'mixed' | 'empty';
 
@@ -26,7 +26,11 @@ const LABELS: Record<Exclude<MarketSentiment, 'empty'>, { label: string; descrip
   },
 };
 
-export function computeMarketStatus(positions: PortfolioPosition[]): MarketStatus {
+/**
+ * Direction of the user's holdings over the last 24 hours. Pass one entry per symbol
+ * (see `mergeHoldings`) so a ticker held in several portfolios is counted once.
+ */
+export function computeMarketStatus(positions: { change24h: number }[]): MarketStatus {
   if (positions.length === 0) {
     return {
       sentiment: 'empty',
@@ -42,8 +46,9 @@ export function computeMarketStatus(positions: PortfolioPosition[]): MarketStatu
   let downCount = 0;
   let flatCount = 0;
   for (const p of positions) {
-    if (p.change24h > 0) upCount++;
-    else if (p.change24h < 0) downCount++;
+    const tone = changeTone(p.change24h);
+    if (tone === 'positive') upCount++;
+    else if (tone === 'negative') downCount++;
     else flatCount++;
   }
 

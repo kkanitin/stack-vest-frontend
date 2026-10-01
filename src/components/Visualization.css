@@ -43,16 +43,16 @@
   gap: 24px;
 }
 
-.viz-row--3 {
+.viz-row--hero {
+  grid-template-columns: 2fr 1fr;
+}
+
+.viz-row--holdings {
+  grid-template-columns: 1fr 2fr;
+}
+
+.viz-row--support {
   grid-template-columns: repeat(3, 1fr);
-}
-
-.viz-row--allocation {
-  grid-template-columns: 1fr 2fr;
-}
-
-.viz-row--sentiment {
-  grid-template-columns: 1fr 2fr;
 }
 
 .viz-card {
@@ -69,10 +69,25 @@
   margin-bottom: 14px;
 }
 
+/* The one figure on the page that should outrank everything else. */
+.viz-value--hero {
+  font-size: clamp(32px, 3.6vw, 48px);
+  letter-spacing: -0.02em;
+}
+
 .viz-card-meta {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.viz-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .viz-card-meta-sub {
@@ -119,8 +134,21 @@
   color: var(--text-dim);
 }
 
-.viz-status-badge {
-  display: inline-block;
+.viz-movers {
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.viz-movers-title {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0 0 4px;
 }
 
 .viz-skel--title {
@@ -135,13 +163,13 @@
   margin-bottom: 14px;
 }
 
-.viz-activity {
+.viz-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.viz-activity-row {
+.viz-list-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -149,8 +177,28 @@
   gap: 12px;
 }
 
-.viz-activity-row + .viz-activity-row {
+.viz-list-row + .viz-list-row {
   border-top: 1px solid var(--border);
+}
+
+.viz-mover-change {
+  font-family: var(--mono);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.viz-activity-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Fixed width so the text column lines up whichever badge (BUY / SELL / UPDATE) leads the row. */
+.viz-activity-badge {
+  font-family: var(--mono);
+  flex-shrink: 0;
+  min-width: 60px;
 }
 
 .viz-activity-text {
@@ -166,26 +214,19 @@
 }
 
 .viz-activity-detail {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.viz-activity-main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.viz-activity-symbol {
+.viz-activity-time {
   font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
   color: var(--text-dim);
-  background: var(--surface-highest);
-  border-radius: var(--r);
-  padding: 3px 7px;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -196,10 +237,13 @@
 
 /* Allocation */
 
+/* The allocation card is a narrow column beside the holdings table, so the donut sits
+   above its legend; once the page drops to one column it has room to sit beside it. */
 .viz-allocation {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
 }
 
 .viz-donut-wrap {
@@ -207,6 +251,7 @@
   width: 160px;
   height: 160px;
   flex-shrink: 0;
+  align-self: center;
 }
 
 .viz-donut-overlay {
@@ -322,7 +367,7 @@
 
 .viz-td {
   padding: 12px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border);
   color: var(--text);
 }
 
@@ -335,9 +380,43 @@
   color: var(--text-h);
 }
 
+.viz-tr:last-child .viz-td {
+  border-bottom: none;
+}
+
 .viz-asset {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+}
+
+.viz-weight {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.viz-weight-track {
+  width: 64px;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--surface-highest);
+  overflow: hidden;
+}
+
+.viz-weight-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+}
+
+.viz-weight-pct {
+  font-family: var(--mono);
+  color: var(--text-h);
+  min-width: 48px;
+  text-align: right;
 }
 
 .viz-asset-symbol {
@@ -347,9 +426,13 @@
 }
 
 .viz-asset-name {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
   margin-top: 2px;
+  max-width: 28ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .viz-change.positive {
@@ -432,11 +515,6 @@
   margin-bottom: 14px;
 }
 
-.viz-skel--activity {
-  height: 36px;
-  width: 100%;
-}
-
 .viz-skel--donut {
   width: 160px;
   height: 160px;
@@ -481,36 +559,47 @@
   text-decoration: underline;
 }
 
-@media (max-width: 1024px) {
-  .viz-row--3 {
-    grid-template-columns: repeat(2, 1fr);
+/* Three supporting cards get cramped before the sidebar collapses: let recent
+   activity take a full row and the two sentiment cards share the next. */
+@media (max-width: 1360px) {
+  .viz-row--support {
+    grid-template-columns: 1fr 1fr;
   }
-  .viz-row--3 .viz-card:first-child {
+  .viz-row--support > :first-child {
     grid-column: 1 / -1;
   }
-  .viz-row--allocation {
+}
+
+@media (max-width: 1024px) {
+  .viz-row--hero,
+  .viz-row--holdings,
+  .viz-row--support {
     grid-template-columns: 1fr;
   }
-  .viz-row--sentiment {
-    grid-template-columns: 1fr;
+  .viz-row--support > :first-child {
+    grid-column: auto;
+  }
+  .viz-allocation {
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
   }
 }
 
 @media (max-width: 640px) {
-  .viz-row--3 {
-    grid-template-columns: 1fr;
+  /* The table would otherwise scroll sideways; the allocation card already shows weights. */
+  .viz-col-weight {
+    display: none;
   }
-  .viz-row--3 .viz-card:first-child {
-    grid-column: auto;
+  .viz-asset-name {
+    max-width: 18ch;
   }
   .viz-allocation {
     flex-direction: column;
     align-items: stretch;
   }
-  .viz-donut-wrap {
-    align-self: center;
-  }
-  .viz-value {
+  .viz-value,
+  .viz-value--hero {
     font-size: 26px;
   }
   .viz-head {
@@ -519,5 +608,100 @@
   }
   .viz-add-btn {
     align-self: flex-start;
+  }
+}
+
+/* Recorded value trend (inside the hero card) */
+
+.viz-trend {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.viz-trend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.viz-trend-title {
+  white-space: nowrap;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.viz-ranges {
+  display: flex;
+  gap: 4px;
+}
+
+.viz-range {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.viz-range:hover {
+  color: var(--text);
+  background: var(--surface-highest);
+}
+
+.viz-range--on {
+  color: var(--primary);
+  background: var(--primary-bg);
+  border-color: var(--primary-border);
+}
+
+.viz-range:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* The line and its hover dot use currentColor, so the series colour is set here. */
+.viz-trend-chart {
+  height: 200px;
+  color: var(--primary);
+}
+
+.viz-skel--chart {
+  height: 200px;
+}
+
+.viz-trend-empty {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin: 0;
+  max-width: 60ch;
+}
+
+.viz-trend-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 10px 0 0;
+}
+
+@media (max-width: 640px) {
+  .viz-range {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    min-height: var(--tap-min);
   }
 }

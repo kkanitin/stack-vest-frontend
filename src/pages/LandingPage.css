@@ -79,16 +79,6 @@
   gap: 2px;
 }
 
-.sidebar-nav-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  padding: 0 12px;
-  margin: 0 0 12px;
-}
-
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -124,14 +114,6 @@
   width: 2px;
   background: var(--primary);
   border-radius: 2px 0 0 2px;
-}
-
-.sidebar-link--child {
-  padding-left: 28px;
-}
-
-.sidebar-section-label {
-  margin-top: 12px;
 }
 
 .sidebar-link-icon {
@@ -231,7 +213,10 @@
   background: var(--bg);
 }
 
+/* The sidebar already carries the brand, so the topbar repeats it only while the
+   sidebar is off-canvas — and not on phones, where the topbar has no room for it. */
 .main-topbar-brand {
+  display: none;
   font-family: var(--sans);
   font-size: 14px;
   font-weight: 600;
@@ -239,9 +224,9 @@
   letter-spacing: -0.005em;
 }
 
-@media (max-width: 767px) {
+@media (min-width: 768px) and (max-width: 1024px) {
   .main-topbar-brand {
-    display: none;
+    display: inline;
   }
 }
 
@@ -300,51 +285,12 @@
 .main-footer {
   padding: 18px 40px;
   border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   font-size: 12px;
   color: var(--text-dim);
 }
 
 .main-footer-copy {
   letter-spacing: 0.02em;
-}
-
-.main-footer-links {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.footer-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.footer-link {
-  color: var(--text-dim);
-  text-decoration: none;
-  transition: color 150ms ease;
-}
-
-.footer-link:hover {
-  color: var(--text-h);
-}
-
-.live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 0 0 var(--success);
-  animation: livepulse 2s ease-in-out infinite;
-}
-
-@keyframes livepulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
 }
 
 /* ── Hamburger (mobile only) ─────────────────────────────── */
@@ -417,13 +363,5 @@
     display: flex;
     min-width: var(--tap-min);
     min-height: var(--tap-min);
-  }
-}
-
-@media (max-width: 540px) {
-  .main-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
   }
 }

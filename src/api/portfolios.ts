@@ -24,11 +24,33 @@ export interface Portfolio {
   assetCount?: number;
 }
 
-/** Aggregate stats for the Portfolios header. ASSUMED endpoint. */
+/**
+ * Aggregate stats across every portfolio (`GET /portfolios/summary`), shown on the
+ * Portfolios header and the Overview. `changePct` is the 30-day change of today's
+ * holdings at today's share counts — a back-test, not tracked account history.
+ */
 export interface PortfoliosSummary {
   totalValue: number;
   changePct: number;
   diversificationScore: number; // 0-100
+}
+
+export type ActivityTone = 'positive' | 'negative' | 'neutral';
+
+/**
+ * One row of the activity feed. `portfolioId` and `portfolioName` are set by the
+ * cross-portfolio feed (`GET /portfolios/activity`).
+ */
+export interface PortfolioActivity {
+  id: string;
+  symbol?: string;
+  label: string;
+  detail: string;
+  tone: ActivityTone;
+  badge: string;
+  timestamp: string;
+  portfolioId?: string;
+  portfolioName?: string;
 }
 
 export interface CreatePortfolioBody {
@@ -121,7 +143,6 @@ export async function deletePortfolio(token: string, id: string): Promise<void> 
   throw new Error(data.errorMessage || 'Failed to delete portfolio');
 }
 
-/** ASSUMED endpoint: GET /portfolios/summary. */
 export async function getPortfoliosSummary(token: string): Promise<PortfoliosSummary> {
   const res = await fetch(`${API_BASE}/portfolios/summary`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -129,6 +150,60 @@ export async function getPortfoliosSummary(token: string): Promise<PortfoliosSum
   const data = await res.json();
   if (res.ok && data.code === 200) return data.result as PortfoliosSummary;
   throw new Error(data.errorMessage || 'Failed to load portfolios summary');
+}
+
+export type ValueHistoryRange = '7D' | '30D' | '90D' | '1Y' | 'All';
+
+/** The user's total value across all portfolios as recorded on one UTC day (`YYYY-MM-DD`). */
+export interface ValuePoint {
+  date: string;
+  value: number;
+}
+
+export interface ValueHistory {
+  range: ValueHistoryRange;
+  points: ValuePoint[];
+}
+
+/**
+ * Recorded daily total value, oldest first (`GET /portfolios/history`). The server
+ * records it every three hours, so the last point can trail the live total by that much, and
+ * history only exists from the day recording began.
+ */
+export async function getPortfolioValueHistory(
+  token: string,
+  range: ValueHistoryRange
+): Promise<ValueHistory> {
+  const res = await fetch(`${API_BASE}/portfolios/history?range=${range}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (res.ok && data.code === 200) return data.result as ValueHistory;
+  throw new Error(data.errorMessage || 'Failed to load value history');
+}
+
+/**
+ * Every position across all of the user's portfolios (`GET /portfolios/positions`), one
+ * row per portfolio holding. One request, however many portfolios there are: the backend
+ * rate-limits bursts per user, so the Overview must not ask each portfolio separately.
+ */
+export async function getAllPositions(token: string): Promise<PortfolioPosition[]> {
+  const res = await fetch(`${API_BASE}/portfolios/positions`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (res.ok && data.code === 200) return data.result as PortfolioPosition[];
+  throw new Error(data.errorMessage || 'Failed to load positions');
+}
+
+/** Newest-first activity across all portfolios (`GET /portfolios/activity`). The server accepts `limit` 1–50. */
+export async function getRecentActivity(token: string, limit: number): Promise<PortfolioActivity[]> {
+  const res = await fetch(`${API_BASE}/portfolios/activity?limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (res.ok && data.code === 200) return data.result as PortfolioActivity[];
+  throw new Error(data.errorMessage || 'Failed to load recent activity');
 }
 
 // ---------------------------------------------------------------------------

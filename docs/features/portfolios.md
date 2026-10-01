@@ -9,7 +9,7 @@ Create, edit, and delete multiple named portfolios, each with a summary stats he
 
 | Component | Purpose |
 |---|---|
-| `PortfolioStatsHeader` | Aggregate stats across all portfolios |
+| `PortfolioStatsHeader` | Aggregate stats across all portfolios; the change figure is coloured by its sign, neutral at zero |
 | `PortfolioCard` | One card per portfolio, links to [Portfolio detail](./portfolio-detail.md) |
 | `PortfolioFormModal` | Create / rename a portfolio |
 | `AnalyzePortfolioModal` | Lazy-loaded [AI Strategy Analysis](./ai-strategy-analysis.md) |

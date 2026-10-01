@@ -23,19 +23,42 @@ export interface DividendCalendarParams {
   to?: string;
 }
 
-/** `GET /dividends/calendar` — upcoming dividend payouts for the authenticated user's
- *  holdings (forward window of roughly today → today + 75 days). `from`/`to` narrow the
- *  view within that window; this UI omits them and filters client-side. */
+/** The largest page the endpoint serves. */
+const PAGE_SIZE = 100;
+
+/** `GET /dividends/calendar` — dividend payouts for the authenticated user's holdings
+ *  whose reference date (payment date, else ex-date) falls within `from`..`to`. The
+ *  endpoint honors the requested range, past months included, and is paginated: this
+ *  walks every page and returns the rows concatenated, in the backend's order
+ *  (reference date, then symbol). `signal` aborts the walk (a month stepped away from). */
 export async function getDividendCalendar(
   token: string,
-  params: DividendCalendarParams = {}
+  params: DividendCalendarParams = {},
+  signal?: AbortSignal
 ): Promise<DividendEvent[]> {
   const qs = new URLSearchParams();
   if (params.from) qs.set('from', params.from);
   if (params.to) qs.set('to', params.to);
-  const url = `${API_BASE}/dividends/calendar${qs.toString() ? `?${qs}` : ''}`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  const data = await res.json();
-  if (res.ok && data.code === 200) return data.results as DividendEvent[];
-  throw new Error(data.errorMessage || 'Failed to fetch dividend calendar');
+  qs.set('size', String(PAGE_SIZE));
+
+  const events: DividendEvent[] = [];
+  for (let page = 1; ; page++) {
+    qs.set('page', String(page));
+    const res = await fetch(`${API_BASE}/dividends/calendar?${qs}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal,
+    });
+    const data = await res.json();
+    if (!res.ok || data.code !== 200) {
+      throw new Error(data.errorMessage || 'Failed to fetch dividend calendar');
+    }
+    const rows = (data.results ?? []) as DividendEvent[];
+    events.push(...rows);
+    // Stop on a short page or once `meta.total` is reached; without a total there is
+    // nothing to page towards.
+    const total = data.meta?.total;
+    if (typeof total !== 'number' || rows.length < PAGE_SIZE || events.length >= total) {
+      return events;
+    }
+  }
 }

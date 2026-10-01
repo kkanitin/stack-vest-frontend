@@ -1,4 +1,4 @@
-import { totalNetValue, change24h } from './portfolioStats';
+import { totalNetValue, change24h, changeUsdFromPct } from './portfolioStats';
 import type { PortfolioPosition } from '../api/portfolio';
 
 function pos(overrides: Partial<PortfolioPosition>): PortfolioPosition {
@@ -22,6 +22,20 @@ describe('totalNetValue', () => {
 
   it('returns 0 for an empty list', () => {
     expect(totalNetValue([])).toBe(0);
+  });
+});
+
+describe('changeUsdFromPct', () => {
+  it('recovers the dollar change from the current value and the percentage', () => {
+    expect(changeUsdFromPct(110, 10)).toBeCloseTo(10, 6);  // was 100
+    expect(changeUsdFromPct(90, -10)).toBeCloseTo(-10, 6); // was 100
+    expect(changeUsdFromPct(500, 0)).toBe(0);
+  });
+
+  it('returns null when there is nothing to measure against', () => {
+    expect(changeUsdFromPct(0, 5)).toBeNull();
+    expect(changeUsdFromPct(100, -100)).toBeNull();
+    expect(changeUsdFromPct(100, NaN)).toBeNull();
   });
 });
 
