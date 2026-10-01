@@ -1,25 +1,25 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { usePortfolioSummary } from '../hooks/usePortfolioSummary';
+import { usePortfoliosSummary } from '../hooks/usePortfoliosSummary';
+import { fmtMoney, fmtPct, fmtSignedMoney, changeTone } from '../utils/format';
+import type { ChangeTone } from '../utils/format';
+import { changeUsdFromPct } from '../utils/portfolioStats';
+import PortfolioValueChart from './PortfolioValueChart';
 import './Visualization.css';
 
-function fmtMoney(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return '—';
-  return `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function fmtPct(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return '—';
-  const sign = n >= 0 ? '+' : '';
-  return `${sign}${n.toFixed(2)}%`;
-}
+const TONE_VARIANT = {
+  positive: 'success',
+  negative: 'error',
+  neutral: 'neutral',
+} as const satisfies Record<ChangeTone, 'success' | 'error' | 'neutral'>;
 
 const PortfolioValueCard: React.FC = () => {
-  const { data: summary, isLoading, isError, isFetching } = usePortfolioSummary();
+  const { data: summary, isLoading, isError, isFetching } = usePortfoliosSummary();
+  const change30d = summary ? changeUsdFromPct(summary.totalValue, summary.changePct) : null;
 
   return (
-    <Card className={`viz-card${isFetching && !isLoading ? ' viz-card--fetching' : ''}`}>
+    <Card className={`viz-card viz-card--hero${isFetching && !isLoading ? ' viz-card--fetching' : ''}`}>
       <CardHeader>
         <CardTitle className="label-caps">Total Portfolio Value</CardTitle>
       </CardHeader>
@@ -30,17 +30,18 @@ const PortfolioValueCard: React.FC = () => {
           <div className="viz-value viz-value--dim">Couldn't load summary</div>
         ) : summary ? (
           <>
-            <div className="viz-value">{fmtMoney(summary.totalValue)}</div>
-            {Number.isFinite(summary.changePct30d) && Number.isFinite(summary.change30d) && (
+            <div className="viz-value viz-value--hero">{fmtMoney(summary.totalValue)}</div>
+            {change30d !== null && (
               <div className="viz-card-meta">
-                <Badge variant={summary.changePct30d >= 0 ? 'success' : 'error'} className="font-mono">
-                  {fmtPct(summary.changePct30d)}
+                <Badge variant={TONE_VARIANT[changeTone(summary.changePct)]} className="font-mono">
+                  {fmtPct(summary.changePct)}
                 </Badge>
                 <span className="viz-card-meta-sub">
-                  {summary.change30d >= 0 ? '+' : '-'}{fmtMoney(summary.change30d)} · 30d
+                  {fmtSignedMoney(change30d)} over 30 days, for the holdings you have today
                 </span>
               </div>
             )}
+            {summary.totalValue > 0 && <PortfolioValueChart />}
           </>
         ) : (
           <div className="viz-value viz-value--dim">—</div>

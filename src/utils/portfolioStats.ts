@@ -5,6 +5,16 @@ export function totalNetValue(positions: PortfolioPosition[]): number {
   return positions.reduce((sum, p) => sum + (Number.isFinite(p.valueUsd) ? p.valueUsd : 0), 0);
 }
 
+/**
+ * Dollar change behind a percentage change: `totalValue` is the value now and
+ * `changePct` how far it moved to get there. Returns null when there is no value to
+ * measure against or the percentage cannot be inverted (a total loss, -100%).
+ */
+export function changeUsdFromPct(totalValue: number, changePct: number): number | null {
+  if (!(totalValue > 0) || !Number.isFinite(changePct) || changePct <= -100) return null;
+  return totalValue - totalValue / (1 + changePct / 100);
+}
+
 export interface Change24h {
   /** Aggregate 24h change in USD across valued holdings. */
   deltaUsd: number;

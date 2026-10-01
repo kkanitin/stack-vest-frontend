@@ -29,7 +29,7 @@ StackVest is a single-page application that helps retail investors track their h
 - **DCA simulation** *(Beta)* — backtest dollar-cost averaging for an asset, amount, frequency, and date range, with ROI/KPIs and a growth chart.
 - **Watchlist** — track assets with 7-day sparklines and toggle per-symbol price alerts.
 - **Global asset search** — a topbar search that opens a detail modal with company profile stats and a price chart.
-- **Dividend calendar** — projected payouts for your holdings, grouped by payment date, with an estimated monthly total.
+- **Dividend calendar** — past and upcoming payouts for your holdings, month by month, with an estimated monthly total.
 
 ## Tech stack
 

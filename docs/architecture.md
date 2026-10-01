@@ -55,7 +55,7 @@ If `VITE_GOOGLE_CLIENT_ID` is missing or still the placeholder value, `App` rend
 ## Data layer
 
 - **API layer** — `src/api/*` is a thin REST client per resource (portfolios, stocks, watchlist, dividends, sentiment, simulations, users, …), based at `${VITE_API_URL}/api/v1`.
-- **Feature hooks** — `src/hooks/*` wrap the API layer with TanStack Query (`usePortfolio`, `usePortfolios`, `useWatchlistQuotes`, `useFearGreedIndex`, …). Components consume hooks, not the API layer directly. Exception: `usePortfolioAnalysis` manages an SSE stream with its own state rather than a cached query (see [AI Strategy Analysis](./features/ai-strategy-analysis.md)).
+- **Feature hooks** — `src/hooks/*` wrap the API layer with TanStack Query (`usePortfolio`, `usePortfolios`, `useWatchlistQuotes`, `useFearGreedIndex`, …). Components consume hooks, not the API layer directly. Data that spans every portfolio (`useAllPositions`, `useRecentActivity`) comes from cross-portfolio endpoints in one request each rather than one request per portfolio, because the backend rate-limits bursts per user (see [Overview dashboard](./features/overview-dashboard.md)). Exception: `usePortfolioAnalysis` manages an SSE stream with its own state rather than a cached query (see [AI Strategy Analysis](./features/ai-strategy-analysis.md)).
 
 ## Authentication
 
@@ -108,4 +108,3 @@ src/
 
 - **React Compiler is intentionally disabled** — do not enable it without discussion.
 - **Styles live in co-located `.css` files** — never inject CSS via a JS string / `<style>` tag. See [AGENTS.md → CSS Conventions](../AGENTS.md#css-conventions).
-- **UI work follows the [StackVest UI Skill](../skills/stackvest-ui/SKILL.md)** (design tokens, patterns, review checklist).

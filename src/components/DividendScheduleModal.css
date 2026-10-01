@@ -26,19 +26,6 @@
   flex-direction: column;
 }
 
-.dsm-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  min-height: 360px;
-  padding: 40px 20px;
-  color: var(--text-dim);
-  font-size: 14px;
-  text-align: center;
-}
-
 .dsm-skel {
   background: linear-gradient(
     100deg,
@@ -50,6 +37,12 @@
   animation: dsm-shimmer 1.4s ease-in-out infinite;
   margin: 20px;
   border-radius: var(--r-lg);
+}
+
+/* Stands in for the side panel's heading and payout list while a month loads. */
+.dsm-skel--panel {
+  height: 132px;
+  margin: 8px 0 0;
 }
 
 @keyframes dsm-shimmer {
@@ -282,6 +275,17 @@
 
 .dsm-no-events {
   margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Error message + retry, in place of the heading and payout list. */
+.dsm-panel-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 8px;
   font-size: 13px;
   color: var(--text-dim);
 }

@@ -1,16 +1,15 @@
 import React from 'react';
 import type { PortfoliosSummary } from '../api/portfolios';
 import { MAX_PORTFOLIOS } from '../config';
+import { fmtPct, changeTone } from '../utils/format';
 import './PortfolioStatsHeader.css';
 
 function fmtMoney(n: number): string {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function fmtPct(n: number): string {
-  const sign = n >= 0 ? '+' : '';
-  return `${sign}${n.toFixed(1)}%`;
-}
+// The header shows the change to one decimal, so its tone is judged at one decimal too.
+const DELTA_DIGITS = 1;
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -38,7 +37,11 @@ const PortfolioStatsHeader: React.FC<PortfolioStatsHeaderProps> = ({
             {summaryLoading ? '—' : summary ? fmtMoney(summary.totalValue) : '—'}
           </span>
           {summary && (
-            <span className="pf-stat-delta data-md">{fmtPct(summary.changePct)}</span>
+            <span
+              className={`pf-stat-delta pf-stat-delta--${changeTone(summary.changePct, DELTA_DIGITS)} data-md`}
+            >
+              {fmtPct(summary.changePct, DELTA_DIGITS)}
+            </span>
           )}
         </div>
       </div>

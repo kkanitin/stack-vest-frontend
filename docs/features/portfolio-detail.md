@@ -24,7 +24,7 @@ Holdings table, net value, 24h performance, allocation usage, and add/edit/remov
 | remove position | `removePortfolioPosition` |
 | delete portfolio | `deletePortfolio` |
 
-Stats helpers live in `src/utils/portfolioStats.ts`.
+Stats helpers live in `src/utils/portfolioStats.ts`. Gain / loss colouring and signs come from `changeTone` in `src/utils/format.ts`: a figure that displays as zero is neutral and unsigned.
 
 ## Limits
 

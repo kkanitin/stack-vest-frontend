@@ -15,11 +15,19 @@ import TopAssetsTable from '../components/TopAssetsTable';
 import EmptyPortfolioState from '../components/EmptyPortfolioState';
 import PositionFormModal from '../components/PositionFormModal';
 import PortfolioFormModal from '../components/PortfolioFormModal';
-import { fmtMoney, fmtPct, fmtCount } from '../utils/format';
+import { fmtMoney, fmtPct, fmtCount, fmtSignedMoney, changeTone } from '../utils/format';
+import type { ChangeTone } from '../utils/format';
 import { totalNetValue, change24h } from '../utils/portfolioStats';
 import './PortfolioDetailPage.css';
 
 const AnalyzePortfolioModal = lazy(() => import('../components/AnalyzePortfolioModal'));
+
+// A flat day keeps the default text colour rather than reading as a gain.
+const PERF_CLASS: Record<ChangeTone, string> = {
+  positive: ' pfd-perf--pos',
+  negative: ' pfd-perf--neg',
+  neutral: '',
+};
 
 const PortfolioDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -209,10 +217,10 @@ const PortfolioDetailPage: React.FC = () => {
                 <CardTitle className="label-caps">24h Performance</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`pfd-stat-value ${perf.deltaUsd >= 0 ? 'pfd-perf--pos' : 'pfd-perf--neg'}`}>
+                <div className={`pfd-stat-value${PERF_CLASS[changeTone(perf.deltaUsd)]}`}>
                   {perf.hasData ? (
                     <>
-                      {perf.deltaUsd >= 0 ? '+' : '-'}{fmtMoney(perf.deltaUsd)}
+                      {fmtSignedMoney(perf.deltaUsd)}
                       <span className="pfd-stat-suffix">({fmtPct(perf.pct)})</span>
                     </>
                   ) : (

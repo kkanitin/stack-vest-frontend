@@ -43,8 +43,16 @@
   color: var(--text-dim);
 }
 
-.pf-stat-delta {
-  color: var(--warning);
+.pf-stat-delta--positive {
+  color: var(--gain);
+}
+
+.pf-stat-delta--negative {
+  color: var(--loss);
+}
+
+.pf-stat-delta--neutral {
+  color: var(--text-dim);
 }
 
 .pf-stat-meter {

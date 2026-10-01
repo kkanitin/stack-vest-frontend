@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { PortfolioPosition } from '../api/portfolio';
-import { fmtMoney, fmtPct, fmtShares } from '../utils/format';
+import { fmtMoney, fmtPct, fmtShares, changeTone } from '../utils/format';
 import '../pages/PortfolioDetailPage.css';
 
 const VISIBLE_LIMIT = 5;
@@ -44,7 +44,7 @@ const TopAssetsTable: React.FC<TopAssetsTableProps> = ({ positions, isLoading, o
         </thead>
         <tbody>
           {visible.map(a => {
-            const cls = a.change24h > 0 ? 'positive' : a.change24h < 0 ? 'negative' : 'neutral';
+            const cls = changeTone(a.change24h);
             return (
               <tr key={a.symbol} className="pfh-tr">
                 <td className="pfh-td">

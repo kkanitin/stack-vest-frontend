@@ -126,10 +126,9 @@ const LandingPage: React.FC = () => {
               <span className="sidebar-link-icon"><Icon.Portfolios /></span>
               Portfolios
             </NavLink>
-            <div className="sidebar-nav-label sidebar-section-label">Visualization</div>
             <NavLink
               to="/dashboard/visualization/heatmap"
-              className={({ isActive }) => `sidebar-link sidebar-link--child${isActive ? ' active' : ''}`}
+              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
               onClick={() => setSidebarOpen(false)}
             >
               <span className="sidebar-link-icon"><Icon.Heatmap /></span>
@@ -194,13 +193,6 @@ const LandingPage: React.FC = () => {
 
           <footer className="main-footer">
             <span className="main-footer-copy">StackVest Personal</span>
-            <span className="main-footer-links">
-              <span className="footer-status">
-                <span className="live-dot" />
-                Service Status
-              </span>
-              <a href="#" className="footer-link">Documentation</a>
-            </span>
           </footer>
         </main>
       </div>

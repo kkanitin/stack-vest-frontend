@@ -44,6 +44,16 @@
   --loss: var(--error);
   --gain: var(--success);
 
+  /* Categorical chart series — identity only, in this fixed order. Kept apart from
+     the semantic colours so a slice never reads as a gain or a loss. The order is
+     what keeps neighbours distinguishable under colour-vision deficiency. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-other: #5f6b85;
+
   /* Lines */
   --border: rgba(255, 255, 255, 0.06);
   --border-strong: rgba(255, 255, 255, 0.12);
@@ -151,6 +161,13 @@
     --error: #b3261e;
     --loss: var(--error);
     --gain: var(--success);
+
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #eda100;
+    --series-5: #e87ba4;
+    --series-other: #9aa3b5;
 
     --border: rgba(13, 20, 38, 0.10);
     --border-strong: rgba(13, 20, 38, 0.18);

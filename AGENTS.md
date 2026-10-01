@@ -67,15 +67,6 @@ Docs must describe the code as it is — verify names and paths against the sour
 
 When adding features, keep in mind the React Compiler is intentionally disabled (noted in the project README) — do not enable it without discussion.
 
-👉 **[StackVest UI Skill](./skills/stackvest-ui/SKILL.md)**
-
-All agents MUST refer to this skill when performing UI/Design tasks. It includes:
-- **Core Principles**: Clarity, Precision, and Technical Aesthetic.
-- **Design Tokens**: Typography (Inter/Mono split), theme-aware colors, and shape rules.
-- **UI Patterns**: Layout conventions and interaction rules.
-- **Review Checklist**: A mandatory checklist to run before submitting UI changes.
-- **Templates**: Boilerplate for components like `FinancialCard`.
-
 ## CSS Conventions
 
 **Always use separate `.css` files — never inject styles via a JS string.**
@@ -91,7 +82,7 @@ return <><style>{S}</style>...</>;
 **Why it's harmful:**
 - Styles are re-injected into the DOM on every render, bypassing Vite's CSS pipeline (no deduplication, no minification, no caching).
 - The JS bundle carries dead CSS weight that the browser cannot separately cache.
-- It is invisible to linters, browser DevTools source maps, and the StackVest UI Skill checklist.
+- It is invisible to linters and browser DevTools source maps.
 
 **Correct pattern:** co-locate a `ComponentName.css` file next to the component and import it:
 
