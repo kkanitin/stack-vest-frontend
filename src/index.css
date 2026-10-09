@@ -54,6 +54,9 @@
   --series-5: #d55181;
   --series-other: #5f6b85;
 
+  /* Benchmark comparison line — a violet, apart from --primary, --gain and --loss. */
+  --benchmark: #c3a6ff;
+
   /* Lines */
   --border: rgba(255, 255, 255, 0.06);
   --border-strong: rgba(255, 255, 255, 0.12);
@@ -168,6 +171,8 @@
     --series-4: #eda100;
     --series-5: #e87ba4;
     --series-other: #9aa3b5;
+
+    --benchmark: #7a4fd0;
 
     --border: rgba(13, 20, 38, 0.10);
     --border-strong: rgba(13, 20, 38, 0.18);

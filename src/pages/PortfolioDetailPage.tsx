@@ -5,19 +5,24 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { usePortfolioPositionsById } from '../hooks/usePortfolioPositionsById';
+import { useClosedPositions } from '../hooks/useClosedPositions';
+import { usePortfolioTransactions } from '../hooks/usePortfolioTransactions';
 import { deletePortfolio, removePortfolioPosition } from '../api/portfolios';
 import type { PortfolioPosition } from '../api/portfolio';
+import type { Transaction, TransactionSide } from '../api/transactions';
 import { MAX_ASSETS_PER_PORTFOLIO } from '../config';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import TopAssetsTable from '../components/TopAssetsTable';
 import EmptyPortfolioState from '../components/EmptyPortfolioState';
-import PositionFormModal from '../components/PositionFormModal';
+import TransactionFormModal from '../components/TransactionFormModal';
+import HoldingHistoryDialog from '../components/HoldingHistoryDialog';
 import PortfolioFormModal from '../components/PortfolioFormModal';
-import { fmtMoney, fmtPct, fmtCount, fmtSignedMoney, changeTone } from '../utils/format';
+import { fmtMoney, fmtPct, fmtCount, fmtShares, fmtSignedMoney, changeTone } from '../utils/format';
 import type { ChangeTone } from '../utils/format';
 import { totalNetValue, change24h } from '../utils/portfolioStats';
+import { totalUnrealisedPnl, totalRealisedPnl } from '../utils/pnlTotals';
 import './PortfolioDetailPage.css';
 
 const AnalyzePortfolioModal = lazy(() => import('../components/AnalyzePortfolioModal'));
@@ -28,6 +33,13 @@ const PERF_CLASS: Record<ChangeTone, string> = {
   negative: ' pfd-perf--neg',
   neutral: '',
 };
+
+interface TxModalState {
+  open: boolean;
+  symbol?: { symbol: string; name: string };
+  side?: TransactionSide;
+  transaction?: Transaction;
+}
 
 const PortfolioDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,19 +55,44 @@ const PortfolioDetailPage: React.FC = () => {
     isError: positionsError,
   } = usePortfolioPositionsById(id);
 
-  const [assetModalOpen, setAssetModalOpen] = useState(false);
-  const [editSymbol, setEditSymbol] = useState<string | undefined>(undefined);
+  const {
+    data: closedData,
+    isLoading: loadingClosed,
+    isError: closedError,
+    refetch: refetchClosed,
+  } = useClosedPositions(id);
+  const closedList = closedData ?? [];
+
+  const [txModal, setTxModal] = useState<TxModalState>({ open: false });
+  const [historyFor, setHistoryFor] = useState<{ symbol: string; name: string } | null>(null);
+  const [txFilter, setTxFilter] = useState('');
   const [editPortfolioOpen, setEditPortfolioOpen] = useState(false);
   const [analyzeOpen, setAnalyzeOpen] = useState(false);
   const [analyzeMounted, setAnalyzeMounted] = useState(false);
 
   const list = positions ?? [];
-  const hasPositions = !loadingPositions && list.length > 0;
-  const isEmpty = !loadingPositions && !positionsError && list.length === 0;
+  // Closed holdings failing to load must not read as "no holdings": keep the table area up with a notice.
+  const showSkeleton = loadingPositions || (loadingClosed && list.length === 0);
+  const hasPositions =
+    !showSkeleton && (list.length > 0 || closedList.length > 0 || (closedError && !positionsError));
+  const isEmpty =
+    !showSkeleton && !positionsError && !closedError && list.length === 0 && closedList.length === 0;
   const atAssetLimit = list.length >= MAX_ASSETS_PER_PORTFOLIO;
 
   const netValue = totalNetValue(list);
   const perf = change24h(list);
+  const unrealised = totalUnrealisedPnl(list);
+  const realised = totalRealisedPnl([...list, ...closedList]);
+  const symbols = Array.from(new Set([...list, ...closedList].map(p => p.symbol))).sort();
+  const {
+    data: txPage,
+    isLoading: loadingTx,
+    isError: txError,
+    hasNextPage: txHasMore,
+    fetchNextPage: fetchMoreTx,
+    isFetchingNextPage: fetchingMoreTx,
+  } = usePortfolioTransactions(id, { symbol: txFilter || undefined });
+  const txs = txPage?.transactions ?? [];
   const slotPct = Math.min(100, (list.length / MAX_ASSETS_PER_PORTFOLIO) * 100);
 
   const deleteMutation = useMutation({
@@ -74,16 +111,24 @@ const PortfolioDetailPage: React.FC = () => {
     mutationFn: (symbol: string) => removePortfolioPosition(token!, id!, symbol),
     onMutate: async (symbol: string) => {
       const key = ['portfolio', id, 'positions'];
+      const closedKey = [...key, 'closed'];
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<PortfolioPosition[]>(key);
+      const previousClosed = queryClient.getQueryData<PortfolioPosition[]>(closedKey);
       queryClient.setQueryData<PortfolioPosition[]>(key, old =>
         (old ?? []).filter(p => p.symbol !== symbol)
       );
-      return { previous };
+      if (previousClosed) {
+        queryClient.setQueryData<PortfolioPosition[]>(closedKey, previousClosed.filter(p => p.symbol !== symbol));
+      }
+      return { previous, previousClosed };
     },
     onError: (err, _symbol, context) => {
       if (context?.previous) {
         queryClient.setQueryData(['portfolio', id, 'positions'], context.previous);
+      }
+      if (context?.previousClosed) {
+        queryClient.setQueryData(['portfolio', id, 'positions', 'closed'], context.previousClosed);
       }
       toast.error(err instanceof Error ? err.message : 'Failed to remove asset');
     },
@@ -100,12 +145,10 @@ const PortfolioDetailPage: React.FC = () => {
       toast.error(`This portfolio is full (max ${MAX_ASSETS_PER_PORTFOLIO} assets).`);
       return;
     }
-    setEditSymbol(undefined);
-    setAssetModalOpen(true);
+    setTxModal({ open: true, side: 'buy' });
   };
-  const openEditModal = (symbol: string) => {
-    setEditSymbol(symbol);
-    setAssetModalOpen(true);
+  const openTradeModal = (p: PortfolioPosition, side: TransactionSide) => {
+    setTxModal({ open: true, side, symbol: { symbol: p.symbol, name: p.name } });
   };
 
   const handleDeletePortfolio = () => {
@@ -118,7 +161,11 @@ const PortfolioDetailPage: React.FC = () => {
 
   const handleDeletePosition = (symbol: string) => {
     if (!token || removePositionMutation.isPending) return;
-    if (window.confirm(`Remove ${symbol} from this portfolio?`)) {
+    if (
+      window.confirm(
+        `Delete ${symbol} from this portfolio? This also deletes its entire transaction history and realised P&L. This cannot be undone.`
+      )
+    ) {
       removePositionMutation.mutate(symbol);
     }
   };
@@ -172,7 +219,7 @@ const PortfolioDetailPage: React.FC = () => {
         </div>
       </header>
 
-      {loadingPositions && (
+      {showSkeleton && (
         <>
           <div className="pfd-stats">
             {[0, 1, 2].map(i => (
@@ -231,6 +278,31 @@ const PortfolioDetailPage: React.FC = () => {
             </Card>
             <Card className="pfd-stat">
               <CardHeader>
+                <CardTitle className="label-caps">Unrealised P&amp;L</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`pfd-stat-value${PERF_CLASS[changeTone(unrealised.pnl)]}`}>
+                  {fmtSignedMoney(unrealised.pnl)}
+                  {unrealised.pct != null && <span className="pfd-stat-suffix">{fmtPct(unrealised.pct)} on cost</span>}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="pfd-stat">
+              <CardHeader>
+                <CardTitle className="label-caps">Realised P&amp;L</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingClosed || closedError ? (
+                  <div className="pfd-stat-value"><span className="pfh-dim">—</span></div>
+                ) : (
+                  <div className={`pfd-stat-value${PERF_CLASS[changeTone(realised)]}`}>
+                    {fmtSignedMoney(realised)}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="pfd-stat">
+              <CardHeader>
                 <CardTitle className="label-caps">Asset Allocation</CardTitle>
               </CardHeader>
               <CardContent>
@@ -250,7 +322,80 @@ const PortfolioDetailPage: React.FC = () => {
               <CardTitle className="label-caps">Current Holdings</CardTitle>
             </CardHeader>
             <CardContent>
-              <TopAssetsTable positions={list} isLoading={false} onEdit={openEditModal} onDelete={handleDeletePosition} />
+              {closedError && (
+                <p className="pft-state" role="alert">
+                  Couldn&apos;t load closed holdings or realised P&amp;L.{' '}
+                  <button type="button" className="pfh-viewall" onClick={() => refetchClosed()}>
+                    Retry
+                  </button>
+                </p>
+              )}
+              <TopAssetsTable
+                positions={list}
+                closedPositions={closedList}
+                isLoading={false}
+                onBuy={p => openTradeModal(p, 'buy')}
+                onSell={p => openTradeModal(p, 'sell')}
+                onHistory={p => setHistoryFor({ symbol: p.symbol, name: p.name })}
+                onDelete={handleDeletePosition}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pft-head">
+              <CardTitle className="label-caps">Transactions</CardTitle>
+              <select
+                className="pft-filter"
+                aria-label="Filter transactions by symbol"
+                value={txFilter}
+                onChange={e => setTxFilter(e.target.value)}
+              >
+                <option value="">All holdings</option>
+                {symbols.map(sym => (
+                  <option key={sym} value={sym}>{sym}</option>
+                ))}
+              </select>
+            </CardHeader>
+            <CardContent>
+              {loadingTx ? (
+                <div className="pfd-skel pfd-skel--row" />
+              ) : txError ? (
+                <p className="pft-state">Couldn&apos;t load transactions. Please try again shortly.</p>
+              ) : txs.length === 0 ? (
+                <p className="pft-state">No transactions yet.</p>
+              ) : (
+                <ul className="pft-list">
+                  {txs.map(tx => (
+                    <li key={tx.id} className="pft-row">
+                      <Badge variant={tx.side === 'buy' ? 'success' : 'error'}>{tx.side === 'buy' ? 'BUY' : 'SELL'}</Badge>
+                      <span className="pft-date">{tx.date}</span>
+                      <span>
+                        <span className="pft-sym">{tx.symbol}</span>
+                        {tx.isOpening && <span className="pft-opening"> · Opening balance</span>}
+                      </span>
+                      <span className="pft-detail">
+                        {fmtShares(tx.quantity)} @ {fmtMoney(tx.price)}
+                        {tx.side === 'sell' && tx.realisedPnl != null && (
+                          <span className={`pfh-mv-change ${changeTone(tx.realisedPnl)}`}> · {fmtSignedMoney(tx.realisedPnl)}</span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {txHasMore && !txError && (
+                <div className="pft-more">
+                  <button
+                    type="button"
+                    className="pfh-viewall"
+                    disabled={fetchingMoreTx}
+                    onClick={() => fetchMoreTx()}
+                  >
+                    {fetchingMoreTx ? 'Loading…' : 'Show more'}
+                  </button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </>
@@ -264,12 +409,25 @@ const PortfolioDetailPage: React.FC = () => {
         </Card>
       )}
 
-      <PositionFormModal
-        open={assetModalOpen}
-        onClose={() => setAssetModalOpen(false)}
-        editSymbol={editSymbol}
+      <TransactionFormModal
+        open={txModal.open}
+        onClose={() => setTxModal(m => ({ ...m, open: false }))}
         portfolioId={id!}
+        symbol={txModal.symbol}
+        initialSide={txModal.side}
+        transaction={txModal.transaction}
       />
+      {historyFor && (
+        <HoldingHistoryDialog
+          // Hidden (not closed) while an edit is open on top of it, so it returns afterwards.
+          open={!txModal.open}
+          onClose={() => setHistoryFor(null)}
+          portfolioId={id!}
+          symbol={historyFor.symbol}
+          name={historyFor.name}
+          onEdit={tx => setTxModal({ open: true, transaction: tx })}
+        />
+      )}
       <PortfolioFormModal
         open={editPortfolioOpen}
         onClose={() => setEditPortfolioOpen(false)}

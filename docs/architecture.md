@@ -55,7 +55,7 @@ If `VITE_GOOGLE_CLIENT_ID` is missing or still the placeholder value, `App` rend
 ## Data layer
 
 - **API layer** — `src/api/*` is a thin REST client per resource (portfolios, stocks, watchlist, dividends, sentiment, simulations, users, …), based at `${VITE_API_URL}/api/v1`.
-- **Feature hooks** — `src/hooks/*` wrap the API layer with TanStack Query (`usePortfolio`, `usePortfolios`, `useWatchlistQuotes`, `useFearGreedIndex`, …). Components consume hooks, not the API layer directly. Data that spans every portfolio (`useAllPositions`, `useRecentActivity`) comes from cross-portfolio endpoints in one request each rather than one request per portfolio, because the backend rate-limits bursts per user (see [Overview dashboard](./features/overview-dashboard.md)). Exception: `usePortfolioAnalysis` manages an SSE stream with its own state rather than a cached query (see [AI Strategy Analysis](./features/ai-strategy-analysis.md)).
+- **Feature hooks** — `src/hooks/*` wrap the API layer with TanStack Query (`usePortfolio`, `usePortfolios`, `useWatchlistQuotes`, `useFearGreedIndex`, …). Components consume hooks, not the API layer directly. Data that spans every portfolio (`useAllPositions`, `useRecentActivity`) comes from cross-portfolio endpoints in one request each rather than one request per portfolio, because the backend rate-limits bursts per user (see [Overview dashboard](./features/overview-dashboard.md)). The transaction ledger has its own module and hooks: `src/api/transactions.ts` (list / create / update / delete) behind `useHoldingTransactions` (`['portfolio', id, 'transactions', 'holding', symbol]`), `usePortfolioTransactions` (`['portfolio', id, 'transactions', 'list', symbol, size]`), `useClosedPositions` (`['portfolio', id, 'positions', 'closed']`) and `useTransactionMutations`, whose create / update / delete invalidate `['portfolio', id]`, `['portfolio', id, 'positions']` and `['portfolios']` so every ledger change refreshes holdings, P&L, history and activity everywhere (see [Portfolio detail](./features/portfolio-detail.md)). Exception: `usePortfolioAnalysis` manages an SSE stream with its own state rather than a cached query (see [AI Strategy Analysis](./features/ai-strategy-analysis.md)).
 
 ## Authentication
 
@@ -100,7 +100,7 @@ src/
     ui/        # Reusable primitives (Button, Card, Modal, Input, …)
   pages/       # Route-level pages (LandingPage shell, Portfolios, Heatmap, …)
   context/     # AuthContext, ToastContext
-  utils/       # Formatting, scoring, and chart helpers
+  utils/       # Formatting, scoring, chart and P&L helpers (e.g. `pnlTotals`, `pctChangeSeries`)
   config.ts    # Client-side feature limits
 ```
 

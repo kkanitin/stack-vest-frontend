@@ -34,7 +34,7 @@ const RecentActivityCard: React.FC = () => {
           <>
             <p className="viz-empty-text">No recent activity.</p>
             <p className="viz-empty-text viz-empty-text--sub">
-              Adding, editing or removing a position shows up here.
+              Record a buy or sell to see it here.
             </p>
           </>
         ) : (

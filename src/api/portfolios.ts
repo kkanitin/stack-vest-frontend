@@ -1,8 +1,4 @@
-import type {
-  PortfolioPosition,
-  AddPositionBody,
-  UpdatePositionBody,
-} from './portfolio';
+import type { PortfolioPosition } from './portfolio';
 
 import { API_BASE } from './config';
 
@@ -11,7 +7,7 @@ import { API_BASE } from './config';
  *
  * `id`, `name`, `description`, `createdAt`, `updatedAt` come from the documented
  * backend contract. `value` and `assetCount` are enrichment fields the cards display;
- * they are ASSUMED pending backend support (see docs/portfolios-backend-gaps.md) and are
+ * they are ASSUMED pending backend support and are
  * therefore optional so the UI degrades gracefully when they are absent.
  */
 export interface Portfolio {
@@ -26,12 +22,14 @@ export interface Portfolio {
 
 /**
  * Aggregate stats across every portfolio (`GET /portfolios/summary`), shown on the
- * Portfolios header and the Overview. `changePct` is the 30-day change of today's
- * holdings at today's share counts — a back-test, not tracked account history.
+ * Portfolios header and the Overview. `changePct` is the 30-day time-weighted return
+ * (money added or withdrawn is excluded) computed from the transaction ledger.
  */
 export interface PortfoliosSummary {
   totalValue: number;
   changePct: number;
+  realisedPnl: number;
+  unrealisedPnl: number;
   diversificationScore: number; // 0-100
 }
 
@@ -158,11 +156,23 @@ export type ValueHistoryRange = '7D' | '30D' | '90D' | '1Y' | 'All';
 export interface ValuePoint {
   date: string;
   value: number;
+  /** Cumulative time-weighted return (%) from the first point in the range; excludes deposits. */
+  returnPct: number;
+  /** The benchmark's close that day; absent (or null) when none exists or no benchmark was requested. */
+  benchmarkClose?: number | null;
 }
 
 export interface ValueHistory {
   range: ValueHistoryRange;
   points: ValuePoint[];
+  /** Present only when a benchmark was requested. `available: false` means its data failed to load. */
+  benchmark?: { symbol: string; label: string; available: boolean } | null;
+}
+
+/** An index the value history can be compared with (`GET /portfolios/benchmarks`). */
+export interface Benchmark {
+  symbol: string;
+  label: string;
 }
 
 /**
@@ -172,9 +182,11 @@ export interface ValueHistory {
  */
 export async function getPortfolioValueHistory(
   token: string,
-  range: ValueHistoryRange
+  range: ValueHistoryRange,
+  benchmark?: string | null
 ): Promise<ValueHistory> {
-  const res = await fetch(`${API_BASE}/portfolios/history?range=${range}`, {
+  const query = `range=${range}${benchmark ? `&benchmark=${encodeURIComponent(benchmark)}` : ''}`;
+  const res = await fetch(`${API_BASE}/portfolios/history?${query}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
@@ -182,13 +194,27 @@ export async function getPortfolioValueHistory(
   throw new Error(data.errorMessage || 'Failed to load value history');
 }
 
+/** The indices the user can compare their value history with (`GET /portfolios/benchmarks`). */
+export async function getBenchmarks(token: string): Promise<Benchmark[]> {
+  const res = await fetch(`${API_BASE}/portfolios/benchmarks`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (res.ok && data.code === 200) return data.result as Benchmark[];
+  throw new Error(data.errorMessage || 'Failed to load benchmarks');
+}
+
 /**
  * Every position across all of the user's portfolios (`GET /portfolios/positions`), one
  * row per portfolio holding. One request, however many portfolios there are: the backend
  * rate-limits bursts per user, so the Overview must not ask each portfolio separately.
  */
-export async function getAllPositions(token: string): Promise<PortfolioPosition[]> {
-  const res = await fetch(`${API_BASE}/portfolios/positions`, {
+export async function getAllPositions(
+  token: string,
+  opts: { includeClosed?: boolean } = {}
+): Promise<PortfolioPosition[]> {
+  const qs = opts.includeClosed ? '?includeClosed=true' : '';
+  const res = await fetch(`${API_BASE}/portfolios/positions${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
@@ -212,58 +238,17 @@ export async function getRecentActivity(token: string, limit: number): Promise<P
 
 export async function getPortfolioPositions(
   token: string,
-  portfolioId: string
+  portfolioId: string,
+  opts: { includeClosed?: boolean } = {}
 ): Promise<PortfolioPosition[]> {
+  const qs = opts.includeClosed ? '?includeClosed=true' : '';
   const res = await fetch(
-    `${API_BASE}/portfolios/${encodeURIComponent(portfolioId)}/positions`,
+    `${API_BASE}/portfolios/${encodeURIComponent(portfolioId)}/positions${qs}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const data = await res.json();
   if (res.ok && data.code === 200) return data.result as PortfolioPosition[];
   throw new Error(data.errorMessage || 'Failed to load portfolio positions');
-}
-
-export async function addPortfolioPosition(
-  token: string,
-  portfolioId: string,
-  body: AddPositionBody
-): Promise<PortfolioPosition> {
-  const res = await fetch(
-    `${API_BASE}/portfolios/${encodeURIComponent(portfolioId)}/positions`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    }
-  );
-  const data = await res.json();
-  if (res.ok && data.code === 201) return data.result as PortfolioPosition;
-  throw new Error(data.errorMessage || 'Failed to add position');
-}
-
-export async function updatePortfolioPosition(
-  token: string,
-  portfolioId: string,
-  symbol: string,
-  body: UpdatePositionBody
-): Promise<PortfolioPosition> {
-  const res = await fetch(
-    `${API_BASE}/portfolios/${encodeURIComponent(portfolioId)}/positions/${encodeURIComponent(symbol)}`,
-    {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    }
-  );
-  const data = await res.json();
-  if (res.ok && data.code === 200) return data.result as PortfolioPosition;
-  throw new Error(data.errorMessage || 'Failed to update position');
 }
 
 export async function removePortfolioPosition(

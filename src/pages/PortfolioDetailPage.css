@@ -67,7 +67,7 @@
 /* ---- Stat cards ---- */
 .pfd-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 20px;
 }
 
@@ -314,5 +314,108 @@
   }
   .pfd-head-actions {
     flex-wrap: wrap;
+  }
+}
+
+/* ---- Closed holdings ---- */
+.pfh-closed {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pfh-closed-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---- Transactions card ---- */
+.pft-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pft-filter {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-low);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 8px 10px;
+  min-height: var(--tap-min);
+}
+
+.pft-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pft-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.pft-row:last-child {
+  border-bottom: none;
+}
+
+.pft-date {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.pft-sym {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.pft-detail {
+  font-family: var(--mono);
+  color: var(--text);
+  text-align: right;
+}
+
+.pft-opening {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pft-state {
+  padding: 20px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.pft-more {
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+}
+
+@media (max-width: 600px) {
+  .pft-row {
+    grid-template-columns: auto 1fr;
+  }
+  .pft-detail {
+    grid-column: 1 / -1;
+    text-align: left;
   }
 }

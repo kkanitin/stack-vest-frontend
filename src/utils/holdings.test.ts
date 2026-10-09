@@ -2,7 +2,7 @@ import { mergeHoldings, allocationSlices, biggestMovers, OTHER_KEY } from './hol
 import type { PortfolioPosition } from '../api/portfolio';
 
 function pos(symbol: string, valueUsd: number, change24h = 0, shares = 1): PortfolioPosition {
-  return { id: `${symbol}-${valueUsd}`, symbol, name: `${symbol} Inc`, shares, avgCost: 1, valueUsd, change24h, addedAt: '' };
+  return { id: `${symbol}-${valueUsd}`, symbol, name: `${symbol} Inc`, shares, avgCost: 1, valueUsd, change24h, addedAt: '', costBasis: 0, unrealisedPnl: 0, unrealisedPnlPct: 0, realisedPnl: 0, closed: false };
 }
 
 describe('mergeHoldings', () => {

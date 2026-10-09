@@ -638,6 +638,71 @@
   color: var(--text-dim);
 }
 
+.viz-trend-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.viz-compare {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.viz-compare-select {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-high);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.viz-compare-select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.viz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.viz-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Solid vs dashed, so the two lines differ by more than colour. */
+.viz-legend-swatch {
+  width: 20px;
+  height: 0;
+  border-top: 2px solid;
+}
+
+.viz-legend-swatch--portfolio {
+  border-top-color: var(--primary);
+}
+
+.viz-legend-swatch--benchmark {
+  border-top-style: dashed;
+  border-top-color: var(--benchmark);
+}
+
 .viz-ranges {
   display: flex;
   gap: 4px;
@@ -704,4 +769,27 @@
     padding: 8px 12px;
     min-height: var(--tap-min);
   }
+
+  .viz-compare-select {
+    font-size: 14px;
+    padding: 8px 10px;
+    min-height: var(--tap-min);
+  }
+}
+
+.viz-card-pnl {
+  gap: 16px;
+}
+
+.viz-pnl {
+  font-family: var(--mono);
+  color: var(--text-h);
+}
+
+.viz-pnl--positive {
+  color: var(--gain);
+}
+
+.viz-pnl--negative {
+  color: var(--loss);
 }

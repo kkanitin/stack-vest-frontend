@@ -11,6 +11,11 @@ function pos(overrides: Partial<PortfolioPosition>): PortfolioPosition {
     valueUsd: 0,
     change24h: 0,
     addedAt: '',
+    costBasis: 0,
+    unrealisedPnl: 0,
+    unrealisedPnlPct: 0,
+    realisedPnl: 0,
+    closed: false,
     ...overrides,
   };
 }

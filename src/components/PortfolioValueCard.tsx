@@ -37,10 +37,23 @@ const PortfolioValueCard: React.FC = () => {
                   {fmtPct(summary.changePct)}
                 </Badge>
                 <span className="viz-card-meta-sub">
-                  {fmtSignedMoney(change30d)} over 30 days, for the holdings you have today
+                  {fmtSignedMoney(change30d)} over 30 days, time-weighted (money you add or withdraw is excluded)
                 </span>
               </div>
             )}
+            <div className="viz-card-meta viz-card-pnl">
+              <span className="viz-card-meta-sub">
+                Realised{' '}
+                <span className={`viz-pnl viz-pnl--${changeTone(summary.realisedPnl)}`}>{fmtSignedMoney(summary.realisedPnl)}</span>
+              </span>
+              <span className="viz-card-meta-sub">
+                Unrealised{' '}
+                <span className={`viz-pnl viz-pnl--${changeTone(summary.unrealisedPnl)}`}>{fmtSignedMoney(summary.unrealisedPnl)}</span>
+              </span>
+            </div>
+            <p className="viz-card-meta-sub">
+              Returns are now calculated from your recorded transactions, so they may differ from before.
+            </p>
             {summary.totalValue > 0 && <PortfolioValueChart />}
           </>
         ) : (
