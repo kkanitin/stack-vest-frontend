@@ -3,7 +3,7 @@ import PortfolioStatsHeader from './PortfolioStatsHeader';
 import type { PortfoliosSummary } from '../api/portfolios';
 
 function renderHeader(changePct: number) {
-  const summary: PortfoliosSummary = { totalValue: 1000, changePct, diversificationScore: 50 };
+  const summary: PortfoliosSummary = { totalValue: 1000, changePct, realisedPnl: 0, unrealisedPnl: 0, diversificationScore: 50 };
   return render(<PortfolioStatsHeader activeCount={2} summary={summary} summaryLoading={false} />);
 }
 

@@ -14,6 +14,9 @@ vi.mock('../hooks/usePortfoliosSummary', () => ({ usePortfoliosSummary: vi.fn() 
 vi.mock('../hooks/usePortfolioValueHistory', () => ({
   usePortfolioValueHistory: () => ({ data: { range: '30D', points: [] }, isLoading: false, isError: false }),
 }));
+vi.mock('../hooks/useBenchmarks', () => ({
+  useBenchmarks: () => ({ data: [], isLoading: false, isError: false }),
+}));
 vi.mock('../hooks/useFearGreedIndex', () => ({
   useFearGreedIndex: () => ({ data: undefined, isLoading: true, isError: false }),
 }));
@@ -23,7 +26,7 @@ const mockedActivity = vi.mocked(useRecentActivity);
 const mockedSummary = vi.mocked(usePortfoliosSummary);
 
 function pos(symbol: string, valueUsd: number, change24h: number): PortfolioPosition {
-  return { id: `${symbol}-${valueUsd}`, symbol, name: `${symbol} Fund`, shares: 1, avgCost: 1, valueUsd, change24h, addedAt: '' };
+  return { id: `${symbol}-${valueUsd}`, symbol, name: `${symbol} Fund`, shares: 1, avgCost: 1, valueUsd, change24h, addedAt: '', costBasis: 0, unrealisedPnl: 0, unrealisedPnlPct: 0, realisedPnl: 0, closed: false };
 }
 
 function setPositions(state: { positions?: PortfolioPosition[]; isLoading?: boolean; isError?: boolean }) {
@@ -44,7 +47,7 @@ function setActivity(state: { entries?: PortfolioActivity[]; isError?: boolean }
 
 function setSummary(totalValue: number, changePct: number) {
   mockedSummary.mockReturnValue({
-    data: { totalValue, changePct, diversificationScore: 50 },
+    data: { totalValue, changePct, realisedPnl: 25, unrealisedPnl: -40, diversificationScore: 50 },
     isLoading: false,
     isError: false,
     isFetching: false,
@@ -102,7 +105,10 @@ describe('Overview', () => {
     const hero = within(card('Total Portfolio Value'));
     expect(hero.getByText('$1,100.00')).toBeInTheDocument();
     expect(hero.getByText('+10.00%')).toBeInTheDocument();
-    expect(hero.getByText(/\+\$100\.00 over 30 days/)).toBeInTheDocument();
+    expect(hero.getByText(/\+\$100\.00 over 30 days, time-weighted/)).toBeInTheDocument();
+    expect(hero.getByText('+$25.00')).toHaveClass('viz-pnl--positive');
+    expect(hero.getByText('-$40.00')).toHaveClass('viz-pnl--negative');
+    expect(hero.getByText(/calculated from your recorded transactions/)).toBeInTheDocument();
   });
 
   it('shows a 30-day change that displays as zero as neutral and unsigned', () => {
@@ -187,6 +193,7 @@ describe('Overview', () => {
     expect(activity.getByText('Bought VOO')).toBeInTheDocument();
     expect(activity.getByText('3 shares @ $412.00 · Core')).toBeInTheDocument();
     expect(activity.getByText('BUY')).toBeInTheDocument();
+    expect(activity.getByText('SELL')).toBeInTheDocument();
     expect(activity.getByText('just now')).toBeInTheDocument();
     expect(activity.getByText('Position closed')).toBeInTheDocument();
   });
