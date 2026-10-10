@@ -2,7 +2,6 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, NavLink, Outlet, useLocation } from 'react-router';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '../components/ErrorBoundary';
 import RouteFallback from '../components/RouteFallback';
 import TopbarSearch from '../components/TopbarSearch';
@@ -141,7 +140,6 @@ const LandingPage: React.FC = () => {
             >
               <span className="sidebar-link-icon"><Icon.DCA /></span>
               DCA Simulation
-              <Badge variant="primary" className="sidebar-link-badge">Beta</Badge>
             </NavLink>
             <NavLink
               to="/dashboard/watchlist"
