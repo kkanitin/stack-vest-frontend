@@ -25,7 +25,7 @@ StackVest is a single-page application that helps retail investors track their h
 - **Portfolios ("strategies")** — create, edit, and delete multiple named portfolios (capped per account), each with a summary stats header and optimistic updates.
 - **Portfolio detail** — holdings table, net value, 24h performance, allocation usage, and add/edit/remove of individual positions.
 - **AI Strategy Analysis** — a streamed, markdown-rendered analysis of a portfolio, with scored dimensions (diversification, risk, fees).
-- **Market heatmap** — four view modes (heatmap tiles, list with sparklines, performance bars, and a multi-asset compare chart), with period (1D/1W/1M/YTD) and sector filters; the compare selection is persisted in the URL.
+- **Market heatmap** — a finviz-style market-cap treemap for the S&P 500, Nasdaq 100 or Dow 30 (grouped by sector, coloured by change), plus four watchlist view modes (heatmap tiles, list with sparklines, performance bars, and a multi-asset compare chart), with period (1D/1W/1M/YTD) and sector filters; the source and compare selection are persisted in the URL.
 - **DCA simulation** — backtest dollar-cost averaging for any searchable asset, amount, frequency (daily to monthly), and date range, with ROI, two yearly returns, a lump-sum comparison and a dated growth chart.
 - **Watchlist** — track assets with 7-day sparklines and toggle per-symbol price alerts.
 - **Global asset search** — a topbar search that opens a detail modal with company profile stats and a price chart.

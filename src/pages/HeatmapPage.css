@@ -521,3 +521,228 @@
     padding: 8px 12px;
   }
 }
+
+/* Index treemap (S&P 500 / Nasdaq 100 / Dow 30) */
+
+.hm {
+  /* Stepped diverging scale, -3 … +3, as in perfLevel(). Saturated enough to
+     carry white text in both themes. */
+  --itm-down-3: #d1323f;
+  --itm-down-2: #a32a37;
+  --itm-down-1: #6e2a36;
+  --itm-flat: #3a4259;
+  --itm-up-1: #1d5c45;
+  --itm-up-2: #1f8052;
+  --itm-up-3: #22a35f;
+  --itm-gap: var(--bg);
+  --itm-ink: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+  .hm {
+    --itm-down-3: #d92d3a;
+    --itm-down-2: #b9414b;
+    --itm-down-1: #b9737b;
+    --itm-flat: #7b8296;
+    --itm-up-1: #5d9c7b;
+    --itm-up-2: #2e8b57;
+    --itm-up-3: #18a356;
+    --itm-gap: #0d1426;
+  }
+}
+
+.hm-source {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hm-legend-steps {
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.hm-legend-steps span {
+  padding: 3px 8px;
+  color: var(--itm-ink);
+}
+
+.itm {
+  position: relative;
+  width: 100%;
+  background: var(--itm-gap);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  user-select: none;
+}
+
+.itm-sector {
+  position: absolute;
+  pointer-events: none;
+}
+
+.itm-sector-label {
+  display: block;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  color: #c0c8ca;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itm-tile {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  color: var(--itm-ink);
+  background: var(--itm-flat);
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.1;
+  transition: filter 150ms ease;
+}
+
+.itm-tile[data-level='-3'] { background: var(--itm-down-3); }
+.itm-tile[data-level='-2'] { background: var(--itm-down-2); }
+.itm-tile[data-level='-1'] { background: var(--itm-down-1); }
+.itm-tile[data-level='1'] { background: var(--itm-up-1); }
+.itm-tile[data-level='2'] { background: var(--itm-up-2); }
+.itm-tile[data-level='3'] { background: var(--itm-up-3); }
+
+.itm-tile:hover,
+.itm-tile:focus-visible {
+  filter: brightness(1.18);
+  outline: 1px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -1px;
+  z-index: 1;
+}
+
+.itm-logo {
+  border-radius: 9999px;
+  background: #ffffff;
+  object-fit: contain;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.itm-symbol {
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.itm-change {
+  font-family: var(--mono);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0.95;
+}
+
+.itm-tip {
+  position: absolute;
+  z-index: 2;
+  padding: 12px;
+  background: var(--surface-high);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.itm-tip-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.itm-tip-symbol {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.itm-tip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itm-tip-sub {
+  margin: 2px 0 8px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.itm-tip-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.itm-tip-grid dt {
+  color: var(--text-dim);
+}
+
+.itm-tip-grid dt.is-active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.itm-tip-grid dd {
+  margin: 0;
+  text-align: right;
+  font-family: var(--mono);
+  color: var(--text-h);
+}
+
+.itm-tip-grid dd[data-sign='up'] { color: var(--gain); }
+.itm-tip-grid dd[data-sign='down'] { color: var(--loss); }
+
+.itm-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.itm-state--loading {
+  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-high) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: itm-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes itm-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .itm-state--loading { animation: none; }
+}

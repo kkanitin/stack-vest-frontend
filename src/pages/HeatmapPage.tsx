@@ -1,7 +1,11 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useWatchlistQuotes } from '../hooks/useWatchlistQuotes';
 import { useSparklineData } from '../hooks/useSparklineData';
+import { useIndexHeatmap } from '../hooks/useIndexHeatmap';
+import { HeatmapWarmingError } from '../api/market';
+import { PERIOD_CLAMP } from '../utils/perfColor';
 import HeatmapTile from '../components/HeatmapTile';
+import IndexTreemap from '../components/IndexTreemap';
 import SparklineList from '../components/SparklineList';
 import PerformanceBarChart from '../components/PerformanceBarChart';
 import ComparisonChart from '../components/ComparisonChart';
@@ -10,6 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Button } from '@/components/ui/button';
 import type { WatchlistEntry } from '../hooks/useWatchlistQuotes';
 import type { HistoryPoint } from '../api/stocks';
+import type { IndexKey } from '../api/market';
 import type { Period } from '../components/HeatmapTile';
 // PERIOD_KEY used by child components via their own imports
 import './HeatmapPage.css';
@@ -18,6 +23,7 @@ type ViewMode = 'heatmap' | 'list' | 'performance' | 'compare';
 type SparklineLookback = '7D' | '30D' | '90D';
 type CompareRange = '7D' | '30D' | '90D' | '1Y' | 'All';
 type FilterValue = 'all' | 'technology' | 'healthcare' | 'finance';
+type Source = IndexKey | 'watchlist';
 type Segment<T extends string> = { value: T; label: string };
 
 const VIEW_SEGS: Segment<ViewMode>[] = [
@@ -26,6 +32,27 @@ const VIEW_SEGS: Segment<ViewMode>[] = [
   { value: 'performance', label: 'Performance' },
   { value: 'compare', label: 'Compare' },
 ];
+
+const SOURCE_SEGS: Segment<Source>[] = [
+  { value: 'sp500', label: 'S&P 500' },
+  { value: 'nasdaq100', label: 'Nasdaq 100' },
+  { value: 'dow30', label: 'Dow 30' },
+  { value: 'watchlist', label: 'Watchlist' },
+];
+
+const isSource = (v: string | null): v is Source => SOURCE_SEGS.some(s => s.value === v);
+
+// Legend steps for the index treemap, matching perfLevel()'s -3 … +3 buckets.
+const LEGEND_LEVELS = [-3, -2, -1, 0, 1, 2, 3] as const;
+const LEGEND_VARS: Record<(typeof LEGEND_LEVELS)[number], string> = {
+  [-3]: 'var(--itm-down-3)',
+  [-2]: 'var(--itm-down-2)',
+  [-1]: 'var(--itm-down-1)',
+  0: 'var(--itm-flat)',
+  1: 'var(--itm-up-1)',
+  2: 'var(--itm-up-2)',
+  3: 'var(--itm-up-3)',
+};
 
 const PERIOD_SEGS: Segment<Period>[] = [
   { value: '1D', label: '1D' },
@@ -73,6 +100,13 @@ const HeatmapPage: React.FC = () => {
   const [comparisonRange, setComparisonRange] = useState<CompareRange>('30D');
   const [filter, setFilter] = useState<FilterValue>('all');
   const [detailSymbol, setDetailSymbol] = useState<string | null>(null);
+  const [source, setSource] = useState<Source>(() => {
+    const s = new URLSearchParams(window.location.search).get('source');
+    return isSource(s) ? s : 'sp500';
+  });
+
+  const isIndex = viewMode === 'heatmap' && source !== 'watchlist';
+  const indexQuery = useIndexHeatmap(isIndex ? (source as IndexKey) : null);
 
   // selectedSymbols with URL persistence
   const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(() => {
@@ -89,6 +123,12 @@ const HeatmapPage: React.FC = () => {
     }
     window.history.replaceState(null, '', url.toString());
   }, [selectedSymbols]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('source', source);
+    window.history.replaceState(null, '', url.toString());
+  }, [source]);
 
   const maxCompare = Number(import.meta.env.VITE_MAX_COMPARE_ASSETS) || 5;
 
@@ -114,9 +154,14 @@ const HeatmapPage: React.FC = () => {
     [tiles, filter]
   );
 
-  const formattedTime = lastUpdated
-    ? lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  const updatedAt = isIndex
+    ? (indexQuery.data ? new Date(indexQuery.data.updatedAt) : null)
+    : lastUpdated;
+  const formattedTime = updatedAt
+    ? updatedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     : null;
+  const handleRefresh = isIndex ? () => { void indexQuery.refetch(); } : refresh;
+  const clamp = PERIOD_CLAMP[period];
 
   const handleToggleSymbol = useCallback(
     (symbol: string) => {
@@ -138,7 +183,11 @@ const HeatmapPage: React.FC = () => {
       <header className="hm-head">
         <div className="hm-head-text">
           <h1 className="hm-title">Market Heatmap</h1>
-          <p className="hm-sub">Real-time investment performance across tracked assets.</p>
+          <p className="hm-sub">
+            {isIndex
+              ? 'Index constituents grouped by sector, sized by market cap.'
+              : 'Real-time investment performance across tracked assets.'}
+          </p>
         </div>
         <div className="hm-toolbar">
           <ToggleGroup
@@ -152,6 +201,20 @@ const HeatmapPage: React.FC = () => {
               <ToggleGroupItem key={s.value} value={s.value}>{s.label}</ToggleGroupItem>
             ))}
           </ToggleGroup>
+          {viewMode === 'heatmap' && (
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={source}
+              onValueChange={(v) => v && setSource(v as Source)}
+              aria-label="Heatmap source"
+            >
+              {SOURCE_SEGS.map((s) => (
+                <ToggleGroupItem key={s.value} value={s.value}>{s.label}</ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          )}
           {viewMode !== 'compare' && (
             <ToggleGroup
               type="single"
@@ -165,7 +228,7 @@ const HeatmapPage: React.FC = () => {
               ))}
             </ToggleGroup>
           )}
-          {(viewMode === 'heatmap' || viewMode === 'list') && (
+          {((viewMode === 'heatmap' && !isIndex) || viewMode === 'list') && (
             <ToggleGroup
               type="single"
               variant="outline"
@@ -191,7 +254,7 @@ const HeatmapPage: React.FC = () => {
               ))}
             </ToggleGroup>
           )}
-          {viewMode === 'heatmap' && (
+          {viewMode === 'heatmap' && !isIndex && (
             <ToggleGroup
               type="single"
               variant="outline"
@@ -204,7 +267,7 @@ const HeatmapPage: React.FC = () => {
               ))}
             </ToggleGroup>
           )}
-          <Button variant="outline" onClick={refresh} className="hm-refresh">
+          <Button variant="outline" onClick={handleRefresh} className="hm-refresh">
             ↻ Refresh
           </Button>
         </div>
@@ -212,18 +275,44 @@ const HeatmapPage: React.FC = () => {
 
       <div className="hm-legend">
         <span className="hm-legend-label">Performance Scale</span>
-        <span className="hm-legend-scale" aria-hidden />
-        <span className="hm-legend-range">
-          <span>-5%</span>
-          <span>0</span>
-          <span>+5%</span>
-        </span>
+        {isIndex ? (
+          <span className="hm-legend-steps" aria-label={`From -${clamp}% to +${clamp}%`}>
+            {LEGEND_LEVELS.map(l => (
+              <span key={l} style={{ background: LEGEND_VARS[l] }}>
+                {l === 0 ? '0%' : `${l > 0 ? '+' : '-'}${+((Math.abs(l) * clamp) / 3).toFixed(1)}%`}
+              </span>
+            ))}
+          </span>
+        ) : (
+          <>
+            <span className="hm-legend-scale" aria-hidden />
+            <span className="hm-legend-range">
+              <span>-5%</span>
+              <span>0</span>
+              <span>+5%</span>
+            </span>
+          </>
+        )}
         {formattedTime && (
           <span className="hm-updated">Updated {formattedTime}</span>
         )}
       </div>
 
-      {watchlistStatus === 'error' ? (
+      {isIndex ? (
+        indexQuery.data ? (
+          <IndexTreemap sectors={indexQuery.data.sectors} period={period} onSelect={setDetailSymbol} />
+        ) : indexQuery.isError && !(indexQuery.error instanceof HeatmapWarmingError) ? (
+          <div className="hm-error">
+            <span>⚠</span>
+            <span className="hm-error-msg">{indexQuery.error.message}</span>
+            <Button variant="outline" onClick={handleRefresh}>Retry</Button>
+          </div>
+        ) : indexQuery.failureReason instanceof HeatmapWarmingError ? (
+          <div className="itm-state" role="status">Building market map… this takes a minute or two after a restart.</div>
+        ) : (
+          <div className="itm-state itm-state--loading" role="status" aria-label="Loading market map" />
+        )
+      ) : watchlistStatus === 'error' ? (
         <div className="hm-error">
           <span>⚠</span>
           <span className="hm-error-msg">{watchlistError}</span>
