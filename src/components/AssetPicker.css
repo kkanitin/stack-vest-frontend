@@ -1,0 +1,103 @@
+.asp {
+  position: relative;
+  width: 100%;
+}
+
+.asp-input {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text-h);
+  background: var(--surface-low);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  outline: none;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.asp-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-bg);
+}
+
+.asp-input::placeholder {
+  color: var(--text-dim);
+}
+
+.asp-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 50;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.asp-state {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.asp-state--err {
+  color: var(--error);
+}
+
+.asp-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  transition: background-color 120ms ease;
+}
+
+.asp-row:hover,
+.asp-row:focus-visible,
+.asp-row[aria-selected='true'] {
+  background: var(--surface-highest);
+  outline: none;
+}
+
+.asp-row-symbol {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.asp-row-name {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.asp-row-meta {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: capitalize;
+}
