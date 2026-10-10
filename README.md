@@ -111,8 +111,6 @@ Tests use **Vitest** and **Testing Library** in a jsdom environment, colocated n
 npm run test -- --run
 ```
 
-The suite currently runs **66 tests across 19 files**, all passing.
-
 ## Deployment
 
 The app deploys to **Cloudflare Pages / Workers** via Wrangler (`wrangler.jsonc`, configured with single-page-application fallback routing).
