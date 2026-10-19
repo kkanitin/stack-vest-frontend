@@ -1,0 +1,4 @@
+# The app behind /dashboard needs a signed-in session; there is nothing there to index.
+User-agent: *
+Disallow: /dashboard
+Allow: /

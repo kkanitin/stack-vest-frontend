@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { getMe, AuthError } from '../api/users';
 
 vi.mock('@react-oauth/google', () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
   useGoogleOneTapLogin: () => {},
 }));
 

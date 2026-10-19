@@ -1,0 +1,10 @@
+# StackVest
+
+> StackVest is a personal investment portfolio tracker. Signed-in users see their holdings, allocation, recorded portfolio value, returns against market benchmarks, a market heatmap, a watchlist, a dollar-cost-averaging simulator and a fear & greed sentiment gauge.
+
+All app pages require signing in with a Google account; there is no public content beyond the sign-in page.
+
+## Pages
+
+- [Sign in](https://stackvest.app/login): Sign in with Google to open the dashboard.
+- [Dashboard](https://stackvest.app/dashboard/visualization): Portfolio overview: total value, allocation, top holdings, recent activity and market sentiment (sign-in required).

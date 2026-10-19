@@ -515,6 +515,16 @@
   margin-bottom: 14px;
 }
 
+.viz-skel--meta {
+  height: 22px;
+  width: 85%;
+  margin-bottom: 10px;
+}
+
+.viz-skel--meta-short {
+  width: 50%;
+}
+
 .viz-skel--donut {
   width: 160px;
   height: 160px;
