@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { useGoogleOneTapLogin } from '@react-oauth/google';
+import { GoogleOAuthProvider, useGoogleOneTapLogin } from '@react-oauth/google';
 import type { CredentialResponse } from '@react-oauth/google';
 import { useQueryClient } from '@tanstack/react-query';
 import { getMe, createMe, AuthError } from '../api/users';
@@ -86,6 +86,24 @@ function readCachedSession(): { user: User | null; token: string | null } {
   return { user: null, token: null };
 }
 
+/** Asks One Tap to re-issue a fresh ID token without user interaction. */
+const SilentRenewal: React.FC<{
+  onSuccess: (resp: CredentialResponse) => void;
+  onFailure: () => void;
+}> = ({ onSuccess, onFailure }) => {
+  useGoogleOneTapLogin({
+    auto_select: true,
+    cancel_on_tap_outside: false,
+    onSuccess,
+    onError: onFailure,
+    promptMomentNotification: (n) => {
+      // Suppressed/skipped without returning a credential => can't renew silently.
+      if (n.isNotDisplayed() || n.isSkippedMoment()) onFailure();
+    },
+  });
+  return null;
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Read from context rather than importing the client from App.tsx — App.tsx
   // imports this module, so a direct import would be a circular dependency.
@@ -139,18 +157,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const handleRenewFailed = () => {
     setRenewing(false);
   };
-
-  useGoogleOneTapLogin({
-    disabled: !renewing,
-    auto_select: true,
-    cancel_on_tap_outside: false,
-    onSuccess: handleRenewed,
-    onError: handleRenewFailed,
-    promptMomentNotification: (n) => {
-      // Suppressed/skipped without returning a credential => can't renew silently.
-      if (n.isNotDisplayed() || n.isSkippedMoment()) handleRenewFailed();
-    },
-  });
 
   // Arm both timers for the current token: a silent renewal shortly before it
   // expires, and a hard logout at the real expiry. The hard logout is armed
@@ -253,6 +259,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!user, isInitializing }}>
       {children}
+      {/* Mounted only for a renewal attempt: GoogleOAuthProvider injects Google's
+          gsi/client script (~100 KB, plus third-party cookies) on mount, so keeping
+          it off the authenticated pages otherwise keeps it off their load. */}
+      {renewing && (
+        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+          <SilentRenewal onSuccess={handleRenewed} onFailure={handleRenewFailed} />
+        </GoogleOAuthProvider>
+      )}
     </AuthContext.Provider>
   );
 };

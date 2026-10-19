@@ -25,7 +25,13 @@ const PortfolioValueCard: React.FC = () => {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="viz-skel viz-skel--value" />
+          // Mirrors the loaded layout (value, 30-day meta, P&L, note) so the card does not
+          // grow when the summary lands and push the rows below it down (CLS).
+          <>
+            <div className="viz-skel viz-skel--value" />
+            <div className="viz-skel viz-skel--meta" />
+            <div className="viz-skel viz-skel--meta viz-skel--meta-short" />
+          </>
         ) : isError ? (
           <div className="viz-value viz-value--dim">Couldn't load summary</div>
         ) : summary ? (
@@ -54,11 +60,14 @@ const PortfolioValueCard: React.FC = () => {
             <p className="viz-card-meta-sub">
               Returns are now calculated from your recorded transactions, so they may differ from before.
             </p>
-            {summary.totalValue > 0 && <PortfolioValueChart />}
           </>
         ) : (
           <div className="viz-value viz-value--dim">—</div>
         )}
+        {/* Mounted while the summary is still loading so the history request runs alongside it
+            (not after it) and the chart's space is reserved from the first paint. Dropped only
+            once the summary says there is nothing to chart. */}
+        {(isLoading || (summary && summary.totalValue > 0)) && <PortfolioValueChart />}
       </CardContent>
     </Card>
   );

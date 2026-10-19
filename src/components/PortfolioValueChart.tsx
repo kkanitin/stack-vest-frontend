@@ -19,6 +19,9 @@ import './Visualization.css';
 
 const RANGES: ValueHistoryRange[] = ['30D', '90D', '1Y', 'All'];
 
+const DEFAULT_NOTE =
+  "What your holdings were worth each day, as recorded, including money added or withdrawn. Today's point is updated every few hours, so it can trail the total above.";
+
 // Snapshot dates are UTC calendar days; format them in UTC so they never shift by a day.
 function fmtDay(date: string, withYear = false): string {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', {
@@ -93,7 +96,11 @@ const PortfolioValueChart: React.FC = () => {
       </header>
 
       {isLoading ? (
-        <div className="viz-skel viz-skel--chart" />
+        <>
+          <div className="viz-skel viz-skel--chart" />
+          {/* Same caption the loaded chart shows by default: static text, so it paints right away. */}
+          <p className="viz-trend-note">{DEFAULT_NOTE}</p>
+        </>
       ) : isError ? (
         <p className="viz-trend-empty">Value history is unavailable right now.</p>
       ) : points.length < 2 ? (
@@ -191,7 +198,7 @@ const PortfolioValueChart: React.FC = () => {
           <p className="viz-trend-note">
             {compare
               ? `% change from ${fmtDay(pctFirst.date)}. The portfolio line is a time-weighted return, so money you add or withdraw does not move it.`
-              : "What your holdings were worth each day, as recorded, including money added or withdrawn. Today's point is updated every few hours, so it can trail the total above."}
+              : DEFAULT_NOTE}
           </p>
         </>
       )}

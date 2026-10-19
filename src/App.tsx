@@ -43,14 +43,22 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-    <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
         <ErrorBoundary variant="page">
         <ToastProvider>
         <Router>
           <Suspense fallback={<RouteFallback variant="page" />}>
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
+            {/* Scoped to /login: the provider loads Google's gsi/client script on mount, and
+                the dashboard only needs it for silent renewal, which AuthProvider mounts itself. */}
+            <Route
+              path="/login"
+              element={
+                <GoogleOAuthProvider clientId={googleClientId}>
+                  <LoginPage />
+                </GoogleOAuthProvider>
+              }
+            />
             <Route 
               path="/dashboard" 
               element={
@@ -75,7 +83,6 @@ function App() {
         </ToastProvider>
         </ErrorBoundary>
       </AuthProvider>
-    </GoogleOAuthProvider>
     </QueryClientProvider>
   );
 }

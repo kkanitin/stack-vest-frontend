@@ -5,6 +5,20 @@
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/600.css";
 
+/* Metric-matched stand-in for JetBrains Mono while the web font loads. Its advance
+   (600/1000 em) equals that of the local monospace fonts listed (Menlo, DejaVu
+   Sans Mono, Courier New), so only the vertical metrics need overriding to JetBrains
+   Mono's (ascent 1020, descent 300, no line gap). The swap then changes no line box
+   or text width, which is what moved the holdings row below the hero (CLS). */
+@font-face {
+  font-family: 'JetBrains Mono Fallback';
+  src: local('Menlo'), local('DejaVu Sans Mono'), local('Courier New');
+  size-adjust: 100%;
+  ascent-override: 102%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /* StackVest design tokens — dark-default, optional light variant.
@@ -65,7 +79,7 @@
   --sans: 'Geist Variable', system-ui, -apple-system, sans-serif;
   --heading: var(--sans);
   --display: var(--sans);
-  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --mono: 'JetBrains Mono', 'JetBrains Mono Fallback', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Radii */
   --r-sm: 2px;
