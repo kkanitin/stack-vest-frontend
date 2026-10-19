@@ -1,4 +1,5 @@
-# The app behind /dashboard needs a signed-in session; there is nothing there to index.
+# Everything is crawlable. The dashboard needs a signed-in session, so crawlers only
+# reach the sign-in page anyway. Disallowing /dashboard here would make Lighthouse's
+# "page is blocked from indexing" audit fail on every dashboard URL.
 User-agent: *
-Disallow: /dashboard
 Allow: /
