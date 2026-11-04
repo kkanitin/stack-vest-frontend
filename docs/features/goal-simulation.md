@@ -146,6 +146,7 @@ A **Growth over time** card between the figures and the range card: `src/compone
 | `src/utils/goalChart.ts` | Chart points at the three returns, axis ticks and labels, text alternative |
 | `src/utils/goalProgress.ts` | Progress: months elapsed since `createdAt`, plan value to date (KAN-25); status and gap (KAN-26) |
 | `src/api/fx.ts` | Today's FX rate (Frankfurter), supported ISO codes, rate description (KAN-27) |
+| `src/hooks/useGoalProgress.ts` | Goal progress state from the goal, the linked portfolio's value and FX (KAN-28) |
 | `src/hooks/useFxRate.ts` | Today's rate for a currency pair, fetched once a day per browser (KAN-27) |
 | `src/utils/goalMath.ts` | Projection, required monthly amount, range, today's money (KAN-17) |
 | `src/utils/format.ts` (`fmtAmount`, `fmtRate`) | Amount with the currency label, whole units; a rate such as "7.25%" |
@@ -173,6 +174,23 @@ KAN-23: for a saved goal linked to a portfolio, how far along it is and whether 
 - **Percentages:** `percentOfPlan` (null when the plan is 0) and `percentOfTarget` (target mode; null without a positive target).
 - **No status** (null) when there is no plan value or no portfolio value.
 
+### Progress hook
+
+`useGoalProgress(goal)` in `src/hooks/useGoalProgress.ts` (KAN-28) combines the goal, the linked portfolio's value and the FX rate for the goal card and the goal page. It returns one state:
+
+| State | When |
+|---|---|
+| `not-linked` | No goal, or the goal has no portfolio link |
+| `loading` | The portfolios, the portfolio detail or the FX rate are loading |
+| `portfolio-removed` | The linked portfolio is not in the user's list |
+| `unreachable` | No plan value (`goalPlanToDate` is null) |
+| `no-value` | The portfolio has no value yet; with `retry` when loading it failed |
+| `fx-unavailable` | `reason: 'unsupported'` (the goal's currency is not a code the rates cover) or `'error'` (the rate failed; with `retry`) |
+| `ready` | `status`, `gap`, `percentOfPlan`, `percentOfTarget`, `actual` (in the goal's currency), `portfolioValue` and `portfolioCurrency`, `fx` (null in the same currency) and the `plan` |
+
+- **Value:** `Portfolio.value` from `usePortfolios` (one request shared by every card); the portfolio detail (`usePortfolio`, `['portfolio', id]`) is asked for only when the list has no value.
+- **Fresh values:** transactions already invalidate `['portfolios']` and `['portfolio', id]`, so progress follows them with no polling. FX is one query per currency pair.
+
 ### Currency conversion
 
 When the goal's currency differs from the portfolio's, the portfolio value is converted at **today's rate only** (KAN-27), no historical rates:
@@ -181,7 +199,7 @@ When the goal's currency differs from the portfolio's, the portfolio value is co
 - **Once a day:** `useFxRate(from, to)` in `src/hooks/useFxRate.ts` keeps the rate in `localStorage` for the calendar day and in the query cache for 24 hours, so each browser fetches a pair once a day. The same currency is rate 1 with no request. A failure retries once, then reports an error with a way to try again.
 - **Codes:** the goal's currency is a free-text label, so it is converted only when `fxCurrencyCode` finds it among the ISO codes ECB covers (`FX_CURRENCIES`, e.g. THB, USD, EUR, JPY); anything else (e.g. "Baht") cannot be converted.
 - **Shown as** `describeFxRate`: "1 USD = 35.20 THB, 4 Nov 2026".
-- **Portfolio currency:** the API has no portfolio currency yet; portfolio values are USD across the app (prices and trades are in USD), so USD is assumed until the backend exposes one.
+- **Portfolio currency:** the API has no portfolio currency yet (`Portfolio.currency` is optional and assumed; `portfolioCurrency` in `src/api/portfolios.ts`); portfolio values are USD across the app (prices and trades are in USD), so USD is assumed until the backend exposes one.
 
 ## Not yet
 
