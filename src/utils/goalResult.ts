@@ -7,6 +7,7 @@ import {
   type GoalRange,
 } from './goalMath';
 import type { ParsedGoal } from './goalInputs';
+import { goalChartPoints, type GoalChartPoint } from './goalChart';
 
 export interface GoalFigures {
   finalValue: number;
@@ -21,6 +22,11 @@ interface GoalResultBase {
   todaysMoney: boolean;
   /** The low / expected / high annual returns, in percent. */
   returns: GoalRange<number>;
+  /**
+   * Yearly points for the growth chart, on the same money basis as `figures`; null when there
+   * is no plan to draw (an unreachable target).
+   */
+  chart: GoalChartPoint[] | null;
 }
 
 export interface ProjectionResult extends GoalResultBase {
@@ -59,12 +65,13 @@ export type GoalResult = ProjectionResult | TargetResult;
  *   future money.
  */
 export function computeGoalResult(goal: ParsedGoal, todaysMoney: boolean): GoalResult {
-  const base: GoalResultBase = {
+  const returns = returnRange(goal.projection.annualReturnPct);
+  const base: Omit<GoalResultBase, 'chart'> = {
     currency: goal.currency,
     years: goal.years,
     inflationPct: goal.inflationPct,
     todaysMoney,
-    returns: returnRange(goal.projection.annualReturnPct),
+    returns,
   };
 
   if (goal.kind === 'projection') {
@@ -74,6 +81,7 @@ export function computeGoalResult(goal: ParsedGoal, todaysMoney: boolean): GoalR
     return {
       ...base,
       kind: 'projection',
+      chart: goalChartPoints(goal.projection, returns, todaysMoney ? goal.inflationPct : undefined),
       headline: deflate(expected.finalValue),
       figures: {
         finalValue: deflate(expected.finalValue),
@@ -94,10 +102,13 @@ export function computeGoalResult(goal: ParsedGoal, todaysMoney: boolean): GoalR
     : targetAmount;
   const range = requiredMonthlyRange({ ...goal.target, targetAmount: targetNominal });
   const monthly = range.expected;
-  const figures = monthly == null ? null : projectGoal({ ...goal.projection, monthlyAmount: monthly });
+  const plan = monthly == null ? null : { ...goal.projection, monthlyAmount: monthly };
+  const figures = plan && projectGoal(plan);
   return {
     ...base,
     kind: 'target',
+    // Future money, like the other target-mode amounts; the chart's target line is `targetNominal`.
+    chart: plan && goalChartPoints(plan, returns),
     headline: monthly,
     figures,
     range,

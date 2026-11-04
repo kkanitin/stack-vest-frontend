@@ -40,6 +40,20 @@ describe('computeGoalResult — projection', () => {
     expect(r.figures.totalInvested).toBeCloseTo(3_600_000 / factor, 2);
     expect(r.figures.gain).toBeCloseTo(r.figures.finalValue - r.figures.totalInvested, 6);
   });
+
+  it('gives yearly chart points that end on the figures and range, in either money', () => {
+    for (const todaysMoney of [false, true]) {
+      const r = computeGoalResult(retirement, todaysMoney);
+      if (r.kind !== 'projection') throw new Error('expected projection');
+      expect(r.chart).toHaveLength(31);
+      const last = r.chart!.at(-1)!;
+      expect(last.year).toBe(30);
+      expect(last.invested).toBeCloseTo(r.figures.totalInvested, 4);
+      expect(last.value.expected).toBeCloseTo(r.range.expected, 4);
+      expect(last.value.low).toBeCloseTo(r.range.low, 4);
+      expect(last.value.high).toBeCloseTo(r.range.high, 4);
+    }
+  });
 });
 
 describe('computeGoalResult — target', () => {
@@ -51,6 +65,29 @@ describe('computeGoalResult — target', () => {
     expect(r.range.low!).toBeGreaterThan(r.range.expected!);
     expect(r.range.high!).toBeLessThan(r.range.expected!);
     expect(r.targetNominal).toBe(1_000_000);
+    // The chart follows the plan at the expected return to the target.
+    expect(r.chart!.at(-1)!.value.expected).toBeCloseTo(1_000_000, 2);
+    expect(r.chart!.at(-1)!.invested).toBeCloseTo(r.figures!.totalInvested, 4);
+  });
+
+  it("keeps the chart in future money in today's money, ending on the grown target", () => {
+    const r = computeGoalResult(house, true);
+    if (r.kind !== 'target') throw new Error('expected target');
+    expect(r.chart!.at(-1)!.value.expected).toBeCloseTo(r.targetNominal, 2);
+  });
+
+  it('has no chart when the target cannot be reached', () => {
+    // No whole month to save in (the form does not allow this, but the maths returns null for it).
+    const unreachable = {
+      ...house,
+      years: 0.01,
+      projection: { ...house.projection, years: 0.01 },
+      target: { ...house.target, years: 0.01 },
+    };
+    const r = computeGoalResult(unreachable, false);
+    if (r.kind !== 'target') throw new Error('expected target');
+    expect(r.figures).toBeNull();
+    expect(r.chart).toBeNull();
   });
 
   it("grows a target in today's money by inflation, so more is needed each month", () => {

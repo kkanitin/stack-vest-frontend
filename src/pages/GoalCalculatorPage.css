@@ -327,3 +327,9 @@
     font-size: 26px;
   }
 }
+
+.goal-chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

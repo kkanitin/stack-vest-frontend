@@ -48,16 +48,29 @@ Calculated by `src/utils/goalResult.ts` (`computeGoalResult`) from the goal math
   - Target: the target is taken as today's money and grown by inflation to the end of the plan, so the monthly amount needed is what the user actually pays. A note gives both figures; the other amounts stay in future money.
 - A note under the results says which basis is shown.
 
+## Growth chart
+
+A **Growth over time** card between the figures and the range card: `src/components/GoalGrowthChart.tsx`, a hand-drawn SVG following the `DcaGrowthChart` pattern, sized to its box with `useElementSize`.
+
+- **Lines:** amount invested (dashed), expected value (solid) and a shaded band between the low and high returns. In target mode a dashed horizontal line marks the target.
+- **Data:** `GoalResult.chart` from `computeGoalResult`, built by `goalChartPoints` in `src/utils/goalChart.ts` on top of `goalSeries`: one point a year from today (year 0 is the starting amount), with a part-year point at the end when years is not whole. Target mode charts the plan at the monthly amount needed; there is no chart when the target cannot be reached.
+- **Today's money:** follows the toggle the same way as the figures. Projection mode divides each point by `(1 + inflation)^year` for its own year, so the last point matches the headline. Target mode stays in future money and the target line sits at the target grown by inflation.
+- **X-axis:** years ("Now", "Year 5", …) on a round step: up to 6 labels, 3 below 480 px wide. **Y-axis:** round gridlines (`valueTicks`) with short labels such as 1.25M (`fmtCompact`), no currency.
+- **Readout:** hovering, or tapping on a phone, shows the nearest year, the amount invested and the value at the low, expected and high returns, with the currency label.
+- **Text alternative:** the SVG's `aria-label` (`describeGoalChart`) gives the years, the amount invested, the expected final value with its low and high, and the target when there is one.
+
 ## Files
 
 | File | Role |
 |---|---|
 | `src/pages/GoalCalculatorPage.tsx`, `.css` | Page: form, mode switch, today's-money toggle, results |
 | `src/utils/goalInputs.ts` | Form state shape, defaults, validation and parsing |
-| `src/utils/goalResult.ts` | Turns parsed inputs into the figures the page shows |
+| `src/utils/goalResult.ts` | Turns parsed inputs into the figures and chart points the page shows |
+| `src/components/GoalGrowthChart.tsx`, `.css` | Growth chart: lines, low–high band, target line, readout, text alternative (KAN-19) |
+| `src/utils/goalChart.ts` | Chart points at the three returns, axis ticks and labels, text alternative |
 | `src/utils/goalMath.ts` | Projection, required monthly amount, range, today's money (KAN-17) |
 | `src/utils/format.ts` (`fmtAmount`) | Amount with the currency label, whole units |
 
 ## Not yet
 
-Saving goals (KAN-22), the growth chart (KAN-19), the short-goal warning (KAN-20) and the optional portfolio link with a suggested return (KAN-21) are separate tickets.
+Saving goals (KAN-22), the short-goal warning (KAN-20) and the optional portfolio link with a suggested return (KAN-21) are separate tickets.
