@@ -36,7 +36,7 @@ An invalid input shows a message under its field and the Run button is disabled.
 | `src/components/AssetPicker.tsx` | Search-to-select field over `useStockSearch` (`GET /stocks/search`) |
 | `src/components/DcaComparison.tsx`, `DcaCompareChart.tsx` | Asset comparison: skipped notice, percentage-return chart with legend, table (helpers in `src/utils/dcaCompare.ts`) |
 | `src/components/HoldingsPicker.tsx`, `DcaHoldingsResult.tsx` | Holdings simulation: portfolio picker with current weights, and the combined result with per-asset table |
-| `src/components/DcaSkippedNotice.tsx` | Names assets left out of a comparison or holdings simulation |
+| `src/components/DcaSkippedNotice.tsx`, `.css` | Names assets left out of a comparison or holdings simulation (also used by the goal calculator's suggested return, with its own `title`) |
 | `src/components/DcaGrowthChart.tsx` | Growth chart with dated axis, hover/tap readout and text alternative |
 
 ## Data

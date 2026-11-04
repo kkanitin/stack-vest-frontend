@@ -1,6 +1,12 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import GoalCalculatorPage from './GoalCalculatorPage';
 
+// The portfolio link (KAN-21) is covered in GoalCalculatorPage.portfolio.test.tsx; here it stays unlinked.
+vi.mock('../hooks/usePortfolios', () => ({ usePortfolios: () => ({ data: [], isLoading: false, isError: false }) }));
+vi.mock('../hooks/useSuggestedReturn', () => ({
+  useSuggestedReturn: () => ({ data: undefined, isLoading: false, isError: false, refetch: () => {} }),
+}));
+
 function type(label: RegExp | string, value: string) {
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 }
