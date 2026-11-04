@@ -100,7 +100,7 @@ src/
     ui/        # Reusable primitives (Button, Card, Modal, Input, …)
   pages/       # Route-level pages (LandingPage shell, Portfolios, Heatmap, …)
   context/     # AuthContext, ToastContext
-  utils/       # Formatting, scoring, chart and P&L helpers (e.g. `pnlTotals`, `pctChangeSeries`)
+  utils/       # Formatting, scoring, chart, P&L and goal-maths helpers (e.g. `pnlTotals`, `pctChangeSeries`, `goalMath`)
   config.ts    # Client-side feature limits
 ```
 
