@@ -144,8 +144,23 @@ A **Growth over time** card between the figures and the range card: `src/compone
 | `src/components/ShortGoalNotice.tsx`, `.css` | Short-goal notice: plan versus cash for goals under 5 years (KAN-20) |
 | `src/components/GoalGrowthChart.tsx`, `.css` | Growth chart: lines, low–high band, target line, readout, text alternative (KAN-19) |
 | `src/utils/goalChart.ts` | Chart points at the three returns, axis ticks and labels, text alternative |
+| `src/utils/goalProgress.ts` | Progress: months elapsed since `createdAt`, plan value to date (KAN-25) |
 | `src/utils/goalMath.ts` | Projection, required monthly amount, range, today's money (KAN-17) |
 | `src/utils/format.ts` (`fmtAmount`, `fmtRate`) | Amount with the currency label, whole units; a rate such as "7.25%" |
+
+## Progress
+
+KAN-23: for a saved goal linked to a portfolio, how far along it is and whether it is on track.
+
+### Plan to date
+
+`src/utils/goalProgress.ts` (KAN-25) works out where the plan says the goal should be today, in future money at the goal's expected return (no today's-money conversion):
+
+- **Start:** `goal.createdAt`, the only start date the backend stores. `updatedAt` is never used, so editing a goal does not move its start. (Open question: an explicit `startDate` from the backend would stop a re-created goal restarting its plan.)
+- **Months elapsed** (`monthsBetween`): whole calendar months from the start to today; a month counts once its day of the month is reached. Capped at the goal's length.
+- **Plan value** (`planValueAt`): the plan's value after that many months, from the starting amount, the monthly amount and the yearly increase (the same month-by-month maths as `projectGoal`). Projection mode uses the monthly amount; target mode uses the monthly amount needed (`requiredMonthlyAmount`, `goalPlanInputs`).
+- `goalPlanToDate(goal, today)` returns the months elapsed, the total months, the plan value and the monthly amount, or null when there is no plan value (the target cannot be reached, or the amount the mode needs is missing).
+- A goal created today is at its starting amount; a goal past its end date is at its final value.
 
 ## Not yet
 
