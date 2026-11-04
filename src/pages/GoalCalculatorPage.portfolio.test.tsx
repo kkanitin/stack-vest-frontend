@@ -1,5 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import GoalCalculatorPage from './GoalCalculatorPage';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderGoalRoutes } from '../test/renderGoalRoutes';
+
+vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ token: 'test-token' }) }));
 import { usePortfolios } from '../hooks/usePortfolios';
 import { useSuggestedReturn } from '../hooks/useSuggestedReturn';
 import type { Portfolio, SuggestedReturn } from '../api/portfolios';
@@ -62,7 +64,7 @@ const typeReturn = (v: string) => fireEvent.change(returnField(), { target: { va
 
 describe('GoalCalculatorPage portfolio link', () => {
   it('starts unlinked with an empty expected return and asks for no suggestion', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     expect(screen.getByLabelText('Link to a portfolio')).toHaveValue('');
     expect(screen.getByRole('option', { name: 'No portfolio' })).toBeInTheDocument();
     expect(returnField()).toHaveValue(null);
@@ -71,7 +73,7 @@ describe('GoalCalculatorPage portfolio link', () => {
   });
 
   it('fills the field from the linked portfolio and says where it came from', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     pick('p1');
     expect(mockedSuggestion).toHaveBeenLastCalledWith('p1');
     expect(returnField()).toHaveValue(7.4);
@@ -83,7 +85,7 @@ describe('GoalCalculatorPage portfolio link', () => {
   });
 
   it('lets the user overwrite it and puts the suggestion back on "Use suggested"', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     pick('p1');
     typeReturn('9');
     expect(returnField()).toHaveValue(9);
@@ -92,7 +94,7 @@ describe('GoalCalculatorPage portfolio link', () => {
   });
 
   it('updates a filled-in suggestion when the portfolio changes', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     pick('p1');
     pick('p2');
     expect(returnField()).toHaveValue(5.25);
@@ -100,7 +102,7 @@ describe('GoalCalculatorPage portfolio link', () => {
   });
 
   it('never replaces a value the user typed when the portfolio changes', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     typeReturn('6');
     pick('p1');
     expect(returnField()).toHaveValue(6);
@@ -112,7 +114,7 @@ describe('GoalCalculatorPage portfolio link', () => {
   });
 
   it('clears a filled-in suggestion when unlinked', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     pick('p1');
     pick('');
     expect(returnField()).toHaveValue(null);
@@ -120,7 +122,7 @@ describe('GoalCalculatorPage portfolio link', () => {
   });
 
   it('shows "No suggestion for this portfolio" and names the holdings left out', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     pick('p1');
     pick('p3');
     expect(screen.getByText('No suggestion for this portfolio.')).toBeInTheDocument();
@@ -132,7 +134,7 @@ describe('GoalCalculatorPage portfolio link', () => {
 
   it('names skipped holdings alongside an available suggestion', () => {
     byId.p1 = { data: suggestion(7.4, { skipped: [{ symbol: 'ABC', code: 'no_price', reason: 'no current price' }] }) };
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     pick('p1');
     expect(returnField()).toHaveValue(7.4);
     expect(screen.getByText('ABC')).toBeInTheDocument();
@@ -141,7 +143,7 @@ describe('GoalCalculatorPage portfolio link', () => {
   it('keeps the form usable while the suggestion loads or fails', () => {
     byId.p1 = { isLoading: true };
     byId.p2 = { isError: true };
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     pick('p1');
     expect(screen.getByText('Working out a suggested return…')).toBeInTheDocument();
     typeReturn('8');
@@ -157,17 +159,18 @@ describe('GoalCalculatorPage portfolio link', () => {
 
   it('fills the field once a slow suggestion arrives', () => {
     byId.p1 = { isLoading: true };
-    const { rerender } = render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     pick('p1');
     expect(returnField()).toHaveValue(null);
     byId.p1 = { data: suggestion(7.4) };
-    rerender(<GoalCalculatorPage />);
+    // Any re-render reads the query again; the mocked hook has no store to notify the page.
+    fireEvent.click(screen.getByLabelText("Show in today's money"));
     expect(returnField()).toHaveValue(7.4);
   });
 
   it('still works when the portfolios cannot be loaded', () => {
     mockedPortfolios.mockReturnValue({ data: undefined, isLoading: false, isError: true } as unknown as ReturnType<typeof usePortfolios>);
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     expect(screen.getByText(/Could not load your portfolios/)).toBeInTheDocument();
     typeReturn('7');
     expect(returnField()).toHaveValue(7);

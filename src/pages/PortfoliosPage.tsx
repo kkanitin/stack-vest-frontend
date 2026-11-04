@@ -51,6 +51,9 @@ const PortfoliosPage: React.FC = () => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolios'] });
       queryClient.invalidateQueries({ queryKey: ['portfolios', 'summary'] });
+      // The backend clears the link on goals that pointed at the deleted portfolio.
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goal'] });
     },
   });
 

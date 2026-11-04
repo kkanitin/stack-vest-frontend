@@ -149,7 +149,7 @@ const LandingPage: React.FC = () => {
               DCA Simulation
             </NavLink>
             <NavLink
-              to="/dashboard/goals/new"
+              to="/dashboard/goals"
               className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
               onClick={() => setSidebarOpen(false)}
             >

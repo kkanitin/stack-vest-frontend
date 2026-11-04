@@ -100,6 +100,9 @@ const PortfolioDetailPage: React.FC = () => {
     onSuccess: () => {
       toast.success('Portfolio deleted');
       queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+      // The backend clears the link on goals that pointed at this portfolio.
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goal'] });
       navigate('/dashboard/portfolios');
     },
     onError: err => {
