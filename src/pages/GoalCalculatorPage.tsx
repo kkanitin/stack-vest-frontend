@@ -26,6 +26,7 @@ import { useGoalMutations } from '../hooks/useGoalMutations';
 import { GoalNotFoundError, type Goal } from '../api/goals';
 import { useToast } from '../context/ToastContext';
 import InlineConfirm from '../components/InlineConfirm';
+import GoalProgressPanel from '../components/GoalProgressPanel';
 import {
   NEW_GOAL_DRAFT,
   draftToBody,
@@ -457,6 +458,8 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
         </p>
       </header>
 
+      {saved && <GoalProgressPanel goal={saved} unsaved={dirty} />}
+
       <div className="goal-grid">
         <Card className="goal-form px-6">
           <CardTitle className="label-caps">Your Goal</CardTitle>
@@ -477,7 +480,7 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
               placeholder={isTarget ? 'House down payment' : 'Retirement'} />
             <div className="goal-field-narrow">
               <Field field="currency" label="Currency" form={form} errors={errors} onChange={update} numeric={false}
-                hint="Label only, no conversion." />
+                hint={portfolioId ? 'A code such as THB lets progress convert the portfolio value.' : 'Label only, no conversion.'} />
             </div>
           </div>
 

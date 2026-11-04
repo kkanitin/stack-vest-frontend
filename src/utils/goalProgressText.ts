@@ -49,7 +49,7 @@ export function progressStateNote(p: GoalProgressState): string | null {
         ? `Can't convert ${p.to}: use a currency code such as THB or USD to track progress.`
         : `Could not load today's ${p.from} to ${p.to} rate.`;
     case 'unreachable':
-      return 'No plan to compare with: the target cannot be reached.';
+      return 'No plan to compare with.';
     default:
       return null;
   }

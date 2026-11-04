@@ -4,7 +4,7 @@
 **Entry points:** `src/pages/GoalsPage.tsx` (list), `src/pages/GoalCalculatorPage.tsx` (calculator)
 **Sidebar:** Goals (opens the list)
 
-Plan toward a goal with investing. The DCA simulation looks back at real prices. This page looks forward at a steady return the user chooses. Every result is calculated in the browser. The API calls are for saved goals (the backend stores inputs only, see [Saved goals](#saved-goals)) and the optional portfolio link: the user's portfolios and a suggested return for the linked one.
+Plan toward a goal with investing. The DCA simulation looks back at real prices. This page looks forward at a steady return the user chooses. Every result is calculated in the browser. The API calls are for saved goals (the backend stores inputs only, see [Saved goals](#saved-goals)) and the optional portfolio link: the user's portfolios and a suggested return for the linked one. Goal progress also reads the linked portfolio's value and, when currencies differ, today's exchange rate from an external FX source (see [Progress](#progress)).
 
 ## Saved goals
 
@@ -61,7 +61,7 @@ Both amounts are kept when switching modes, so switching back does not lose what
 ## Inputs
 
 - Goal name
-- Currency: a free-text label (up to 10 characters, default `THB`). It is shown after every amount on the page and in the amount inputs, and is never used in a calculation; changing it changes no number.
+- Currency: a free-text label (up to 10 characters, default `THB`). It is shown after every amount on the page and in the amount inputs, and is never used in a calculation; changing it changes no number. Goal progress converts the linked portfolio's value into it when it is an ISO code the FX source covers (see [Currency conversion](#currency-conversion)).
 - Starting amount (optional, empty = 0)
 - Monthly amount (projection) or target amount (target)
 - Years: decimals allowed (e.g. 2.5), up to 100; the maths rounds to whole months
@@ -128,9 +128,10 @@ A **Growth over time** card between the figures and the range card: `src/compone
 
 | File | Role |
 |---|---|
-| `src/pages/GoalCalculatorPage.tsx`, `.css` | Page: loads a saved goal or starts a new one; form, mode switch, today's-money toggle, results, save / delete / unsaved-changes prompt |
+| `src/pages/GoalCalculatorPage.tsx`, `.css` | Page: loads a saved goal or starts a new one; progress card, form, mode switch, today's-money toggle, results, save / delete / unsaved-changes prompt |
 | `src/pages/GoalsPage.tsx`, `.css` | Saved-goals list, empty state, delete from the list (KAN-22) |
 | `src/components/GoalCard.tsx`, `.css` | One saved goal: name, mode, years, headline result, linked portfolio, progress (KAN-29), in-card delete confirmation |
+| `src/components/GoalProgressPanel.tsx`, `.css` | Progress card on a saved goal's page (KAN-30) |
 | `src/components/GoalProgressStatus.tsx`, `.css` | Status chip (label + icon) and progress bar shared by the card and the goal page |
 | `src/utils/goalProgressText.ts` | Progress wording: status labels, gap, rate note, bar fill, notes for states without figures |
 | `src/components/InlineConfirm.tsx`, `.css` | In-page confirmation used for delete and for leaving with unsaved changes |
@@ -156,6 +157,17 @@ A **Growth over time** card between the figures and the range card: `src/compone
 ## Progress
 
 KAN-23: for a saved goal linked to a portfolio, how far along it is and whether it is on track.
+
+### Progress card on the goal page
+
+`src/components/GoalProgressPanel.tsx` (KAN-30), between the page header and the form, on `/dashboard/goals/:id` for saved goals with a portfolio link:
+
+- **Shows:** the status chip and the gap ("Behind by 3,000 USD"), the progress bar, then the portfolio's value now (plus "≈ 122,500 THB" when converted), the plan for today, the signed gap, months elapsed of the total ("12 of 60 months") and, in target mode, the share of the target. A converted value adds "Converted at 1 USD = 35.20 THB, 4 Nov 2026. Today's rate only." A last line says the figures are in future money at the expected return, from the day the goal was saved.
+- **Saved goal only:** it reads the saved goal, not the form. While the form has unsaved changes a note says "Progress follows the saved goal. Save your changes to update it." Saving updates it (the mutation writes `['goal', id]`).
+- **Other states:** the same notes as the card (`role="status"`), with **Try again** for a failed rate or portfolio load; nothing in the form is blocked.
+- **Hidden** on `/dashboard/goals/new`, for unlinked goals and when the linked portfolio was removed (the picker's "Removed portfolio" note covers that).
+- **Currency hint:** with a portfolio linked, the currency field's hint says a code such as THB lets progress convert the value; otherwise it stays "Label only, no conversion."
+- The text figures (a `dl`) and the chip's label are the text alternative; the bar has `role="progressbar"` with its value.
 
 ### Plan to date
 
@@ -205,4 +217,4 @@ When the goal's currency differs from the portfolio's, the portfolio value is co
 
 ## Not yet
 
-The short-goal notice never stops the user saving a goal. The today's-money toggle is not saved with the goal.
+The short-goal notice never stops the user saving a goal. The today's-money toggle is not saved with the goal. Progress is not marked on the growth chart, the plan always starts on `createdAt` (no separate start date from the backend), and portfolio values are assumed to be USD until the API gives a portfolio currency.
