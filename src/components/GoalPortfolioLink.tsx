@@ -21,6 +21,11 @@ interface Props {
   /** The expected-return field as typed, to tell whether it already holds the suggestion. */
   expectedReturnText: string;
   onUseSuggested: (rate: number) => void;
+  /**
+   * The linked portfolio no longer exists (a saved goal whose portfolio was deleted). The
+   * picker shows it as removed and no suggestion is asked for.
+   */
+  linkRemoved?: boolean;
 }
 
 /**
@@ -33,6 +38,7 @@ const GoalPortfolioLink: React.FC<Props> = ({
   suggestion,
   expectedReturnText,
   onUseSuggested,
+  linkRemoved = false,
 }) => {
   const portfolios = usePortfolios();
   const list = portfolios.data ?? [];
@@ -44,6 +50,7 @@ const GoalPortfolioLink: React.FC<Props> = ({
   let pickerHint: string | null = null;
   if (portfolios.isLoading) pickerHint = 'Loading your portfolios…';
   else if (portfolios.isError) pickerHint = 'Could not load your portfolios. You can still enter the expected return yourself.';
+  else if (linkRemoved) pickerHint = null;
   else if (portfolios.data && list.length === 0) pickerHint = 'You have no portfolios yet.';
   else if (!linked) pickerHint = 'Optional. Link one to get a suggested return from what it holds.';
 
@@ -58,11 +65,19 @@ const GoalPortfolioLink: React.FC<Props> = ({
         aria-describedby="goal-portfolio-hint"
       >
         <option value="">No portfolio</option>
+        {linkRemoved && <option value={portfolioId} disabled>Removed portfolio</option>}
         {list.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
       </select>
 
       <div id="goal-portfolio-hint" className="goal-link-status" aria-live="polite">
         {pickerHint && <p className="goal-hint">{pickerHint}</p>}
+
+        {linkRemoved && (
+          <p className="goal-hint goal-link-removed" role="status" data-testid="goal-link-removed">
+            The portfolio this goal was linked to has been deleted. Pick another one or leave it
+            unlinked; saving removes the old link.
+          </p>
+        )}
 
         {linked && suggestion.isLoading && (
           <p className="goal-hint" role="status">Working out a suggested return…</p>

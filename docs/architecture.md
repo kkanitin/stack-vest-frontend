@@ -29,12 +29,14 @@ QueryClientProvider        TanStack Query (queries retry once)
    └─ AuthProvider         src/context/AuthContext.tsx
       └─ ErrorBoundary     page-level
          └─ ToastProvider  src/context/ToastContext.tsx
-            └─ Router      React Router 8, Suspense-wrapped routes
+            └─ RouterProvider  React Router 8 data router (createBrowserRouter), Suspense-wrapped routes
 ```
 
 If `VITE_GOOGLE_CLIENT_ID` is missing or still the placeholder value, `App` renders an explicit "Missing Google Client ID" screen instead of crashing.
 
 ## Routing
+
+`src/App.tsx` builds a data router (`createBrowserRouter` + `createRoutesFromElements`) once per mount, so pages can use `useBlocker` (the goal calculator holds navigation while it has unsaved changes). A root layout route wraps every route in one `Suspense` boundary.
 
 ```
 /login                             LoginPage
@@ -45,8 +47,9 @@ If `VITE_GOOGLE_CLIENT_ID` is missing or still the placeholder value, `App` rend
   portfolios                       PortfoliosPage
   portfolios/:id                   PortfolioDetailPage
   dca                              DCASimulation
-  goals                            → redirects to goals/new
-  goals/new                        GoalCalculatorPage
+  goals                            GoalsPage (saved goals)
+  goals/new                        GoalCalculatorPage (new goal)
+  goals/:id                        GoalCalculatorPage (saved goal)
   watchlist                        WatchlistPage
 /                                  → redirects to /dashboard
 *                                  NotFoundPage
@@ -56,8 +59,8 @@ If `VITE_GOOGLE_CLIENT_ID` is missing or still the placeholder value, `App` rend
 
 ## Data layer
 
-- **API layer** — `src/api/*` is a thin REST client per resource (portfolios, stocks, watchlist, dividends, sentiment, simulations, users, …), based at `${VITE_API_URL}/api/v1`.
-- **Feature hooks** — `src/hooks/*` wrap the API layer with TanStack Query (`usePortfolio`, `usePortfolios`, `useWatchlistQuotes`, `useFearGreedIndex`, …). Components consume hooks, not the API layer directly. Data that spans every portfolio (`useAllPositions`, `useRecentActivity`) comes from cross-portfolio endpoints in one request each rather than one request per portfolio, because the backend rate-limits bursts per user (see [Overview dashboard](./features/overview-dashboard.md)). The transaction ledger has its own module and hooks: `src/api/transactions.ts` (list / create / update / delete) behind `useHoldingTransactions` (`['portfolio', id, 'transactions', 'holding', symbol]`), `usePortfolioTransactions` (`['portfolio', id, 'transactions', 'list', symbol, size]`), `useClosedPositions` (`['portfolio', id, 'positions', 'closed']`) and `useTransactionMutations`, whose create / update / delete invalidate `['portfolio', id]`, `['portfolio', id, 'positions']` and `['portfolios']` so every ledger change refreshes holdings, P&L, history and activity everywhere (see [Portfolio detail](./features/portfolio-detail.md)). Exception: `usePortfolioAnalysis` manages an SSE stream with its own state rather than a cached query (see [AI Strategy Analysis](./features/ai-strategy-analysis.md)).
+- **API layer** — `src/api/*` is a thin REST client per resource (portfolios, goals, stocks, watchlist, dividends, sentiment, simulations, users, …), based at `${VITE_API_URL}/api/v1`.
+- **Feature hooks** — `src/hooks/*` wrap the API layer with TanStack Query (`usePortfolio`, `usePortfolios`, `useWatchlistQuotes`, `useFearGreedIndex`, …). Components consume hooks, not the API layer directly. Data that spans every portfolio (`useAllPositions`, `useRecentActivity`) comes from cross-portfolio endpoints in one request each rather than one request per portfolio, because the backend rate-limits bursts per user (see [Overview dashboard](./features/overview-dashboard.md)). The transaction ledger has its own module and hooks: `src/api/transactions.ts` (list / create / update / delete) behind `useHoldingTransactions` (`['portfolio', id, 'transactions', 'holding', symbol]`), `usePortfolioTransactions` (`['portfolio', id, 'transactions', 'list', symbol, size]`), `useClosedPositions` (`['portfolio', id, 'positions', 'closed']`) and `useTransactionMutations`, whose create / update / delete invalidate `['portfolio', id]`, `['portfolio', id, 'positions']` and `['portfolios']` so every ledger change refreshes holdings, P&L, history and activity everywhere (see [Portfolio detail](./features/portfolio-detail.md)). Saved goals have their own module and hooks: `src/api/goals.ts` (`GET/POST /goals`, `GET/PUT/DELETE /goals/:id`) behind `useGoals` (`['goals']`), `useGoal` (`['goal', id]`) and `useGoalMutations`, which write results into both keys and refetch the list; deleting a portfolio also invalidates `['goals']` and `['goal']` because the backend clears goal links to it (see [Goal simulation](./features/goal-simulation.md#saved-goals)). Exception: `usePortfolioAnalysis` manages an SSE stream with its own state rather than a cached query (see [AI Strategy Analysis](./features/ai-strategy-analysis.md)).
 
 ## Authentication
 

@@ -1,0 +1,25 @@
+.inline-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-high);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r);
+  cursor: default;
+}
+
+.inline-confirm-msg {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-h);
+  flex: 1 1 220px;
+}
+
+.inline-confirm-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}

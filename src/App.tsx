@@ -1,5 +1,12 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router';
+import { lazy, Suspense, useState } from 'react';
+import {
+  createBrowserRouter,
+  createRoutesFromElements,
+  Navigate,
+  Outlet,
+  Route,
+  RouterProvider,
+} from 'react-router';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
@@ -22,11 +29,71 @@ const HeatmapPage = lazy(() => import('./pages/HeatmapPage'));
 const WatchlistPage = lazy(() => import('./pages/WatchlistPage'));
 const PortfoliosPage = lazy(() => import('./pages/PortfoliosPage'));
 const PortfolioDetailPage = lazy(() => import('./pages/PortfolioDetailPage'));
+const GoalsPage = lazy(() => import('./pages/GoalsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1 } },
 });
+
+/** Every route is lazy, so the whole tree shares one Suspense boundary. */
+function RootLayout() {
+  return (
+    <Suspense fallback={<RouteFallback variant="page" />}>
+      <Outlet />
+    </Suspense>
+  );
+}
+
+/**
+ * A data router (not `<BrowserRouter>`) so pages can use `useBlocker`, e.g. the goal
+ * calculator flagging unsaved changes before in-app navigation.
+ */
+function createAppRouter(googleClientId: string) {
+  return createBrowserRouter(
+    createRoutesFromElements(
+      <Route element={<RootLayout />}>
+        {/* Scoped to /login: the provider loads Google's gsi/client script on mount, and
+            the dashboard only needs it for silent renewal, which AuthProvider mounts itself. */}
+        <Route
+          path="/login"
+          element={
+            <GoogleOAuthProvider clientId={googleClientId}>
+              <LoginPage />
+            </GoogleOAuthProvider>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <LandingPage />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="visualization" replace />} />
+          <Route path="visualization" element={<Visualization />} />
+          <Route path="portfolios" element={<PortfoliosPage />} />
+          <Route path="portfolios/:id" element={<PortfolioDetailPage />} />
+          <Route path="dca" element={<DCASimulation />} />
+          <Route path="goals" element={<GoalsPage />} />
+          <Route path="goals/new" element={<GoalCalculatorPage />} />
+          <Route path="goals/:id" element={<GoalCalculatorPage />} />
+          <Route path="visualization/heatmap" element={<HeatmapPage />} />
+          <Route path="watchlist" element={<WatchlistPage />} />
+        </Route>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    )
+  );
+}
+
+function AppRouter({ googleClientId }: { googleClientId: string }) {
+  // Created once per mount, not at module scope, so importing App starts no history listener.
+  const [router] = useState(() => createAppRouter(googleClientId));
+  return <RouterProvider router={router} />;
+}
 
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -46,45 +113,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ErrorBoundary variant="page">
-        <ToastProvider>
-        <Router>
-          <Suspense fallback={<RouteFallback variant="page" />}>
-          <Routes>
-            {/* Scoped to /login: the provider loads Google's gsi/client script on mount, and
-                the dashboard only needs it for silent renewal, which AuthProvider mounts itself. */}
-            <Route
-              path="/login"
-              element={
-                <GoogleOAuthProvider clientId={googleClientId}>
-                  <LoginPage />
-                </GoogleOAuthProvider>
-              }
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <LandingPage />
-                </ProtectedRoute>
-              } 
-            >
-              <Route index element={<Navigate to="visualization" replace />} />
-              <Route path="visualization" element={<Visualization />} />
-              <Route path="portfolios" element={<PortfoliosPage />} />
-              <Route path="portfolios/:id" element={<PortfolioDetailPage />} />
-              <Route path="dca" element={<DCASimulation />} />
-              {/* Until the saved-goals list exists (KAN-22), /goals opens the calculator. */}
-              <Route path="goals" element={<Navigate to="new" replace />} />
-              <Route path="goals/new" element={<GoalCalculatorPage />} />
-              <Route path="visualization/heatmap" element={<HeatmapPage />} />
-              <Route path="watchlist" element={<WatchlistPage />} />
-            </Route>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-          </Suspense>
-        </Router>
-        </ToastProvider>
+          <ToastProvider>
+            <AppRouter googleClientId={googleClientId} />
+          </ToastProvider>
         </ErrorBoundary>
       </AuthProvider>
     </QueryClientProvider>

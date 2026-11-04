@@ -1,5 +1,7 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
-import GoalCalculatorPage from './GoalCalculatorPage';
+import { screen, fireEvent, within } from '@testing-library/react';
+import { renderGoalRoutes } from '../test/renderGoalRoutes';
+
+vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ token: 'test-token' }) }));
 
 // The portfolio link (KAN-21) is covered in GoalCalculatorPage.portfolio.test.tsx; here it stays unlinked.
 vi.mock('../hooks/usePortfolios', () => ({ usePortfolios: () => ({ data: [], isLoading: false, isError: false }) }));
@@ -22,7 +24,7 @@ const headline = () => screen.getByTestId('goal-headline').textContent ?? '';
 
 describe('GoalCalculatorPage', () => {
   it('shows no results until the form is valid', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     expect(screen.getByTestId('goal-empty')).toBeInTheDocument();
     expect(screen.queryByTestId('goal-results')).not.toBeInTheDocument();
     // Required fields complain while empty.
@@ -31,7 +33,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('projects the final value as the user types (≈ 14.9M for the epic example)', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     fillRetirement();
     expect(screen.queryByTestId('goal-empty')).not.toBeInTheDocument();
     expect(headline()).toMatch(/^14,9\d\d,\d{3} THB$/);
@@ -43,7 +45,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it("switches every amount to today's money with the toggle (≈ 6.1M at the default 3%)", () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     fillRetirement();
     fireEvent.click(screen.getByLabelText("Show in today's money"));
     expect(headline()).toMatch(/^6,1\d\d,\d{3} THB$/);
@@ -51,7 +53,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('solves the monthly amount needed in target mode (≈ 24.7k for 1M in 3 years at 8%)', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     fireEvent.click(screen.getByRole('radio', { name: 'How much must I save?' }));
     type('Goal name', 'House');
     type('Target amount', '1000000');
@@ -67,7 +69,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('keeps the last valid result when a field is cleared, without turning it into 0', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     fillRetirement();
     const before = headline();
     type('Monthly amount', '');
@@ -82,7 +84,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('shows the currency label with every amount and never a dollar sign', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     type('Currency', 'EUR');
     fillRetirement();
     const results = screen.getByTestId('goal-results');
@@ -94,7 +96,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('does not change the numbers when only the currency label changes', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     fillRetirement();
     const thb = headline().replace(' THB', '');
     type('Currency', 'USD');
@@ -102,7 +104,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('keeps both amounts when switching modes back and forth', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     type('Monthly amount', '5000');
     fireEvent.click(screen.getByRole('radio', { name: 'How much must I save?' }));
     type('Target amount', '750000');
@@ -113,7 +115,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('says so when the starting amount already reaches the target', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     fireEvent.click(screen.getByRole('radio', { name: 'How much must I save?' }));
     type('Goal name', 'Covered');
     type('Starting amount (optional)', '2000000');
@@ -125,7 +127,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('draws the growth chart with a text alternative that follows the today\'s-money toggle', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     fillRetirement();
     const chart = within(screen.getByTestId('goal-chart-card')).getByRole('img');
     expect(chart.getAttribute('aria-label')).toMatch(
@@ -138,7 +140,7 @@ describe('GoalCalculatorPage', () => {
   });
 
   it('draws a target line on the chart in target mode', () => {
-    render(<GoalCalculatorPage />);
+    renderGoalRoutes();
     fireEvent.click(screen.getByRole('radio', { name: 'How much must I save?' }));
     type('Goal name', 'House');
     type('Target amount', '1000000');
@@ -160,7 +162,7 @@ describe('GoalCalculatorPage', () => {
     const notice = () => screen.queryByTestId('short-goal-notice');
 
     it('compares the monthly amount with cash in target mode under 5 years', () => {
-      render(<GoalCalculatorPage />);
+      renderGoalRoutes();
       fillHouse('3');
       expect(notice()).toHaveAttribute('role', 'note');
       expect(notice()).toHaveTextContent(
@@ -169,7 +171,7 @@ describe('GoalCalculatorPage', () => {
     });
 
     it('compares final values in projection mode', () => {
-      render(<GoalCalculatorPage />);
+      renderGoalRoutes();
       type('Goal name', 'Trip');
       type('Monthly amount', '10000');
       type('Years', '2');
@@ -179,7 +181,7 @@ describe('GoalCalculatorPage', () => {
     });
 
     it('is hidden at 5 years or more and comes back below', () => {
-      render(<GoalCalculatorPage />);
+      renderGoalRoutes();
       fillHouse('5');
       expect(notice()).not.toBeInTheDocument();
       type('Years', '4.5');
@@ -187,13 +189,13 @@ describe('GoalCalculatorPage', () => {
     });
 
     it('says when investing does worse than cash', () => {
-      render(<GoalCalculatorPage />);
+      renderGoalRoutes();
       fillHouse('3', '-2');
       expect(notice()).toHaveTextContent(/At -2% you need [\d,]+ THB a month\. In cash you need 27,778 THB\. At this return investing costs about [\d,]+ THB more a month/);
     });
 
     it('is informational only: results stay on screen', () => {
-      render(<GoalCalculatorPage />);
+      renderGoalRoutes();
       fillHouse('1');
       expect(notice()).toBeInTheDocument();
       expect(headline()).toMatch(/THB \/ month$/);

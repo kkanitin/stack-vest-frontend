@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useBlocker, useNavigate, useParams } from 'react-router';
+import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
-  DEFAULT_GOAL_FORM,
   hasErrors,
   parseGoalInputs,
   validateGoalInputs,
@@ -19,7 +20,35 @@ import GoalGrowthChart from '../components/GoalGrowthChart';
 import GoalPortfolioLink from '../components/GoalPortfolioLink';
 import { useSuggestedReturn } from '../hooks/useSuggestedReturn';
 import { suggestedRate, suggestedRateText } from '../utils/suggestedReturn';
+import { usePortfolios } from '../hooks/usePortfolios';
+import { useGoal } from '../hooks/useGoals';
+import { useGoalMutations } from '../hooks/useGoalMutations';
+import { GoalNotFoundError, type Goal } from '../api/goals';
+import { useToast } from '../context/ToastContext';
+import InlineConfirm from '../components/InlineConfirm';
+import {
+  NEW_GOAL_DRAFT,
+  draftToBody,
+  goalToDraft,
+  sameDraft,
+  saveProblem,
+  type GoalDraft,
+} from '../utils/savedGoal';
 import './GoalCalculatorPage.css';
+
+/**
+ * Navigation state that lets a page leave without the unsaved-changes check, for moves the
+ * page makes itself right after saving or deleting (before the cleared flag has rendered).
+ */
+const LEAVE_SAVED = { goalSaved: true } as const;
+
+function leavesSaved(state: unknown): boolean {
+  return typeof state === 'object' && state !== null && (state as { goalSaved?: unknown }).goalSaved === true;
+}
+
+function errorText(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
 
 type TextField = Exclude<keyof GoalFormInputs, 'kind'>;
 
@@ -240,9 +269,17 @@ function Results({ result, stale }: { result: GoalResult; stale: boolean }) {
   );
 }
 
-const GoalCalculatorPage: React.FC = () => {
-  const [form, setForm] = useState<GoalFormInputs>(DEFAULT_GOAL_FORM);
+/** The calculator for a new goal (`saved` null) or a saved one, loaded into the form. */
+function GoalCalculator({ saved }: { saved: Goal | null }) {
+  const navigate = useNavigate();
+  const toast = useToast();
+  const { create: createMutation, update: updateMutation, remove: removeMutation } = useGoalMutations();
+
+  // What was last saved (or the blank form for a new goal); the form is dirty when it differs.
+  const [baseline, setBaseline] = useState<GoalDraft>(() => (saved ? goalToDraft(saved) : NEW_GOAL_DRAFT));
+  const [form, setForm] = useState<GoalFormInputs>(baseline.form);
   const [todaysMoney, setTodaysMoney] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Inputs are checked on every render. Invalid inputs never produce results; the last valid
   // inputs stay on screen until the form is valid again.
@@ -262,11 +299,20 @@ const GoalCalculatorPage: React.FC = () => {
 
   // Optional portfolio link (KAN-21). The suggested return fills the expected-return field
   // unless the user typed a value there themselves; an empty field is always free to fill.
-  const [portfolioId, setPortfolioId] = useState('');
-  const [returnTyped, setReturnTyped] = useState(false);
+  const [portfolioId, setPortfolioId] = useState(baseline.portfolioId);
+  // A saved goal's expected return is the user's choice: a suggestion never overwrites it.
+  const [returnTyped, setReturnTyped] = useState(saved !== null);
   const [appliedSuggestion, setAppliedSuggestion] = useState<string | null>(null);
-  const suggestion = useSuggestedReturn(portfolioId || undefined);
-  const suggested = portfolioId ? suggestedRate(suggestion.data) : null;
+  // A saved goal can point at a portfolio that has since been deleted.
+  const portfolios = usePortfolios();
+  const linkRemoved =
+    portfolioId !== '' && !!portfolios.data && !portfolios.data.some(p => p.id === portfolioId);
+  // Ask for a suggestion once the portfolio is known to exist (or the list failed to load),
+  // so a deleted one is never asked for.
+  const linkKnown = portfolios.data ? !linkRemoved : portfolios.isError;
+  const linkedId = portfolioId && linkKnown ? portfolioId : undefined;
+  const suggestion = useSuggestedReturn(linkedId);
+  const suggested = linkedId ? suggestedRate(suggestion.data) : null;
   const suggestionKey = suggested == null ? null : `${portfolioId}:${suggested}`;
   if (suggestionKey !== null && suggestionKey !== appliedSuggestion) {
     // Adjusting state while rendering, as above: fill the field once per new suggestion.
@@ -296,10 +342,115 @@ const GoalCalculatorPage: React.FC = () => {
   const currencyLabel = form.currency.trim() || undefined;
   const isTarget = form.kind === 'target';
 
+  // Saving (KAN-22).
+  const dirty = !sameDraft({ form, portfolioId }, baseline);
+  const problem = valid ? saveProblem(form) : null;
+  const saving = createMutation.isPending || updateMutation.isPending;
+  const canSave = valid && !problem && !saving && (saved === null || dirty || linkRemoved);
+  let saveHint: string | null = null;
+  if (!valid && (saved !== null || dirty)) saveHint = 'Fix the highlighted fields to save.';
+  else if (problem) saveHint = problem;
+
+  const applySaved = (goal: Goal) => {
+    const draft = goalToDraft(goal);
+    setBaseline(draft);
+    setForm(draft.form);
+    setPortfolioId(draft.portfolioId);
+    setReturnTyped(true);
+  };
+
+  const save = () => {
+    if (!canSave) return;
+    const body = draftToBody({ form, portfolioId: linkRemoved ? '' : portfolioId });
+    const onError = (err: unknown) => toast.error(errorText(err, 'Failed to save goal'));
+    if (saved) {
+      updateMutation.mutate({ id: saved.id, body }, {
+        onSuccess: goal => {
+          applySaved(goal);
+          toast.success('Changes saved');
+        },
+        onError,
+      });
+    } else {
+      createMutation.mutate(body, {
+        onSuccess: goal => {
+          toast.success('Goal saved');
+          navigate(`/dashboard/goals/${goal.id}`, { replace: true, state: LEAVE_SAVED });
+        },
+        onError,
+      });
+    }
+  };
+
+  const deleteGoal = () => {
+    if (!saved) return;
+    removeMutation.mutate(saved.id, {
+      onSuccess: () => {
+        toast.success('Goal deleted');
+        navigate('/dashboard/goals', { state: LEAVE_SAVED });
+      },
+      onError: err => {
+        setConfirmDelete(false);
+        toast.error(errorText(err, 'Failed to delete goal'));
+      },
+    });
+  };
+
+  // Unsaved changes are flagged before leaving: in-app moves ask in the page, closing or
+  // reloading the tab gets the browser's own prompt.
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    dirty && currentLocation.pathname !== nextLocation.pathname && !leavesSaved(nextLocation.state),
+  );
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [dirty]);
+
   return (
     <div className="goal">
       <header className="goal-head">
-        <h1 className="goal-title">Goal Calculator</h1>
+        <Link to="/dashboard/goals" className="goal-back">← All goals</Link>
+        <div className="goal-head-row">
+          <h1 className="goal-title">{saved ? baseline.form.name : 'Goal Calculator'}</h1>
+          <div className="goal-save-bar">
+            {dirty && <span className="goal-unsaved" data-testid="goal-unsaved">Unsaved changes</span>}
+            {saved && (
+              <Button type="button" variant="ghost" onClick={() => setConfirmDelete(true)} disabled={removeMutation.isPending}>
+                Delete
+              </Button>
+            )}
+            <Button type="button" onClick={save} disabled={!canSave}>
+              {saving ? 'Saving…' : saved ? 'Save changes' : 'Save'}
+            </Button>
+          </div>
+        </div>
+        {saveHint && <p className="goal-save-hint" data-testid="goal-save-hint">{saveHint}</p>}
+        {blocker.state === 'blocked' && (
+          <InlineConfirm
+            className="goal-head-confirm"
+            message="You have unsaved changes. Leave this page without saving them?"
+            confirmLabel="Leave without saving"
+            cancelLabel="Stay"
+            onConfirm={() => blocker.proceed()}
+            onCancel={() => blocker.reset()}
+          />
+        )}
+        {saved && confirmDelete && (
+          <InlineConfirm
+            className="goal-head-confirm"
+            message={`Delete “${baseline.form.name}”? This cannot be undone.`}
+            confirmLabel="Delete goal"
+            danger
+            busy={removeMutation.isPending}
+            onConfirm={deleteGoal}
+            onCancel={() => setConfirmDelete(false)}
+          />
+        )}
         <p className="goal-sub">Plan toward a goal: see what you could have, or what you need to save each month.</p>
         <p className="goal-disclaimer">
           A projection at a steady return you choose. Real returns vary from year to year. This is not investment advice.
@@ -347,6 +498,7 @@ const GoalCalculatorPage: React.FC = () => {
             suggestion={suggestion}
             expectedReturnText={form.expectedReturn}
             onUseSuggested={applySuggested}
+            linkRemoved={linkRemoved}
           />
 
           <div className="goal-field-row">
@@ -381,6 +533,36 @@ const GoalCalculatorPage: React.FC = () => {
       </div>
     </div>
   );
+}
+
+function SavedGoal({ id }: { id: string }) {
+  const goal = useGoal(id);
+  if (goal.data) return <GoalCalculator key={id} saved={goal.data} />;
+  if (goal.isPending) {
+    return (
+      <Card className="goal-empty px-6" data-testid="goal-loading">
+        <p className="goal-empty-text" role="status">Loading your goal…</p>
+      </Card>
+    );
+  }
+  const notFound = goal.error instanceof GoalNotFoundError;
+  return (
+    <Card className="goal-empty px-6" data-testid="goal-load-error">
+      <p className="goal-empty-text" role="alert">
+        {notFound ? 'This goal does not exist. It may have been deleted.' : errorText(goal.error, 'Could not load this goal.')}
+      </p>
+      <div className="goal-load-actions">
+        {!notFound && <Button type="button" variant="outline" onClick={() => goal.refetch()}>Try again</Button>}
+        <Button asChild variant="ghost"><Link to="/dashboard/goals">All goals</Link></Button>
+      </div>
+    </Card>
+  );
+}
+
+/** `/dashboard/goals/new` starts a blank goal; `/dashboard/goals/:id` opens a saved one. */
+const GoalCalculatorPage: React.FC = () => {
+  const { id } = useParams();
+  return id ? <SavedGoal key={id} id={id} /> : <GoalCalculator key="new" saved={null} />;
 };
 
 export default GoalCalculatorPage;

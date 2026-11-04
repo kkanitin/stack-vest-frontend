@@ -1,10 +1,51 @@
 # Goal Simulation
 
-**Route:** `/dashboard/goals/new` (`/dashboard/goals` redirects here until the saved-goals list exists)
-**Entry point:** `src/pages/GoalCalculatorPage.tsx`
-**Sidebar:** Goals
+**Routes:** `/dashboard/goals` (saved goals), `/dashboard/goals/new` (new goal), `/dashboard/goals/:id` (a saved goal)
+**Entry points:** `src/pages/GoalsPage.tsx` (list), `src/pages/GoalCalculatorPage.tsx` (calculator)
+**Sidebar:** Goals (opens the list)
 
-Plan toward a goal with investing. The DCA simulation looks back at real prices. This page looks forward at a steady return the user chooses. Everything is calculated in the browser. The only API calls are for the optional portfolio link: the user's portfolios and a suggested return for the linked one.
+Plan toward a goal with investing. The DCA simulation looks back at real prices. This page looks forward at a steady return the user chooses. Every result is calculated in the browser. The API calls are for saved goals (the backend stores inputs only, see [Saved goals](#saved-goals)) and the optional portfolio link: the user's portfolios and a suggested return for the linked one.
+
+## Saved goals
+
+KAN-22, on the backend's goal storage API (KAN-15, `/goals`).
+
+### API
+
+`src/api/goals.ts`, behind `src/hooks/useGoals.ts` and `src/hooks/useGoalMutations.ts`:
+
+| Call | Function | Hook / query key |
+|---|---|---|
+| `GET /goals?page=1&size=100` (list envelope, `results`) | `listGoals` | `useGoals`, `['goals']` |
+| `GET /goals/:id` (`404` → `GoalNotFoundError`, not retried) | `getGoal` | `useGoal(id)`, `['goal', id]`; placeholder from the list |
+| `POST /goals` (`201`; `409` → `GoalLimitError`) | `createGoal` | `useGoalMutations().create` |
+| `PUT /goals/:id` (replaces every field) | `updateGoal` | `useGoalMutations().update` |
+| `DELETE /goals/:id` (`204`) | `deleteGoal` | `useGoalMutations().remove` |
+
+The backend caps goals at 50 a user and pages at up to 100, so one page holds them all. Each mutation writes the result into `['goal', id]` and `['goals']`, then refetches the list. Deleting a portfolio (Portfolios page or portfolio detail) also invalidates `['goals']` and `['goal']`, because the backend clears that portfolio's goal links.
+
+### Form ↔ saved goal
+
+`src/utils/savedGoal.ts`:
+
+- `goalToDraft` loads a goal into the form as text (`null` and a 0 starting amount become empty fields) plus the portfolio link.
+- `draftToBody` builds the request body: empty optional fields are `null`, no link is `null`. Both amounts are sent, so switching modes after loading loses neither; the amount the mode does not use is sent only when it is a positive number (the backend rejects a 0 target).
+- `saveProblem`: the backend stores whole years only (1–100), so a goal with part years (e.g. 2.5) shows results but cannot be saved until Years is whole.
+- `sameDraft` compares the form and link with what was last saved; that is the "unsaved changes" flag. The today's-money toggle is not saved.
+- `goalHeadline` gives the list card's result.
+
+### Goals list (`/dashboard/goals`)
+
+`src/pages/GoalsPage.tsx` with one `src/components/GoalCard.tsx` per goal, newest first. A card shows the name, the mode ("How much will I have?" / "How much must I save?"), the years and the headline result in future money: the final value or the monthly amount needed ("Not reachable" when no amount reaches the target). It says "Linked to <portfolio>" when linked, or "Linked portfolio removed" once the portfolios have loaded and the linked one is not among them. The card opens the goal; **Delete** on the card asks in the card (`InlineConfirm`, not a browser dialog). With no goals there is an empty state with **Create your first goal**; otherwise a **+ New goal** button.
+
+### Saving, loading and editing
+
+- **New goal** (`/dashboard/goals/new`): **Save** is enabled once the form is valid and the years are whole. Saving creates the goal and replaces the URL with `/dashboard/goals/:id`.
+- **Saved goal** (`/dashboard/goals/:id`): the page loads the goal (`useGoal`) and starts the calculator from it; the title is the saved name. Its expected return counts as typed by the user, so linking a portfolio shows the suggestion with **Use suggested** but never overwrites it. **Save changes** is enabled when something changed. After saving, the form shows the stored values (the backend trims the name and uppercases the currency). A missing goal shows "This goal does not exist" with a link to the list; other load errors offer **Try again**.
+- A hint under the title says why saving is not possible (fix the highlighted fields, or use whole years). Save errors (e.g. the goal limit) are toasts and keep the changes.
+- **Delete** on a saved goal asks in the page, then returns to the list.
+- **Unsaved changes** are flagged next to the buttons. Leaving the page inside the app (sidebar, links, back) is held by `useBlocker` with an in-page prompt: **Stay** or **Leave without saving**. Closing or reloading the tab gets the browser's `beforeunload` prompt. The page's own moves after saving or deleting pass `{ goalSaved: true }` as navigation state to skip the prompt.
+- **Linked portfolio deleted:** the backend clears the link when a portfolio is deleted, so a fresh goal simply has no link. If a goal still names a portfolio that is not in the user's list (e.g. loaded before the link was cleared), it still opens: the picker shows "Removed portfolio" with a note, no suggestion is asked for, and saving sends `portfolioId: null`.
 
 ## Modes
 
@@ -43,6 +84,7 @@ A **Link to a portfolio** picker above the years and expected-return fields (KAN
 - **No suggestion** (`available: false`, e.g. no priced holdings): "No suggestion for this portfolio." with the backend's `note`; the field is left to the user.
 - **Left-out holdings:** `skipped` is listed with `DcaSkippedNotice` ("Left out of the suggestion:"), with or without a suggestion.
 - **Loading and errors** are notes under the picker only; nothing in the form is disabled. A failed suggestion offers **try again** (one automatic retry first); failing to load the portfolios still leaves "No portfolio" and the form usable.
+- The suggestion is asked for only once the portfolio is known to be in the user's list (or the list failed to load), so a deleted portfolio is never asked for.
 - The page tracks this with `portfolioId`, `returnTyped` and the last applied suggestion (`portfolioId:rate`), adjusting state while rendering like the last-valid-result logic. The query is cached for 10 minutes under `['portfolio', id, 'suggested-return']`, so transaction changes (which invalidate `['portfolio', id]`) refresh it.
 
 ## Input checks
@@ -86,7 +128,13 @@ A **Growth over time** card between the figures and the range card: `src/compone
 
 | File | Role |
 |---|---|
-| `src/pages/GoalCalculatorPage.tsx`, `.css` | Page: form, mode switch, today's-money toggle, results |
+| `src/pages/GoalCalculatorPage.tsx`, `.css` | Page: loads a saved goal or starts a new one; form, mode switch, today's-money toggle, results, save / delete / unsaved-changes prompt |
+| `src/pages/GoalsPage.tsx`, `.css` | Saved-goals list, empty state, delete from the list (KAN-22) |
+| `src/components/GoalCard.tsx`, `.css` | One saved goal: name, mode, years, headline result, linked portfolio, in-card delete confirmation |
+| `src/components/InlineConfirm.tsx`, `.css` | In-page confirmation used for delete and for leaving with unsaved changes |
+| `src/api/goals.ts` | `/goals` REST client: `listGoals`, `getGoal`, `createGoal`, `updateGoal`, `deleteGoal` |
+| `src/hooks/useGoals.ts`, `src/hooks/useGoalMutations.ts` | Query hooks (`useGoals`, `useGoal`) and create / update / delete mutations |
+| `src/utils/savedGoal.ts` | Saved goal ↔ form, request body, whole-years check, unsaved-changes comparison, list headline |
 | `src/utils/goalInputs.ts` | Form state shape, defaults, validation and parsing |
 | `src/components/GoalPortfolioLink.tsx`, `.css` | Portfolio picker, suggested-return line, "Use suggested", loading/error/no-suggestion notes (KAN-21) |
 | `src/hooks/useSuggestedReturn.ts` | React Query hook for `GET /portfolios/:id/suggested-return` |
@@ -101,4 +149,4 @@ A **Growth over time** card between the figures and the range card: `src/compone
 
 ## Not yet
 
-Saving goals (KAN-22) is a separate ticket; the portfolio link is not saved yet. Once goals can be saved, the short-goal notice must not stop the user saving one.
+The short-goal notice never stops the user saving a goal. The today's-money toggle is not saved with the goal.
