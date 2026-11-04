@@ -1,6 +1,6 @@
 # Features
 
-StackVest is a single-page investment dashboard for retail investors: track holdings, watch the market, and backtest strategies before committing real money. All authenticated views live under the `/dashboard` shell (`src/pages/LandingPage.tsx`).
+StackVest is a single-page investment dashboard for retail investors: track holdings, watch the market, backtest strategies before committing real money, and plan toward financial goals. All authenticated views live under the `/dashboard` shell (`src/pages/LandingPage.tsx`).
 
 | Feature | Route | Entry point |
 |---|---|---|
@@ -10,6 +10,7 @@ StackVest is a single-page investment dashboard for retail investors: track hold
 | [AI Strategy Analysis](./ai-strategy-analysis.md) | modal on portfolio pages | `src/components/AnalyzePortfolioModal.tsx` |
 | [Market heatmap](./market-heatmap.md) | `/dashboard/visualization/heatmap` | `src/pages/HeatmapPage.tsx` |
 | [DCA simulation](./dca-simulation.md) | `/dashboard/dca` | `src/components/DCASimulation.tsx` |
+| [Goal simulation](./goal-simulation.md) | `/dashboard/goals/new` | `src/pages/GoalCalculatorPage.tsx` |
 | [Watchlist](./watchlist.md) | `/dashboard/watchlist` | `src/pages/WatchlistPage.tsx` |
 | [Global asset search](./asset-search.md) | topbar (all dashboard routes) | `src/components/TopbarSearch.tsx` |
 | [Dividend calendar](./dividend-calendar.md) | modal from the dashboard shell | `src/components/DividendScheduleModal.tsx` |

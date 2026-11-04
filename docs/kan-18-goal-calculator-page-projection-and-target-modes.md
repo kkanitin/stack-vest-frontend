@@ -1,6 +1,6 @@
 # KAN-18 Goal calculator page (projection and target modes)
 
-> **Status:** Draft  
+> **Status:** Implemented  
 > **Created:** 2026-11-04  
 > **Author:** Kanitin Krikriengsri  
 > **Ticket:** [KAN-18](https://planplanster.atlassian.net/browse/KAN-18) · Epic idea: [KAN-14](https://planplanster.atlassian.net/browse/KAN-14)  
@@ -106,16 +106,16 @@ The field that is not used in the current mode is not checked, and its value is 
 
 | # | Task | Owner | Status |
 |---|------|-------|--------|
-| 1 | Confirm the open questions below | Kanitin | [ ] |
+| 1 | Confirm the open questions below | Kanitin | [x] proposed defaults used (Jira comment), open to change in review |
 | 2 | `src/utils/goalMath.ts` + tests (KAN-17) | — | [x] merged in #36 |
-| 3 | `src/utils/goalInputs.ts` + `goalInputs.test.ts` | TBD | [ ] |
-| 4 | `fmtAmount(n, currency)` in `src/utils/format.ts` + test | TBD | [ ] |
-| 5 | `GoalCalculatorPage.tsx` + `GoalCalculatorPage.css`: form, mode switch, field errors | TBD | [ ] |
-| 6 | Results panel: headline, invested, growth, low/expected/high range, today's-money toggle, last valid result | TBD | [ ] |
-| 7 | Route in `App.tsx` (lazy) + **Goals** sidebar link and icon in `LandingPage.tsx` | TBD | [ ] |
-| 8 | `GoalCalculatorPage.test.tsx` | TBD | [ ] |
-| 9 | `docs/features/goal-simulation.md`, `docs/features/index.md` row, `docs/architecture.md` check | TBD | [ ] |
-| 10 | `npm run lint`, `npx vitest run`, `npm run build`, check in the browser at phone and desktop width | TBD | [ ] |
+| 3 | `src/utils/goalInputs.ts` + `goalInputs.test.ts` | Claude | [x] |
+| 4 | `fmtAmount(n, currency)` in `src/utils/format.ts` + test | Claude | [x] |
+| 5 | `GoalCalculatorPage.tsx` + `GoalCalculatorPage.css`: form, mode switch, field errors | Claude | [x] |
+| 6 | Results panel: headline, invested, growth, low/expected/high range, today's-money toggle, last valid result | Claude | [x] |
+| 7 | Route in `App.tsx` (lazy) + **Goals** sidebar link and icon in `LandingPage.tsx` | Claude | [x] |
+| 8 | `GoalCalculatorPage.test.tsx` | Claude | [x] |
+| 9 | `docs/features/goal-simulation.md`, `docs/features/index.md` row, `docs/architecture.md` check | Claude | [x] |
+| 10 | `npm run lint`, `npx vitest run`, `npm run build`, check in the browser at phone and desktop width | Claude | [x] |
 
 ## Dependencies
 
