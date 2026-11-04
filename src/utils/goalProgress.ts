@@ -71,3 +71,44 @@ export function goalPlanToDate(goal: Goal, today: Date = new Date()): PlanToDate
     monthlyAmount: inputs.monthlyAmount,
   };
 }
+
+/**
+ * How close to the plan counts as "on track", as a percentage of the plan value, so small
+ * price moves do not flip the status (KAN-26). Inclusive at both edges.
+ */
+export const ON_TRACK_TOLERANCE_PCT = 2;
+
+export type ProgressStatus = 'ahead' | 'on-track' | 'behind';
+
+export interface GoalProgress {
+  status: ProgressStatus;
+  /** actual − plan, signed, in the goal's currency. */
+  gap: number;
+  /** actual / plan × 100; null when the plan value is 0 or less. */
+  percentOfPlan: number | null;
+  /** actual / target × 100 (target mode only); null when there is no positive target. */
+  percentOfTarget: number | null;
+}
+
+/**
+ * Compares the portfolio's value (`actual`, already in the goal's currency) with the plan value
+ * today. Null — no status — when either value is missing or not a finite number.
+ */
+export function goalProgress(
+  actual: number | null | undefined,
+  plan: number | null | undefined,
+  target?: number | null,
+): GoalProgress | null {
+  if (actual == null || plan == null || !Number.isFinite(actual) || !Number.isFinite(plan)) {
+    return null;
+  }
+  const gap = actual - plan;
+  const band = (Math.abs(plan) * ON_TRACK_TOLERANCE_PCT) / 100;
+  const status: ProgressStatus = Math.abs(gap) <= band ? 'on-track' : gap > 0 ? 'ahead' : 'behind';
+  return {
+    status,
+    gap,
+    percentOfPlan: plan > 0 ? (actual / plan) * 100 : null,
+    percentOfTarget: target != null && target > 0 ? (actual / target) * 100 : null,
+  };
+}

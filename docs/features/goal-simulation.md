@@ -144,7 +144,7 @@ A **Growth over time** card between the figures and the range card: `src/compone
 | `src/components/ShortGoalNotice.tsx`, `.css` | Short-goal notice: plan versus cash for goals under 5 years (KAN-20) |
 | `src/components/GoalGrowthChart.tsx`, `.css` | Growth chart: lines, low–high band, target line, readout, text alternative (KAN-19) |
 | `src/utils/goalChart.ts` | Chart points at the three returns, axis ticks and labels, text alternative |
-| `src/utils/goalProgress.ts` | Progress: months elapsed since `createdAt`, plan value to date (KAN-25) |
+| `src/utils/goalProgress.ts` | Progress: months elapsed since `createdAt`, plan value to date (KAN-25); status and gap (KAN-26) |
 | `src/utils/goalMath.ts` | Projection, required monthly amount, range, today's money (KAN-17) |
 | `src/utils/format.ts` (`fmtAmount`, `fmtRate`) | Amount with the currency label, whole units; a rate such as "7.25%" |
 
@@ -161,6 +161,15 @@ KAN-23: for a saved goal linked to a portfolio, how far along it is and whether 
 - **Plan value** (`planValueAt`): the plan's value after that many months, from the starting amount, the monthly amount and the yearly increase (the same month-by-month maths as `projectGoal`). Projection mode uses the monthly amount; target mode uses the monthly amount needed (`requiredMonthlyAmount`, `goalPlanInputs`).
 - `goalPlanToDate(goal, today)` returns the months elapsed, the total months, the plan value and the monthly amount, or null when there is no plan value (the target cannot be reached, or the amount the mode needs is missing).
 - A goal created today is at its starting amount; a goal past its end date is at its final value.
+
+### Status
+
+`goalProgress(actual, plan, target?)` in the same file (KAN-26) compares the portfolio's value, already in the goal's currency, with the plan value today:
+
+- **Status:** `on-track` when the value is within ±2% of the plan (`ON_TRACK_TOLERANCE_PCT`, edges included), so small price moves do not flip it; otherwise `ahead` or `behind`. A plan value of 0 has no band: 0 is on track, anything more is ahead.
+- **Gap:** actual − plan, signed, in the goal's currency.
+- **Percentages:** `percentOfPlan` (null when the plan is 0) and `percentOfTarget` (target mode; null without a positive target).
+- **No status** (null) when there is no plan value or no portfolio value.
 
 ## Not yet
 

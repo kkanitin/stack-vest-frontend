@@ -1,6 +1,13 @@
 import type { Goal } from '../api/goals';
 import { projectGoal, requiredMonthlyAmount } from './goalMath';
-import { goalPlanInputs, goalPlanToDate, monthsBetween, planValueAt } from './goalProgress';
+import {
+  goalPlanInputs,
+  goalPlanToDate,
+  goalProgress,
+  monthsBetween,
+  ON_TRACK_TOLERANCE_PCT,
+  planValueAt,
+} from './goalProgress';
 
 /** A local date as the ISO string the backend sends. */
 const iso = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12).toISOString();
@@ -162,5 +169,52 @@ describe('goalPlanToDate', () => {
   it('is null for an unreachable target or a bad start date', () => {
     expect(goalPlanToDate(goal({ kind: 'target', targetAmount: 1e9, years: 0 }))).toBeNull();
     expect(goalPlanToDate(goal({ createdAt: 'not a date' }))).toBeNull();
+  });
+});
+
+describe('goalProgress', () => {
+  it('is on track within ±2% of the plan, edges included', () => {
+    expect(goalProgress(100_000, 100_000)?.status).toBe('on-track');
+    expect(goalProgress(102_000, 100_000)?.status).toBe('on-track');
+    expect(goalProgress(98_000, 100_000)?.status).toBe('on-track');
+    expect(ON_TRACK_TOLERANCE_PCT).toBe(2);
+  });
+
+  it('is ahead or behind just outside the band', () => {
+    expect(goalProgress(102_001, 100_000)?.status).toBe('ahead');
+    expect(goalProgress(97_999, 100_000)?.status).toBe('behind');
+  });
+
+  it('gives the signed gap and percentages', () => {
+    expect(goalProgress(87_600, 100_000, 400_000)).toEqual({
+      status: 'behind',
+      gap: -12_400,
+      percentOfPlan: 87.6,
+      percentOfTarget: 21.9,
+    });
+    expect(goalProgress(120_000, 100_000)).toMatchObject({ status: 'ahead', gap: 20_000, percentOfTarget: null });
+  });
+
+  it('a zero plan: zero is on track, anything above is ahead, no percent of plan', () => {
+    expect(goalProgress(0, 0)).toMatchObject({ status: 'on-track', gap: 0, percentOfPlan: null });
+    expect(goalProgress(10, 0)).toMatchObject({ status: 'ahead', percentOfPlan: null });
+  });
+
+  it('a zero or negative actual value is behind a positive plan', () => {
+    expect(goalProgress(0, 50_000)).toMatchObject({ status: 'behind', gap: -50_000, percentOfPlan: 0 });
+    expect(goalProgress(-500, 50_000)?.status).toBe('behind');
+  });
+
+  it('no percent of target without a positive target', () => {
+    expect(goalProgress(1, 1, 0)?.percentOfTarget).toBeNull();
+    expect(goalProgress(1, 1, null)?.percentOfTarget).toBeNull();
+  });
+
+  it('no status without an actual or a plan value', () => {
+    expect(goalProgress(null, 100)).toBeNull();
+    expect(goalProgress(undefined, 100)).toBeNull();
+    expect(goalProgress(100, null)).toBeNull();
+    expect(goalProgress(NaN, 100)).toBeNull();
+    expect(goalProgress(100, Infinity)).toBeNull();
   });
 });
