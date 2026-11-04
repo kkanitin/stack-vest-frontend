@@ -1,6 +1,7 @@
 import {
   projectGoal,
   projectRange,
+  requiredMonthlyAmount,
   requiredMonthlyRange,
   returnRange,
   toTodaysMoney,
@@ -8,6 +9,27 @@ import {
 } from './goalMath';
 import type { ParsedGoal } from './goalInputs';
 import { goalChartPoints, type GoalChartPoint } from './goalChart';
+
+/** Goals shorter than this many years get the short-goal notice comparing the plan with cash. */
+export const SHORT_GOAL_YEARS = 5;
+
+/**
+ * The plan at the expected return next to the same plan at a 0% return (keeping cash), on
+ * the same money basis as the headline. Projection mode compares final values; target mode
+ * compares monthly amounts needed.
+ */
+export interface CashComparison {
+  /** The headline figure at the expected return; null when no monthly amount reaches the target. */
+  invested: number | null;
+  /** The same figure at a 0% return. */
+  cash: number;
+  /**
+   * What investing gains over cash: the extra final value (projection) or the monthly amount
+   * saved (target). Negative when the expected return does worse than cash; null when
+   * `invested` is null.
+   */
+  benefit: number | null;
+}
 
 export interface GoalFigures {
   finalValue: number;
@@ -27,6 +49,8 @@ interface GoalResultBase {
    * is no plan to draw (an unreachable target).
    */
   chart: GoalChartPoint[] | null;
+  /** Plan versus cash, only for goals under `SHORT_GOAL_YEARS`; null otherwise. */
+  cashComparison: CashComparison | null;
 }
 
 export interface ProjectionResult extends GoalResultBase {
@@ -66,7 +90,8 @@ export type GoalResult = ProjectionResult | TargetResult;
  */
 export function computeGoalResult(goal: ParsedGoal, todaysMoney: boolean): GoalResult {
   const returns = returnRange(goal.projection.annualReturnPct);
-  const base: Omit<GoalResultBase, 'chart'> = {
+  const short = goal.years < SHORT_GOAL_YEARS;
+  const base: Omit<GoalResultBase, 'chart' | 'cashComparison'> = {
     currency: goal.currency,
     years: goal.years,
     inflationPct: goal.inflationPct,
@@ -78,11 +103,18 @@ export function computeGoalResult(goal: ParsedGoal, todaysMoney: boolean): GoalR
     const deflate = (n: number) => (todaysMoney ? toTodaysMoney(n, goal.years, goal.inflationPct) : n);
     const r = projectRange(goal.projection);
     const expected = r.expected;
+    const headline = deflate(expected.finalValue);
+    let cashComparison: CashComparison | null = null;
+    if (short) {
+      const cash = deflate(projectGoal({ ...goal.projection, annualReturnPct: 0 }).finalValue);
+      cashComparison = { invested: headline, cash, benefit: headline - cash };
+    }
     return {
       ...base,
       kind: 'projection',
+      cashComparison,
       chart: goalChartPoints(goal.projection, returns, todaysMoney ? goal.inflationPct : undefined),
-      headline: deflate(expected.finalValue),
+      headline,
       figures: {
         finalValue: deflate(expected.finalValue),
         totalInvested: deflate(expected.totalInvested),
@@ -104,9 +136,18 @@ export function computeGoalResult(goal: ParsedGoal, todaysMoney: boolean): GoalR
   const monthly = range.expected;
   const plan = monthly == null ? null : { ...goal.projection, monthlyAmount: monthly };
   const figures = plan && projectGoal(plan);
+  let cashComparison: CashComparison | null = null;
+  if (short) {
+    // At 0% every payment counts in full, so cash only fails with no months to save in.
+    const cash = requiredMonthlyAmount({ ...goal.target, targetAmount: targetNominal, annualReturnPct: 0 });
+    if (cash != null) {
+      cashComparison = { invested: monthly, cash, benefit: monthly == null ? null : cash - monthly };
+    }
+  }
   return {
     ...base,
     kind: 'target',
+    cashComparison,
     // Future money, like the other target-mode amounts; the chart's target line is `targetNominal`.
     chart: plan && goalChartPoints(plan, returns),
     headline: monthly,

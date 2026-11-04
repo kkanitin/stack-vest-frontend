@@ -11,18 +11,14 @@ import {
   type GoalKind,
 } from '../utils/goalInputs';
 import { computeGoalResult, type GoalResult } from '../utils/goalResult';
-import { fmtAmount } from '../utils/format';
+import { fmtAmount, fmtRate } from '../utils/format';
+import ShortGoalNotice from '../components/ShortGoalNotice';
 import type { GoalRange } from '../utils/goalMath';
 import { useElementSize } from '../hooks/useElementSize';
 import GoalGrowthChart from '../components/GoalGrowthChart';
 import './GoalCalculatorPage.css';
 
 type TextField = Exclude<keyof GoalFormInputs, 'kind'>;
-
-/** A rate as typed, e.g. 8 → "8%", 7.25 → "7.25%". */
-function fmtRate(n: number): string {
-  return `${Number(n.toFixed(2))}%`;
-}
 
 function fmtYears(n: number): string {
   return `${Number(n.toFixed(2))} ${n === 1 ? 'year' : 'years'}`;
@@ -183,6 +179,15 @@ function Results({ result, stale }: { result: GoalResult; stale: boolean }) {
         )}
         <div className="goal-headline-sub">at the expected return of {fmtRate(result.returns.expected)} a year</div>
       </Card>
+
+      {result.cashComparison && (
+        <ShortGoalNotice
+          kind={result.kind}
+          comparison={result.cashComparison}
+          expectedReturnPct={result.returns.expected}
+          currency={currency}
+        />
+      )}
 
       {figures && (
         <div className={`goal-kpis${isTarget ? '' : ' goal-kpis--two'}`}>

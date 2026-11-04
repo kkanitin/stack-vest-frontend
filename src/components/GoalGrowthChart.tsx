@@ -8,7 +8,7 @@ import {
   yearTicks,
   type GoalChartPoint,
 } from '../utils/goalChart';
-import { fmtAmount } from '../utils/format';
+import { fmtAmount, fmtRate } from '../utils/format';
 import type { GoalRange } from '../utils/goalMath';
 import './GoalGrowthChart.css';
 
@@ -27,10 +27,6 @@ const PAD_L = 48;
 const PAD_R = 16;
 const PAD_T = 16;
 const PAD_B = 30;
-
-function fmtRate(n: number): string {
-  return `${Number(n.toFixed(2))}%`;
-}
 
 /**
  * Hand-drawn SVG chart of a goal plan over the years: amount invested, expected value with a

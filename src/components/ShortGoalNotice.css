@@ -1,0 +1,40 @@
+.short-goal-notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+  border-left: 3px solid var(--warning);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+}
+
+.short-goal-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--warning);
+}
+
+.short-goal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.short-goal-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.short-goal-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}

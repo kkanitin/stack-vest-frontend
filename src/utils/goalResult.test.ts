@@ -115,3 +115,52 @@ describe('computeGoalResult — target', () => {
     expect(r.figures!.totalInvested).toBe(2_000_000);
   });
 });
+
+describe('computeGoalResult — cash comparison for short goals', () => {
+  const withYears = (goal: typeof house, years: number) => ({
+    ...goal,
+    years,
+    projection: { ...goal.projection, years },
+    target: { ...goal.target, years },
+  });
+
+  it('compares monthly amounts with cash in target mode (ticket example: 24.7k vs 27.8k)', () => {
+    const r = computeGoalResult(house, false);
+    const c = r.cashComparison!;
+    expect(c.invested).toBe(r.headline);
+    expect(c.invested! / 1000).toBeCloseTo(24.7, 1);
+    expect(c.cash).toBeCloseTo(1_000_000 / 36, 6);
+    expect(c.benefit).toBeCloseTo(c.cash - c.invested!, 6);
+    expect(c.benefit! / 1000).toBeCloseTo(3.1, 1);
+  });
+
+  it('compares final values with cash in projection mode', () => {
+    const short = withYears(retirement, 3);
+    const r = computeGoalResult(short, false);
+    const c = r.cashComparison!;
+    expect(c.invested).toBe(r.headline);
+    expect(c.cash).toBe(360_000); // 10k a month for 36 months at 0%
+    expect(c.benefit).toBeCloseTo(c.invested! - 360_000, 6);
+    expect(c.benefit!).toBeGreaterThan(0);
+  });
+
+  it('uses the same money basis as the headline', () => {
+    const short = withYears(retirement, 3);
+    const r = computeGoalResult(short, true);
+    expect(r.cashComparison!.cash).toBeCloseTo(360_000 / 1.03 ** 3, 4);
+    const t = computeGoalResult(house, true);
+    if (t.kind !== 'target') throw new Error('expected target');
+    expect(t.cashComparison!.cash).toBeCloseTo(t.targetNominal / 36, 6);
+  });
+
+  it('is shown under 5 years only', () => {
+    expect(computeGoalResult(withYears(house, 4.99), false).cashComparison).not.toBeNull();
+    expect(computeGoalResult(withYears(house, 5), false).cashComparison).toBeNull();
+    expect(computeGoalResult(retirement, false).cashComparison).toBeNull();
+  });
+
+  it('gives a negative benefit when the expected return is below 0%', () => {
+    const losing = { ...house, projection: { ...house.projection, annualReturnPct: -2 }, target: { ...house.target, annualReturnPct: -2 } };
+    expect(computeGoalResult(losing, false).cashComparison!.benefit!).toBeLessThan(0);
+  });
+});

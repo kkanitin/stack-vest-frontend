@@ -142,4 +142,56 @@ describe('GoalCalculatorPage', () => {
     const label = within(screen.getByTestId('goal-chart-card')).getByRole('img').getAttribute('aria-label');
     expect(label).toContain('Target 1,000,000 THB.');
   });
+
+  describe('short-goal notice', () => {
+    function fillHouse(years: string, expectedReturn = '8') {
+      fireEvent.click(screen.getByRole('radio', { name: 'How much must I save?' }));
+      type('Goal name', 'House');
+      type('Target amount', '1000000');
+      type('Years', years);
+      type('Expected return a year', expectedReturn);
+    }
+    const notice = () => screen.queryByTestId('short-goal-notice');
+
+    it('compares the monthly amount with cash in target mode under 5 years', () => {
+      render(<GoalCalculatorPage />);
+      fillHouse('3');
+      expect(notice()).toHaveAttribute('role', 'note');
+      expect(notice()).toHaveTextContent(
+        /^Under 5 years.*At 8% you need 24,[67]\d\d THB a month\. In cash you need 27,778 THB\. Investing saves about 3,\d{3} THB a month, but one bad year in the market could leave you short when you need the money\.$/,
+      );
+    });
+
+    it('compares final values in projection mode', () => {
+      render(<GoalCalculatorPage />);
+      type('Goal name', 'Trip');
+      type('Monthly amount', '10000');
+      type('Years', '2');
+      type('Expected return a year', '8');
+      expect(notice()).toHaveTextContent(/At 8% you could have [\d,]+ THB\. In cash you would have 240,000 THB\. Investing adds about [\d,]+ THB, but one bad year/);
+      expect(notice()).not.toHaveTextContent('a month');
+    });
+
+    it('is hidden at 5 years or more and comes back below', () => {
+      render(<GoalCalculatorPage />);
+      fillHouse('5');
+      expect(notice()).not.toBeInTheDocument();
+      type('Years', '4.5');
+      expect(notice()).toBeInTheDocument();
+    });
+
+    it('says when investing does worse than cash', () => {
+      render(<GoalCalculatorPage />);
+      fillHouse('3', '-2');
+      expect(notice()).toHaveTextContent(/At -2% you need [\d,]+ THB a month\. In cash you need 27,778 THB\. At this return investing costs about [\d,]+ THB more a month/);
+    });
+
+    it('is informational only: results stay on screen', () => {
+      render(<GoalCalculatorPage />);
+      fillHouse('1');
+      expect(notice()).toBeInTheDocument();
+      expect(headline()).toMatch(/THB \/ month$/);
+      expect(screen.getByTestId('goal-chart-card')).toBeInTheDocument();
+    });
+  });
 });
