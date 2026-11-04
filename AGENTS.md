@@ -100,8 +100,8 @@ import './MyComponent.css';
 
 ## Git Policy
 
-AI Agents (including Junie) are strictly prohibited from performing operations that modify the remote repository or create local commits. This policy ensures that all changes are reviewed and committed by a human developer.
+AI Agents (including Junie) may commit and push their work. Changes reach `main` through a reviewed pull request.
 
-- **Forbidden Commands**: `git commit`, `git push`, `git merge`, `git rebase`.
-- **Allowed Commands (Read-only)**: `git status`, `git fetch`, `git diff`, `git log`, `git show`, `git pull` (only for updating local state).
-- **Mandatory Requirement**: Never initiate a commit or push under any circumstances.
+- **Allowed**: `git status`, `git fetch`, `git diff`, `git log`, `git show`, `git pull`, `git commit`, `git push`.
+- **Branches**: Work on a feature branch named after the ticket (e.g. `feature/KAN-17-goal-calculation-module`) and push to that branch. Never push directly to `main`.
+- **Before committing**: Run `npm test` (or `npx vitest run`), `npm run lint` and `npm run build` on the change, and keep `docs/` in sync (see Documentation Maintenance).
