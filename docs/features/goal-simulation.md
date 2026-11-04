@@ -145,6 +145,8 @@ A **Growth over time** card between the figures and the range card: `src/compone
 | `src/components/GoalGrowthChart.tsx`, `.css` | Growth chart: lines, low–high band, target line, readout, text alternative (KAN-19) |
 | `src/utils/goalChart.ts` | Chart points at the three returns, axis ticks and labels, text alternative |
 | `src/utils/goalProgress.ts` | Progress: months elapsed since `createdAt`, plan value to date (KAN-25); status and gap (KAN-26) |
+| `src/api/fx.ts` | Today's FX rate (Frankfurter), supported ISO codes, rate description (KAN-27) |
+| `src/hooks/useFxRate.ts` | Today's rate for a currency pair, fetched once a day per browser (KAN-27) |
 | `src/utils/goalMath.ts` | Projection, required monthly amount, range, today's money (KAN-17) |
 | `src/utils/format.ts` (`fmtAmount`, `fmtRate`) | Amount with the currency label, whole units; a rate such as "7.25%" |
 
@@ -170,6 +172,16 @@ KAN-23: for a saved goal linked to a portfolio, how far along it is and whether 
 - **Gap:** actual − plan, signed, in the goal's currency.
 - **Percentages:** `percentOfPlan` (null when the plan is 0) and `percentOfTarget` (target mode; null without a positive target).
 - **No status** (null) when there is no plan value or no portfolio value.
+
+### Currency conversion
+
+When the goal's currency differs from the portfolio's, the portfolio value is converted at **today's rate only** (KAN-27), no historical rates:
+
+- **Source:** `getFxRate` in `src/api/fx.ts`, `GET ${VITE_FX_API_URL}/latest?base=USD&symbols=THB` on Frankfurter (ECB reference rates, free, no key). ECB publishes once a working day, so the rate's date can be an earlier day.
+- **Once a day:** `useFxRate(from, to)` in `src/hooks/useFxRate.ts` keeps the rate in `localStorage` for the calendar day and in the query cache for 24 hours, so each browser fetches a pair once a day. The same currency is rate 1 with no request. A failure retries once, then reports an error with a way to try again.
+- **Codes:** the goal's currency is a free-text label, so it is converted only when `fxCurrencyCode` finds it among the ISO codes ECB covers (`FX_CURRENCIES`, e.g. THB, USD, EUR, JPY); anything else (e.g. "Baht") cannot be converted.
+- **Shown as** `describeFxRate`: "1 USD = 35.20 THB, 4 Nov 2026".
+- **Portfolio currency:** the API has no portfolio currency yet; portfolio values are USD across the app (prices and trades are in USD), so USD is assumed until the backend exposes one.
 
 ## Not yet
 
