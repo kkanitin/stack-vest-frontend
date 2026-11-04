@@ -45,6 +45,8 @@ If `VITE_GOOGLE_CLIENT_ID` is missing or still the placeholder value, `App` rend
   portfolios                       PortfoliosPage
   portfolios/:id                   PortfolioDetailPage
   dca                              DCASimulation
+  goals                            → redirects to goals/new
+  goals/new                        GoalCalculatorPage
   watchlist                        WatchlistPage
 /                                  → redirects to /dashboard
 *                                  NotFoundPage

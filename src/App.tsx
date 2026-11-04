@@ -17,6 +17,7 @@ import './App.css';
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const Visualization = lazy(() => import('./components/Visualization'));
 const DCASimulation = lazy(() => import('./components/DCASimulation'));
+const GoalCalculatorPage = lazy(() => import('./pages/GoalCalculatorPage'));
 const HeatmapPage = lazy(() => import('./pages/HeatmapPage'));
 const WatchlistPage = lazy(() => import('./pages/WatchlistPage'));
 const PortfoliosPage = lazy(() => import('./pages/PortfoliosPage'));
@@ -72,6 +73,9 @@ function App() {
               <Route path="portfolios" element={<PortfoliosPage />} />
               <Route path="portfolios/:id" element={<PortfolioDetailPage />} />
               <Route path="dca" element={<DCASimulation />} />
+              {/* Until the saved-goals list exists (KAN-22), /goals opens the calculator. */}
+              <Route path="goals" element={<Navigate to="new" replace />} />
+              <Route path="goals/new" element={<GoalCalculatorPage />} />
               <Route path="visualization/heatmap" element={<HeatmapPage />} />
               <Route path="watchlist" element={<WatchlistPage />} />
             </Route>

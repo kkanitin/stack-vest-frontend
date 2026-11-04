@@ -42,6 +42,13 @@ const Icon: Record<string, React.FC<{ size?: number }>> = {
       <rect x="17" y="3" width="4" height="18" />
     </svg>
   ),
+  Goals: ({ size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" />
+    </svg>
+  ),
   Watchlist: ({ size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -140,6 +147,14 @@ const LandingPage: React.FC = () => {
             >
               <span className="sidebar-link-icon"><Icon.DCA /></span>
               DCA Simulation
+            </NavLink>
+            <NavLink
+              to="/dashboard/goals/new"
+              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <span className="sidebar-link-icon"><Icon.Goals /></span>
+              Goals
             </NavLink>
             <NavLink
               to="/dashboard/watchlist"

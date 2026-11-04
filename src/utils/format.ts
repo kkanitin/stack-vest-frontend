@@ -61,3 +61,20 @@ export function fmtRelativeTime(iso: string, now: Date = new Date()): string {
 export function fmtCount(n: number): string {
   return String(n).padStart(2, '0');
 }
+
+/**
+ * An amount with a free-text currency label, e.g. "14,903,594 THB". The label is display
+ * only — no conversion and no symbol lookup. Whole units by default: goal figures are
+ * projections, so cents would be false precision.
+ */
+export function fmtAmount(n: number | null | undefined, currency: string, digits = 0): string {
+  if (n == null || !Number.isFinite(n)) return '—';
+  const rounded = Number(n.toFixed(digits));
+  const sign = rounded < 0 ? '-' : '';
+  const body = Math.abs(rounded).toLocaleString('en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+  const label = currency.trim();
+  return label ? `${sign}${body} ${label}` : `${sign}${body}`;
+}

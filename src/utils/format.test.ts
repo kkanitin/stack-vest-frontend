@@ -1,4 +1,4 @@
-import { changeTone, fmtPct, fmtRelativeTime, fmtSignedMoney } from './format';
+import { changeTone, fmtAmount, fmtPct, fmtRelativeTime, fmtSignedMoney } from './format';
 
 describe('fmtRelativeTime', () => {
   const now = new Date('2026-10-01T12:00:00Z');
@@ -75,5 +75,30 @@ describe('fmtSignedMoney', () => {
 
   it('shows a dash for missing input', () => {
     expect(fmtSignedMoney(undefined)).toBe('—');
+  });
+});
+
+describe('fmtAmount', () => {
+  it('shows whole units with the currency label after the number', () => {
+    expect(fmtAmount(14903594.4, 'THB')).toBe('14,903,594 THB');
+  });
+
+  it('never uses a dollar sign', () => {
+    expect(fmtAmount(1234.5, 'EUR')).not.toContain('$');
+  });
+
+  it('keeps the sign for a negative amount and drops it for one that rounds to zero', () => {
+    expect(fmtAmount(-2500, 'USD')).toBe('-2,500 USD');
+    expect(fmtAmount(-0.4, 'USD')).toBe('0 USD');
+  });
+
+  it('can show decimals', () => {
+    expect(fmtAmount(24718.256, 'THB', 2)).toBe('24,718.26 THB');
+  });
+
+  it('shows a dash for missing values and omits an empty label', () => {
+    expect(fmtAmount(null, 'THB')).toBe('—');
+    expect(fmtAmount(Number.NaN, 'THB')).toBe('—');
+    expect(fmtAmount(10, '  ')).toBe('10');
   });
 });
