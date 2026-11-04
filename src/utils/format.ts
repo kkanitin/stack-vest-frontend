@@ -78,3 +78,8 @@ export function fmtAmount(n: number | null | undefined, currency: string, digits
   const label = currency.trim();
   return label ? `${sign}${body} ${label}` : `${sign}${body}`;
 }
+
+/** A rate as typed, e.g. 8 → "8%", 7.25 → "7.25%"; unsigned, up to two decimals. */
+export function fmtRate(n: number): string {
+  return `${Number(n.toFixed(2))}%`;
+}

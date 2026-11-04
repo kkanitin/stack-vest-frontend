@@ -48,6 +48,14 @@ Calculated by `src/utils/goalResult.ts` (`computeGoalResult`) from the goal math
   - Target: the target is taken as today's money and grown by inflation to the end of the plan, so the monthly amount needed is what the user actually pays. A note gives both figures; the other amounts stay in future money.
 - A note under the results says which basis is shown.
 
+## Short-goal notice
+
+For goals under 5 years (`SHORT_GOAL_YEARS` in `src/utils/goalResult.ts`), a notice under the headline compares the plan with keeping cash: `src/components/ShortGoalNotice.tsx`. At 5 years or more it is not shown.
+
+- **Figures:** `GoalResult.cashComparison` from `computeGoalResult`: the headline figure at the expected return, the same figure at a 0% return, and the difference. Target mode compares the monthly amounts needed (`requiredMonthlyAmount` at 0%); projection mode compares final values (`projectGoal` at 0%). Both use the same money basis as the headline, so they follow the today's-money toggle.
+- **Text:** for example, "At 8% you need 24,670 THB a month. In cash you need 27,778 THB. Investing saves about 3,108 THB a month, but one bad year in the market could leave you short when you need the money." Amounts use the goal's currency label. When the expected return does no better than cash (0% or negative), the last sentence says so instead. When no monthly amount reaches the target, it gives the cash amount only.
+- It is information only (`role="note"`): it never hides results or blocks anything.
+
 ## Growth chart
 
 A **Growth over time** card between the figures and the range card: `src/components/GoalGrowthChart.tsx`, a hand-drawn SVG following the `DcaGrowthChart` pattern, sized to its box with `useElementSize`.
@@ -66,11 +74,12 @@ A **Growth over time** card between the figures and the range card: `src/compone
 | `src/pages/GoalCalculatorPage.tsx`, `.css` | Page: form, mode switch, today's-money toggle, results |
 | `src/utils/goalInputs.ts` | Form state shape, defaults, validation and parsing |
 | `src/utils/goalResult.ts` | Turns parsed inputs into the figures and chart points the page shows |
+| `src/components/ShortGoalNotice.tsx`, `.css` | Short-goal notice: plan versus cash for goals under 5 years (KAN-20) |
 | `src/components/GoalGrowthChart.tsx`, `.css` | Growth chart: lines, low–high band, target line, readout, text alternative (KAN-19) |
 | `src/utils/goalChart.ts` | Chart points at the three returns, axis ticks and labels, text alternative |
 | `src/utils/goalMath.ts` | Projection, required monthly amount, range, today's money (KAN-17) |
-| `src/utils/format.ts` (`fmtAmount`) | Amount with the currency label, whole units |
+| `src/utils/format.ts` (`fmtAmount`, `fmtRate`) | Amount with the currency label, whole units; a rate such as "7.25%" |
 
 ## Not yet
 
-Saving goals (KAN-22), the short-goal warning (KAN-20) and the optional portfolio link with a suggested return (KAN-21) are separate tickets.
+Saving goals (KAN-22) and the optional portfolio link with a suggested return (KAN-21) are separate tickets. Once goals can be saved, the short-goal notice must not stop the user saving one.
