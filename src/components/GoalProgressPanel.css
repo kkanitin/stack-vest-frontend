@@ -1,0 +1,78 @@
+.goal-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.goal-progress-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.goal-progress-gap {
+  margin: 0;
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  font-size: 20px;
+  color: var(--text-h);
+  overflow-wrap: anywhere;
+}
+
+.goal-progress-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px 24px;
+  margin: 4px 0 0;
+}
+
+.goal-progress-figures dt {
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+.goal-progress-figures dd {
+  margin: 2px 0 0;
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  font-size: 15px;
+  color: var(--text-h);
+  overflow-wrap: anywhere;
+}
+
+.goal-progress-converted {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.goal-progress-rate,
+.goal-progress-basis,
+.goal-progress-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.goal-progress-saved-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--warning);
+}
+
+.goal-progress-retry {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.goal-progress-retry:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

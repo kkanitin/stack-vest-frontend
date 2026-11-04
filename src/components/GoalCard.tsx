@@ -4,6 +4,9 @@ import type { Goal } from '../api/goals';
 import { fmtAmount } from '../utils/format';
 import { GOAL_KIND_LABEL, goalHeadline } from '../utils/savedGoal';
 import InlineConfirm from './InlineConfirm';
+import { GoalProgressBar, GoalStatusChip } from './GoalProgressStatus';
+import { useGoalProgress } from '../hooks/useGoalProgress';
+import { progressBarPct, progressGapText, progressRateText, progressStateNote } from '../utils/goalProgressText';
 import './GoalCard.css';
 
 /** The linked portfolio: its name, `removed` when it no longer exists, null when not linked. */
@@ -19,6 +22,52 @@ interface Props {
 function fmtYears(n: number): string {
   return `${n} ${n === 1 ? 'year' : 'years'}`;
 }
+
+/** Compact progress for a linked goal (KAN-29): status, a bar against the plan today and the gap. */
+const GoalCardProgress: React.FC<{ goal: Goal }> = ({ goal }) => {
+  const progress = useGoalProgress(goal);
+
+  if (progress.state !== 'ready') {
+    const note = progressStateNote(progress);
+    if (!note) return null;
+    const retry = 'retry' in progress ? progress.retry : undefined;
+    return (
+      <div className="goal-card-progress-note" data-testid="goal-card-progress">
+        {note}
+        {retry && (
+          <button
+            type="button"
+            className="goal-card-retry"
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              retry();
+            }}
+          >
+            Try again
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const rate = progressRateText(progress);
+  return (
+    <div className="goal-card-progress" data-testid="goal-card-progress">
+      <div className="goal-card-progress-top">
+        <GoalStatusChip status={progress.status} />
+        <span className="goal-card-gap" title={rate ?? undefined}>
+          {progressGapText(progress, goal.currency)}
+        </span>
+      </div>
+      <GoalProgressBar
+        pct={progressBarPct(progress)}
+        status={progress.status}
+        label={`${goal.name}: portfolio value against the plan today`}
+      />
+    </div>
+  );
+};
 
 /** One saved goal in the list: opens it in the calculator, with an in-card delete confirmation. */
 const GoalCard: React.FC<Props> = ({ goal, link, onDelete, deleting = false }) => {
@@ -66,6 +115,7 @@ const GoalCard: React.FC<Props> = ({ goal, link, onDelete, deleting = false }) =
         <div className="goal-card-link goal-card-link--removed">Linked portfolio removed</div>
       )}
       {link && link !== 'removed' && <div className="goal-card-link">Linked to {link.name}</div>}
+      {link && link !== 'removed' && <GoalCardProgress goal={goal} />}
 
       {confirming && (
         <InlineConfirm

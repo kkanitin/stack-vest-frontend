@@ -18,6 +18,16 @@ export interface Portfolio {
   updatedAt: string;
   value?: number;
   assetCount?: number;
+  /**
+   * ASSUMED pending backend support: the currency of `value`. Prices and trades are in USD
+   * across the app, so a missing currency is read as USD (`portfolioCurrency`).
+   */
+  currency?: string;
+}
+
+/** The currency a portfolio's `value` is in, as an upper-case code; USD until the API says. */
+export function portfolioCurrency(portfolio: Pick<Portfolio, 'currency'>): string {
+  return portfolio.currency?.trim().toUpperCase() || 'USD';
 }
 
 /**

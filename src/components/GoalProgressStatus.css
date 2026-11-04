@@ -1,0 +1,65 @@
+.goal-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.goal-status-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.goal-status--ahead {
+  color: var(--gain);
+  background: color-mix(in srgb, var(--gain) 10%, transparent);
+  border-color: color-mix(in srgb, var(--gain) 30%, transparent);
+}
+
+.goal-status--on-track {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.goal-status--behind {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 30%, transparent);
+}
+
+.goal-progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-highest);
+  overflow: hidden;
+}
+
+.goal-progress-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.goal-progress-bar-fill--ahead {
+  background: var(--gain);
+}
+
+.goal-progress-bar-fill--on-track {
+  background: var(--primary);
+}
+
+.goal-progress-bar-fill--behind {
+  background: var(--warning);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-progress-bar-fill {
+    transition: none;
+  }
+}
