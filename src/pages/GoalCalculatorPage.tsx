@@ -16,6 +16,9 @@ import ShortGoalNotice from '../components/ShortGoalNotice';
 import type { GoalRange } from '../utils/goalMath';
 import { useElementSize } from '../hooks/useElementSize';
 import GoalGrowthChart from '../components/GoalGrowthChart';
+import GoalPortfolioLink from '../components/GoalPortfolioLink';
+import { useSuggestedReturn } from '../hooks/useSuggestedReturn';
+import { suggestedRate, suggestedRateText } from '../utils/suggestedReturn';
 import './GoalCalculatorPage.css';
 
 type TextField = Exclude<keyof GoalFormInputs, 'kind'>;
@@ -257,7 +260,38 @@ const GoalCalculatorPage: React.FC = () => {
     [shownForm, todaysMoney],
   );
 
-  const update = (field: TextField, value: string) => setForm(f => ({ ...f, [field]: value }));
+  // Optional portfolio link (KAN-21). The suggested return fills the expected-return field
+  // unless the user typed a value there themselves; an empty field is always free to fill.
+  const [portfolioId, setPortfolioId] = useState('');
+  const [returnTyped, setReturnTyped] = useState(false);
+  const [appliedSuggestion, setAppliedSuggestion] = useState<string | null>(null);
+  const suggestion = useSuggestedReturn(portfolioId || undefined);
+  const suggested = portfolioId ? suggestedRate(suggestion.data) : null;
+  const suggestionKey = suggested == null ? null : `${portfolioId}:${suggested}`;
+  if (suggestionKey !== null && suggestionKey !== appliedSuggestion) {
+    // Adjusting state while rendering, as above: fill the field once per new suggestion.
+    setAppliedSuggestion(suggestionKey);
+    if (!returnTyped || form.expectedReturn.trim() === '') {
+      setForm(f => ({ ...f, expectedReturn: suggestedRateText(suggested!) }));
+      setReturnTyped(false);
+    }
+  }
+
+  const changePortfolio = (id: string) => {
+    setPortfolioId(id);
+    setAppliedSuggestion(null);
+    // A filled-in suggestion belonged to the old portfolio; a typed value is the user's to keep.
+    if (!returnTyped) setForm(f => ({ ...f, expectedReturn: '' }));
+  };
+  const applySuggested = (rate: number) => {
+    setForm(f => ({ ...f, expectedReturn: suggestedRateText(rate) }));
+    setReturnTyped(false);
+  };
+
+  const update = (field: TextField, value: string) => {
+    if (field === 'expectedReturn') setReturnTyped(true);
+    setForm(f => ({ ...f, [field]: value }));
+  };
   const setKind = (kind: GoalKind) => setForm(f => ({ ...f, kind }));
   const currencyLabel = form.currency.trim() || undefined;
   const isTarget = form.kind === 'target';
@@ -306,6 +340,14 @@ const GoalCalculatorPage: React.FC = () => {
             <Field field="monthlyAmount" label="Monthly amount" form={form} errors={errors} onChange={update}
               suffix={currencyLabel} />
           )}
+
+          <GoalPortfolioLink
+            portfolioId={portfolioId}
+            onPortfolioChange={changePortfolio}
+            suggestion={suggestion}
+            expectedReturnText={form.expectedReturn}
+            onUseSuggested={applySuggested}
+          />
 
           <div className="goal-field-row">
             <Field field="years" label="Years" form={form} errors={errors} onChange={update} suffix="yrs" />

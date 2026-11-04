@@ -4,7 +4,7 @@
 **Entry point:** `src/pages/GoalCalculatorPage.tsx`
 **Sidebar:** Goals
 
-Plan toward a goal with investing. The DCA simulation looks back at real prices. This page looks forward at a steady return the user chooses. Everything is calculated in the browser; there are no API calls.
+Plan toward a goal with investing. The DCA simulation looks back at real prices. This page looks forward at a steady return the user chooses. Everything is calculated in the browser. The only API calls are for the optional portfolio link: the user's portfolios and a suggested return for the linked one.
 
 ## Modes
 
@@ -24,11 +24,26 @@ Both amounts are kept when switching modes, so switching back does not lose what
 - Starting amount (optional, empty = 0)
 - Monthly amount (projection) or target amount (target)
 - Years: decimals allowed (e.g. 2.5), up to 100; the maths rounds to whole months
-- Expected return a year (%): starts empty and must be typed in; 0% and negative returns are allowed
+- Expected return a year (%): starts empty and must be typed in, unless a linked portfolio suggests one (see [Portfolio link](#portfolio-link-and-suggested-return)); 0% and negative returns are allowed
+- Link to a portfolio (optional, default "No portfolio")
 - Yearly increase in the monthly amount (%, optional)
 - Inflation a year (%, optional, default 3)
 
 Every field is kept as text, so clearing one is not turned into 0.
+
+## Portfolio link and suggested return
+
+A **Link to a portfolio** picker above the years and expected-return fields (KAN-21): `src/components/GoalPortfolioLink.tsx`. It lists the user's portfolios (`usePortfolios`) after **No portfolio**, the default.
+
+- **Linked:** `useSuggestedReturn` calls `GET /portfolios/:id/suggested-return` (`getSuggestedReturn` in `src/api/portfolios.ts`; backend KAN-16). The suggestion fills the expected-return field, and a line under the picker says where it came from, e.g. "Suggested 7.4% a year from your holdings, 2016–2026, price only." (`describeSuggestion` in `src/utils/suggestedReturn.ts`; the years come from `lookback`). The backend's `note` (e.g. short price histories) is shown under it.
+- **Overwrite:** the user can type a different value. While the field differs from the suggestion, a **Use suggested** button puts it back.
+- **Typed values are kept:** once the user types in the expected-return field, changing or removing the link never replaces that value; the new suggestion is only shown with **Use suggested**. An empty field counts as not typed and is filled.
+- **Filled-in values follow the link:** a value the app filled in is cleared when the portfolio changes (then refilled from the new portfolio's suggestion) or when the link is removed, so it never shows another portfolio's figure.
+- **Not linked:** no suggestion is asked for; the field is the user's to fill.
+- **No suggestion** (`available: false`, e.g. no priced holdings): "No suggestion for this portfolio." with the backend's `note`; the field is left to the user.
+- **Left-out holdings:** `skipped` is listed with `DcaSkippedNotice` ("Left out of the suggestion:"), with or without a suggestion.
+- **Loading and errors** are notes under the picker only; nothing in the form is disabled. A failed suggestion offers **try again** (one automatic retry first); failing to load the portfolios still leaves "No portfolio" and the form usable.
+- The page tracks this with `portfolioId`, `returnTyped` and the last applied suggestion (`portfolioId:rate`), adjusting state while rendering like the last-valid-result logic. The query is cached for 10 minutes under `['portfolio', id, 'suggested-return']`, so transaction changes (which invalidate `['portfolio', id]`) refresh it.
 
 ## Input checks
 
@@ -73,6 +88,10 @@ A **Growth over time** card between the figures and the range card: `src/compone
 |---|---|
 | `src/pages/GoalCalculatorPage.tsx`, `.css` | Page: form, mode switch, today's-money toggle, results |
 | `src/utils/goalInputs.ts` | Form state shape, defaults, validation and parsing |
+| `src/components/GoalPortfolioLink.tsx`, `.css` | Portfolio picker, suggested-return line, "Use suggested", loading/error/no-suggestion notes (KAN-21) |
+| `src/hooks/useSuggestedReturn.ts` | React Query hook for `GET /portfolios/:id/suggested-return` |
+| `src/utils/suggestedReturn.ts` | Reads the suggested rate, formats it for the field and describes its source |
+| `src/components/DcaSkippedNotice.tsx`, `.css` | Lists the holdings left out of the suggestion (shared with the DCA simulation) |
 | `src/utils/goalResult.ts` | Turns parsed inputs into the figures and chart points the page shows |
 | `src/components/ShortGoalNotice.tsx`, `.css` | Short-goal notice: plan versus cash for goals under 5 years (KAN-20) |
 | `src/components/GoalGrowthChart.tsx`, `.css` | Growth chart: lines, low–high band, target line, readout, text alternative (KAN-19) |
@@ -82,4 +101,4 @@ A **Growth over time** card between the figures and the range card: `src/compone
 
 ## Not yet
 
-Saving goals (KAN-22) and the optional portfolio link with a suggested return (KAN-21) are separate tickets. Once goals can be saved, the short-goal notice must not stop the user saving one.
+Saving goals (KAN-22) is a separate ticket; the portfolio link is not saved yet. Once goals can be saved, the short-goal notice must not stop the user saving one.

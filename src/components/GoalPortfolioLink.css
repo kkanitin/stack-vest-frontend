@@ -1,0 +1,68 @@
+.goal-select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.goal-link-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.goal-link-status:empty {
+  display: none;
+}
+
+.goal-link-status .goal-hint {
+  margin: 0;
+}
+
+.goal-link-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.goal-link-none {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.goal-link-error {
+  color: var(--loss);
+}
+
+.goal-link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.goal-link-use {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-bg);
+  border: 1px solid var(--primary);
+  border-radius: var(--r);
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.goal-link-use:hover {
+  filter: brightness(1.1);
+}
+
+.goal-link-use:focus-visible,
+.goal-link-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

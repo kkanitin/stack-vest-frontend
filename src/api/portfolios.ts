@@ -403,3 +403,63 @@ export function parsePortfolioAnalysis(raw: string): PortfolioAnalysis | null {
   if (!summary && dimensions.length === 0) return null;
   return { summary, dimensions };
 }
+
+// ---------------------------------------------------------------------------
+// Suggested expected return (KAN-16)
+// ---------------------------------------------------------------------------
+
+/** Why a holding was left out of a suggested return. */
+export type SuggestedReturnSkipCode = 'no_price' | 'no_history' | 'history_unavailable';
+
+/** The period used across the included holdings. `shortHistory`: some holding had under `requestedYears`. */
+export interface SuggestedReturnLookback {
+  startDate: string;
+  endDate: string;
+  years: number;
+  requestedYears: number;
+  shortHistory: boolean;
+}
+
+export interface SuggestedReturnHolding {
+  symbol: string;
+  name: string;
+  valueUsd: number;
+  weightPct: number;
+  annualReturn: number;
+  startDate: string;
+  endDate: string;
+  years: number;
+  shortHistory: boolean;
+}
+
+export interface SuggestedReturnSkipped {
+  symbol: string;
+  code: SuggestedReturnSkipCode;
+  reason: string;
+}
+
+/**
+ * An expected yearly return suggested from what a portfolio holds: each open holding's
+ * price-only CAGR over up to 10 years, weighted by its current value. When nothing could be
+ * used, `available` is false, `annualReturn` and `lookback` are null and `note` says why.
+ */
+export interface SuggestedReturn {
+  available: boolean;
+  /** Percent a year, rounded to 2 decimals. */
+  annualReturn: number | null;
+  lookback: SuggestedReturnLookback | null;
+  holdings: SuggestedReturnHolding[];
+  skipped: SuggestedReturnSkipped[];
+  note?: string;
+  priceBasisNote: string;
+}
+
+/** `GET /portfolios/:id/suggested-return`. "No suggestion" is a normal response, not an error. */
+export async function getSuggestedReturn(token: string, portfolioId: string): Promise<SuggestedReturn> {
+  const res = await fetch(`${API_BASE}/portfolios/${encodeURIComponent(portfolioId)}/suggested-return`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (res.ok && data.code === 200) return data.result as SuggestedReturn;
+  throw new Error(data.errorMessage || 'Failed to load the suggested return');
+}
