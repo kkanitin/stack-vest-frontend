@@ -13,6 +13,8 @@ import {
 import { computeGoalResult, type GoalResult } from '../utils/goalResult';
 import { fmtAmount } from '../utils/format';
 import type { GoalRange } from '../utils/goalMath';
+import { useElementSize } from '../hooks/useElementSize';
+import GoalGrowthChart from '../components/GoalGrowthChart';
 import './GoalCalculatorPage.css';
 
 type TextField = Exclude<keyof GoalFormInputs, 'kind'>;
@@ -109,6 +111,48 @@ function RangeRow({
   );
 }
 
+function GrowthCard({ result }: { result: GoalResult }) {
+  // Match the SVG viewBox to the rendered box so axis text is not stretched.
+  const [wrapRef, size] = useElementSize<HTMLDivElement>({ initialWidth: 760, initialHeight: 260 });
+  if (!result.chart) return null;
+  const isTarget = result.kind === 'target';
+  return (
+    <Card className="goal-chart-card px-6" data-testid="goal-chart-card">
+      <CardTitle className="label-caps">Growth over time</CardTitle>
+      <div className="goal-chart-wrap" ref={wrapRef}>
+        <GoalGrowthChart
+          points={result.chart}
+          returns={result.returns}
+          currency={result.currency}
+          target={isTarget ? result.targetNominal : undefined}
+          width={size.width}
+          height={size.height}
+        />
+      </div>
+      <div className="goal-chart-legend">
+        <span className="goal-legend-item">
+          <span className="goal-legend-swatch" />
+          Expected value
+        </span>
+        <span className="goal-legend-item">
+          <span className="goal-legend-swatch goal-legend-swatch--band" />
+          Low–high return
+        </span>
+        <span className="goal-legend-item">
+          <span className="goal-legend-swatch goal-legend-swatch--dashed" />
+          Amount invested
+        </span>
+        {isTarget && (
+          <span className="goal-legend-item">
+            <span className="goal-legend-swatch goal-legend-swatch--target" />
+            Target
+          </span>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 function Results({ result, stale }: { result: GoalResult; stale: boolean }) {
   const { currency } = result;
   const isTarget = result.kind === 'target';
@@ -161,6 +205,8 @@ function Results({ result, stale }: { result: GoalResult; stale: boolean }) {
           </div>
         </div>
       )}
+
+      <GrowthCard result={result} />
 
       <Card className="goal-range-card px-6">
         <CardTitle className="label-caps">

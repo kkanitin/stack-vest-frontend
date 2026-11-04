@@ -117,4 +117,29 @@ describe('GoalCalculatorPage', () => {
     expect(headline()).toBe('0 THB / month');
     expect(screen.getByText(/already reaches the target/)).toBeInTheDocument();
   });
+
+  it('draws the growth chart with a text alternative that follows the today\'s-money toggle', () => {
+    render(<GoalCalculatorPage />);
+    fillRetirement();
+    const chart = within(screen.getByTestId('goal-chart-card')).getByRole('img');
+    expect(chart.getAttribute('aria-label')).toMatch(
+      /^Goal growth over 30 years\. Amount invested 3,600,000 THB; expected final value 14,9\d\d,\d{3} THB/,
+    );
+    expect(screen.queryByTestId('goal-chart-target')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("Show in today's money"));
+    expect(chart.getAttribute('aria-label')).toContain(`expected final value ${headline()}`);
+  });
+
+  it('draws a target line on the chart in target mode', () => {
+    render(<GoalCalculatorPage />);
+    fireEvent.click(screen.getByRole('radio', { name: 'How much must I save?' }));
+    type('Goal name', 'House');
+    type('Target amount', '1000000');
+    type('Years', '3');
+    type('Expected return a year', '8');
+    expect(screen.getByTestId('goal-chart-target')).toBeInTheDocument();
+    const label = within(screen.getByTestId('goal-chart-card')).getByRole('img').getAttribute('aria-label');
+    expect(label).toContain('Target 1,000,000 THB.');
+  });
 });
