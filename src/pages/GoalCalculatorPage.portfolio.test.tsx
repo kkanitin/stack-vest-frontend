@@ -176,3 +176,81 @@ describe('GoalCalculatorPage portfolio link', () => {
     expect(returnField()).toHaveValue(7);
   });
 });
+
+const volField = () => screen.getByLabelText('Volatility a year (optional)') as HTMLInputElement;
+const typeVol = (v: string) => fireEvent.change(volField(), { target: { value: v } });
+
+describe('GoalCalculatorPage volatility (KAN-34)', () => {
+  beforeEach(() => {
+    byId.p1 = { data: suggestion(7.4, { annualVolatility: 15 }) };
+    byId.p2 = { data: suggestion(5.25, { annualVolatility: 9.5 }) };
+  });
+
+  it('is empty when unlinked, with a hint that empty skips the probability', () => {
+    renderGoalRoutes();
+    expect(volField()).toHaveValue(null);
+    expect(screen.getByText(/Leave empty to skip the chance of reaching your goal/)).toBeInTheDocument();
+  });
+
+  it('fills from the linked portfolio and names it in the suggestion', () => {
+    renderGoalRoutes();
+    pick('p1');
+    expect(volField()).toHaveValue(15);
+    expect(screen.getByTestId('goal-suggestion')).toHaveTextContent(
+      'Suggested 7.4% a year, ±15% volatility, from your holdings, 2016–2026, price only.',
+    );
+    expect(screen.queryByRole('button', { name: 'Use suggested volatility' })).not.toBeInTheDocument();
+  });
+
+  it('follows the link when filled in: switch portfolio, then unlink', () => {
+    renderGoalRoutes();
+    pick('p1');
+    pick('p2');
+    expect(volField()).toHaveValue(9.5);
+    pick('');
+    expect(volField()).toHaveValue(null);
+  });
+
+  it('keeps a typed value and offers "Use suggested volatility"', () => {
+    renderGoalRoutes();
+    typeVol('22');
+    pick('p1');
+    expect(volField()).toHaveValue(22);
+    expect(returnField()).toHaveValue(7.4);
+    pick('p2');
+    expect(volField()).toHaveValue(22);
+    fireEvent.click(screen.getByRole('button', { name: 'Use suggested volatility' }));
+    expect(volField()).toHaveValue(9.5);
+    expect(returnField()).toHaveValue(5.25);
+  });
+
+  it('is left to the user when the portfolio has no volatility', () => {
+    byId.p1 = { data: suggestion(7.4, { annualVolatility: null }) };
+    renderGoalRoutes();
+    pick('p1');
+    expect(returnField()).toHaveValue(7.4);
+    expect(volField()).toHaveValue(null);
+    expect(screen.getByTestId('goal-suggestion')).toHaveTextContent('Suggested 7.4% a year from your holdings');
+  });
+
+  it('feeds the chance of reaching the goal (KAN-35)', () => {
+    renderGoalRoutes();
+    fireEvent.change(screen.getByLabelText('Goal name'), { target: { value: 'Retirement' } });
+    fireEvent.change(screen.getByLabelText('Monthly amount'), { target: { value: '10000' } });
+    fireEvent.change(screen.getByLabelText('Years'), { target: { value: '30' } });
+    expect(screen.queryByTestId('goal-chance')).not.toBeInTheDocument();
+    pick('p1');
+    expect(screen.getByTestId('goal-chance-text')).toHaveTextContent(/^In 8 of 10 simulated outcomes/);
+    expect(screen.getByTestId('goal-chance')).toHaveTextContent('±15% volatility a year');
+    // Unlinking clears the filled-in return, so the last valid result stays, dimmed.
+    pick('');
+    expect(screen.getByTestId('goal-results')).toHaveClass('goal-results--stale');
+  });
+
+  it('flags an out-of-range value', () => {
+    renderGoalRoutes();
+    typeVol('120');
+    expect(volField()).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText(/Enter a volatility between 0% and 100%/)).toBeInTheDocument();
+  });
+});

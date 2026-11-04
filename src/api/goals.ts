@@ -19,6 +19,11 @@ export interface Goal {
   expectedReturn: number;
   contributionGrowth: number | null;
   inflation: number | null;
+  /**
+   * Annual volatility, percent (0–100), for the chance of reaching the goal (KAN-32). Null when
+   * not set; missing from older backends.
+   */
+  volatility?: number | null;
   /** Cleared by the backend when the linked portfolio is deleted. */
   portfolioId: string | null;
   createdAt: string;

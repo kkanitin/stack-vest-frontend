@@ -93,6 +93,7 @@ describe('GoalCalculatorPage saving', () => {
       expectedReturn: 8,
       contributionGrowth: null,
       inflation: 3,
+      volatility: null,
       portfolioId: null,
     });
     // The saved goal is shown from the cache, without asking the server again.

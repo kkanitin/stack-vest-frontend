@@ -1,5 +1,12 @@
 import type { SuggestedReturn } from '../api/portfolios';
-import { describeSuggestion, isSuggestedRate, lookbackYears, suggestedRate, suggestedRateText } from './suggestedReturn';
+import {
+  describeSuggestion,
+  isSuggestedRate,
+  lookbackYears,
+  suggestedRate,
+  suggestedRateText,
+  suggestedVolatility,
+} from './suggestedReturn';
 
 function make(over: Partial<SuggestedReturn> = {}): SuggestedReturn {
   return {
@@ -37,5 +44,18 @@ describe('suggestedReturn helpers', () => {
     expect(describeSuggestion(make())).toBe('Suggested 7.4% a year from your holdings, 2016–2026, price only.');
     expect(lookbackYears(make({ lookback: { startDate: '2026-01-02', endDate: '2026-10-01', years: 0.8, requestedYears: 10, shortHistory: true } }))).toBe('2026');
     expect(describeSuggestion(make({ available: false, annualReturn: null, lookback: null }))).toBeNull();
+  });
+
+  it('reads the volatility only alongside a suggested return', () => {
+    expect(suggestedVolatility(make({ annualVolatility: 15.2 }))).toBe(15.2);
+    expect(suggestedVolatility(make({ annualVolatility: null }))).toBeNull();
+    expect(suggestedVolatility(make())).toBeNull();
+    expect(suggestedVolatility(make({ available: false, annualReturn: null, annualVolatility: 15 }))).toBeNull();
+  });
+
+  it('names the volatility in the description when there is one', () => {
+    expect(describeSuggestion(make({ annualVolatility: 15 }))).toBe(
+      'Suggested 7.4% a year, ±15% volatility, from your holdings, 2016–2026, price only.',
+    );
   });
 });

@@ -51,12 +51,13 @@ export interface GoalRange<T> {
   high: T;
 }
 
-function toMonths(years: number): number {
+/** `years` as whole months (rounded), the step count every simulation uses. */
+export function toMonths(years: number): number {
   return Math.max(0, Math.round(years * 12));
 }
 
 /** Monthly growth factor. A return of −1200% or worse would wipe the balance; it is floored at zero. */
-function monthlyFactor(annualReturnPct: number): number {
+export function monthlyFactor(annualReturnPct: number): number {
   return Math.max(0, 1 + annualReturnPct / 100 / 12);
 }
 

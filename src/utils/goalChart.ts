@@ -1,5 +1,5 @@
 import { goalSeries, toTodaysMoney, type GoalRange, type ProjectionInputs } from './goalMath';
-import { fmtAmount } from './format';
+import { fmtAmount, fmtRate } from './format';
 
 /** One point of the goal growth chart: a year, the amount invested by then and the value at each return. */
 export interface GoalChartPoint {
@@ -10,12 +10,28 @@ export interface GoalChartPoint {
 }
 
 /**
- * Yearly points of the plan at the low, expected and high returns. All three share the same
- * months and payments, so their years and amounts invested line up.
- *
- * With `deflateInflationPct` set, each amount is divided by `(1 + inflation)^year` for its own
- * year — what it would buy today. The last point uses `inputs.years` as given rather than the
+ * Chart points in today's money: each amount is divided by `(1 + inflation)^year` for its own
+ * year, i.e. what it would buy today. The last point uses `years` as given rather than the
  * whole months the maths rounds to, so it matches the page's headline figures exactly.
+ * Without `inflationPct` the points are returned unchanged.
+ */
+export function deflateChartPoints(points: GoalChartPoint[], years: number, inflationPct?: number): GoalChartPoint[] {
+  if (inflationPct === undefined) return points;
+  const lastIndex = points.length - 1;
+  return points.map((p, i) => {
+    const deflate = (n: number) => toTodaysMoney(n, i === lastIndex ? years : p.year, inflationPct);
+    return {
+      year: p.year,
+      invested: deflate(p.invested),
+      value: { low: deflate(p.value.low), expected: deflate(p.value.expected), high: deflate(p.value.high) },
+    };
+  });
+}
+
+/**
+ * Yearly points of the plan at the low, expected and high returns. All three share the same
+ * months and payments, so their years and amounts invested line up. With
+ * `deflateInflationPct` set, the points are in today's money (`deflateChartPoints`).
  */
 export function goalChartPoints(
   inputs: ProjectionInputs,
@@ -25,23 +41,48 @@ export function goalChartPoints(
   const low = goalSeries({ ...inputs, annualReturnPct: returns.low });
   const expected = goalSeries({ ...inputs, annualReturnPct: returns.expected });
   const high = goalSeries({ ...inputs, annualReturnPct: returns.high });
+  const points = expected.map((p, i) => ({
+    year: p.year,
+    invested: p.invested,
+    value: { low: low[i].value, expected: p.value, high: high[i].value },
+  }));
+  return deflateChartPoints(points, inputs.years, deflateInflationPct);
+}
 
-  const lastIndex = expected.length - 1;
-  return expected.map((p, i) => {
-    const deflate = (n: number) =>
-      deflateInflationPct === undefined
-        ? n
-        : toTodaysMoney(n, i === lastIndex ? inputs.years : p.year, deflateInflationPct);
-    return {
-      year: p.year,
-      invested: deflate(p.invested),
-      value: {
-        low: deflate(low[i].value),
-        expected: deflate(p.value),
-        high: deflate(high[i].value),
-      },
-    };
-  });
+/**
+ * Where the chart's band comes from: the low and high returns (expected ∓ 2 points), or the
+ * percentiles of a Monte Carlo simulation (KAN-36).
+ */
+export type GoalChartBand =
+  | { kind: 'returns'; returns: GoalRange<number> }
+  | { kind: 'percentiles'; percentiles: GoalRange<number>; paths: number };
+
+/** "10th", "50th", "90th", "1st", "2nd", "3rd", "11th". */
+export function fmtOrdinal(n: number): string {
+  const v = Math.round(n);
+  const teen = v % 100 >= 11 && v % 100 <= 13;
+  const suffix = teen ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[v % 10] ?? 'th';
+  return `${v}${suffix}`;
+}
+
+/** Labels for the band's low / middle / high values, e.g. "Low (5%)" or "10th percentile". */
+export function bandLabels(band: GoalChartBand): GoalRange<string> {
+  if (band.kind === 'returns') {
+    const r = band.returns;
+    return { low: `Low (${fmtRate(r.low)})`, expected: `Expected (${fmtRate(r.expected)})`, high: `High (${fmtRate(r.high)})` };
+  }
+  const p = band.percentiles;
+  return {
+    low: `${fmtOrdinal(p.low)} percentile`,
+    expected: p.expected === 50 ? 'Median' : `${fmtOrdinal(p.expected)} percentile`,
+    high: `${fmtOrdinal(p.high)} percentile`,
+  };
+}
+
+/** The legend text for the band, e.g. "10th–90th percentile of 2,000 simulations". */
+export function bandLegend(band: GoalChartBand): string {
+  if (band.kind === 'returns') return 'Expected return ∓ 2 points';
+  return `${fmtOrdinal(band.percentiles.low)}–${fmtOrdinal(band.percentiles.high)} percentile of ${band.paths.toLocaleString('en-US')} simulations`;
 }
 
 const NICE_STEPS = [1, 2, 5, 10, 20, 25, 50, 100];
@@ -98,14 +139,26 @@ function fmtYearSpan(years: number): string {
 }
 
 /** One-sentence text alternative for the goal chart. */
-export function describeGoalChart(points: GoalChartPoint[], currency: string, target?: number): string {
+export function describeGoalChart(
+  points: GoalChartPoint[],
+  currency: string,
+  target?: number,
+  band?: GoalChartBand,
+): string {
   if (points.length === 0) return 'Goal growth chart: no data.';
   const last = points[points.length - 1];
   const amount = (n: number) => fmtAmount(n, currency);
+  const final =
+    band?.kind === 'percentiles'
+      ? `median final value ${amount(last.value.expected)} ` +
+        `(${fmtOrdinal(band.percentiles.low)} percentile ${amount(last.value.low)}, ` +
+        `${fmtOrdinal(band.percentiles.high)} percentile ${amount(last.value.high)}, ` +
+        `from ${band.paths.toLocaleString('en-US')} simulations)`
+      : `expected final value ${amount(last.value.expected)} ` +
+        `(low ${amount(last.value.low)}, high ${amount(last.value.high)})`;
   return (
     `Goal growth over ${fmtYearSpan(last.year)}. ` +
-    `Amount invested ${amount(last.invested)}; expected final value ${amount(last.value.expected)} ` +
-    `(low ${amount(last.value.low)}, high ${amount(last.value.high)}).` +
+    `Amount invested ${amount(last.invested)}; ${final}.` +
     (target === undefined ? '' : ` Target ${amount(target)}.`)
   );
 }

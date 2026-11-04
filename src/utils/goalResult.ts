@@ -8,7 +8,8 @@ import {
   type GoalRange,
 } from './goalMath';
 import type { ParsedGoal } from './goalInputs';
-import { goalChartPoints, type GoalChartPoint } from './goalChart';
+import { deflateChartPoints, goalChartPoints, type GoalChartPoint } from './goalChart';
+import { simulateGoalPaths } from './goalMonteCarlo';
 
 /** Goals shorter than this many years get the short-goal notice comparing the plan with cash. */
 export const SHORT_GOAL_YEARS = 5;
@@ -155,5 +156,66 @@ export function computeGoalResult(goal: ParsedGoal, todaysMoney: boolean): GoalR
     range,
     targetAmount,
     targetNominal,
+  };
+}
+
+/**
+ * The Monte Carlo view of a goal (KAN-35, KAN-36), on the same money basis as
+ * `computeGoalResult`: projection amounts follow the today's-money toggle, target amounts
+ * stay in future money and are compared with the target grown by inflation.
+ */
+export interface GoalSimulationResult {
+  /** The volatility simulated, in percent a year. */
+  volatilityPct: number;
+  paths: number;
+  /** The percentiles behind `chart` and `final`, e.g. 10 / 50 / 90. */
+  percentiles: GoalRange<number>;
+  /** Yearly points with the percentile values, for the chart. */
+  chart: GoalChartPoint[];
+  /** Final value at each percentile. */
+  final: GoalRange<number>;
+  /**
+   * Target mode: the share (0–1) of paths reaching the target when saving the monthly amount
+   * needed. Null in projection mode, which has no target.
+   */
+  probability: number | null;
+}
+
+/**
+ * Simulates the plan the page shows. Null when there is no volatility (the field is empty)
+ * or no plan to simulate (the target cannot be reached).
+ */
+export function computeGoalSimulation(goal: ParsedGoal, todaysMoney: boolean): GoalSimulationResult | null {
+  if (goal.volatilityPct == null) return null;
+  const options = { annualReturnPct: goal.projection.annualReturnPct, annualVolatilityPct: goal.volatilityPct };
+
+  if (goal.kind === 'projection') {
+    const sim = simulateGoalPaths(goal.projection, options);
+    const inflation = todaysMoney ? goal.inflationPct : undefined;
+    const chart = deflateChartPoints(sim.series, goal.years, inflation);
+    return {
+      volatilityPct: goal.volatilityPct,
+      paths: sim.paths,
+      percentiles: sim.percentiles,
+      chart,
+      final: chart[chart.length - 1].value,
+      probability: null,
+    };
+  }
+
+  const targetNominal = todaysMoney
+    ? goal.target.targetAmount * (1 + goal.inflationPct / 100) ** goal.years
+    : goal.target.targetAmount;
+  const monthly = requiredMonthlyAmount({ ...goal.target, targetAmount: targetNominal });
+  if (monthly == null) return null;
+  const sim = simulateGoalPaths({ ...goal.projection, monthlyAmount: monthly }, options);
+  return {
+    volatilityPct: goal.volatilityPct,
+    paths: sim.paths,
+    percentiles: sim.percentiles,
+    chart: sim.series,
+    final: sim.final,
+    // The amount needed lands on the target only up to rounding, so allow a hair below it.
+    probability: sim.probabilityOfReaching(targetNominal * (1 - 1e-9)),
   };
 }

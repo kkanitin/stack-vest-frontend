@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
 import { nearestIndex } from '../utils/dcaChart';
 import {
+  bandLabels,
   describeGoalChart,
   fmtCompact,
   fmtYearLabel,
   valueTicks,
   yearTicks,
+  type GoalChartBand,
   type GoalChartPoint,
 } from '../utils/goalChart';
-import { fmtAmount, fmtRate } from '../utils/format';
-import type { GoalRange } from '../utils/goalMath';
+import { fmtAmount } from '../utils/format';
 import './GoalGrowthChart.css';
 
 interface Props {
   points: GoalChartPoint[];
-  /** Low / expected / high annual returns in percent, for the readout. */
-  returns: GoalRange<number>;
+  /**
+   * What the band and middle line show: the plan at the low / expected / high returns, or
+   * the percentiles of a simulation (KAN-36). Labels the readout and the text alternative.
+   */
+  band: GoalChartBand;
   currency: string;
   /** Draws a horizontal line at this amount (target goals). */
   target?: number;
@@ -29,11 +33,11 @@ const PAD_T = 16;
 const PAD_B = 30;
 
 /**
- * Hand-drawn SVG chart of a goal plan over the years: amount invested, expected value with a
- * shaded low–high band, and an optional target line. Hover or tap shows a readout; the SVG
+ * Hand-drawn SVG chart of a goal plan over the years: amount invested, the middle line (the
+ * expected value, or the simulated median) with a shaded band, and an optional target line. Hover or tap shows a readout; the SVG
  * carries a one-sentence text alternative. Follows the `DcaGrowthChart` pattern.
  */
-const GoalGrowthChart: React.FC<Props> = ({ points, returns, currency, target, width, height }) => {
+const GoalGrowthChart: React.FC<Props> = ({ points, band, currency, target, width, height }) => {
   const [hover, setHover] = useState<number | null>(null);
 
   if (points.length === 0) {
@@ -78,6 +82,7 @@ const GoalGrowthChart: React.FC<Props> = ({ points, returns, currency, target, w
   const hp = hover !== null ? points[hover] : null;
   const hx = hover !== null ? x(years[hover]) : 0;
   const amount = (n: number) => fmtAmount(n, currency);
+  const labels = bandLabels(band);
 
   return (
     <div className="goal-chart-box">
@@ -86,7 +91,7 @@ const GoalGrowthChart: React.FC<Props> = ({ points, returns, currency, target, w
         className="goal-chart"
         preserveAspectRatio="none"
         role="img"
-        aria-label={describeGoalChart(points, currency, target)}
+        aria-label={describeGoalChart(points, currency, target, band)}
         onPointerMove={select}
         onPointerDown={select}
         onPointerLeave={e => { if (e.pointerType !== 'touch') setHover(null); }}
@@ -143,9 +148,9 @@ const GoalGrowthChart: React.FC<Props> = ({ points, returns, currency, target, w
         >
           <div className="goal-chart-tip-year">{fmtYearLabel(hp.year)}</div>
           <div>Invested <strong>{amount(hp.invested)}</strong></div>
-          <div>Low ({fmtRate(returns.low)}) <strong>{amount(hp.value.low)}</strong></div>
-          <div>Expected ({fmtRate(returns.expected)}) <strong>{amount(hp.value.expected)}</strong></div>
-          <div>High ({fmtRate(returns.high)}) <strong>{amount(hp.value.high)}</strong></div>
+          <div>{labels.low} <strong>{amount(hp.value.low)}</strong></div>
+          <div>{labels.expected} <strong>{amount(hp.value.expected)}</strong></div>
+          <div>{labels.high} <strong>{amount(hp.value.high)}</strong></div>
         </div>
       )}
     </div>

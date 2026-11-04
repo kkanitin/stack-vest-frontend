@@ -28,7 +28,7 @@ The backend caps goals at 50 a user and pages at up to 100, so one page holds th
 
 `src/utils/savedGoal.ts`:
 
-- `goalToDraft` loads a goal into the form as text (`null` and a 0 starting amount become empty fields) plus the portfolio link.
+- `goalToDraft` loads a goal into the form as text (`null` and a 0 starting amount become empty fields) plus the portfolio link. `volatility` (KAN-32) loads the same way; a goal from a backend without the field loads it as empty.
 - `draftToBody` builds the request body: empty optional fields are `null`, no link is `null`. Both amounts are sent, so switching modes after loading loses neither; the amount the mode does not use is sent only when it is a positive number (the backend rejects a 0 target).
 - `saveProblem`: the backend stores whole years only (1–100), so a goal with part years (e.g. 2.5) shows results but cannot be saved until Years is whole.
 - `sameDraft` compares the form and link with what was last saved; that is the "unsaved changes" flag. The today's-money toggle is not saved.
@@ -67,6 +67,7 @@ Both amounts are kept when switching modes, so switching back does not lose what
 - Years: decimals allowed (e.g. 2.5), up to 100; the maths rounds to whole months
 - Expected return a year (%): starts empty and must be typed in, unless a linked portfolio suggests one (see [Portfolio link](#portfolio-link-and-suggested-return)); 0% and negative returns are allowed
 - Link to a portfolio (optional, default "No portfolio")
+- Volatility a year (%, optional, 0–100): how much the yearly return swings, for the chance of reaching the goal (KAN-34). Filled from a linked portfolio (see [Portfolio link](#portfolio-link-and-suggested-return)). Unlinked it starts empty with the hint "Leave empty to skip the chance of reaching your goal. Broad stock funds are often 15–20%." Empty means no probability is shown; 0 is allowed.
 - Yearly increase in the monthly amount (%, optional)
 - Inflation a year (%, optional, default 3)
 
@@ -76,8 +77,9 @@ Every field is kept as text, so clearing one is not turned into 0.
 
 A **Link to a portfolio** picker above the years and expected-return fields (KAN-21): `src/components/GoalPortfolioLink.tsx`. It lists the user's portfolios (`usePortfolios`) after **No portfolio**, the default.
 
-- **Linked:** `useSuggestedReturn` calls `GET /portfolios/:id/suggested-return` (`getSuggestedReturn` in `src/api/portfolios.ts`; backend KAN-16). The suggestion fills the expected-return field, and a line under the picker says where it came from, e.g. "Suggested 7.4% a year from your holdings, 2016–2026, price only." (`describeSuggestion` in `src/utils/suggestedReturn.ts`; the years come from `lookback`). The backend's `note` (e.g. short price histories) is shown under it.
-- **Overwrite:** the user can type a different value. While the field differs from the suggestion, a **Use suggested** button puts it back.
+- **Linked:** `useSuggestedReturn` calls `GET /portfolios/:id/suggested-return` (`getSuggestedReturn` in `src/api/portfolios.ts`; backend KAN-16). The suggestion fills the expected-return field and, when the backend gives an `annualVolatility` (KAN-31), the volatility field. A line under the picker says where they came from, e.g. "Suggested 7.4% a year, ±15% volatility, from your holdings, 2016–2026, price only." (`describeSuggestion` and `suggestedVolatility` in `src/utils/suggestedReturn.ts`; the years come from `lookback`, and the volatility part is left out when it is `null`). The backend's `note` (e.g. short price histories, or too little history for a volatility) is shown under it.
+- **Overwrite:** the user can type a different value. While the field differs from the suggestion, a **Use suggested** button puts the return back, and **Use suggested volatility** does the same for the volatility.
+- **Both fields follow the same rules** below, from `src/utils/suggestedFields.ts` (`applySuggestions`, `linkChanged`, `markTyped`, `restoreSuggestion`). Each field keeps its own typed flag, so typing a volatility does not stop the return being filled, and the other way round.
 - **Typed values are kept:** once the user types in the expected-return field, changing or removing the link never replaces that value; the new suggestion is only shown with **Use suggested**. An empty field counts as not typed and is filled.
 - **Filled-in values follow the link:** a value the app filled in is cleared when the portfolio changes (then refilled from the new portfolio's suggestion) or when the link is removed, so it never shows another portfolio's figure.
 - **Not linked:** no suggestion is asked for; the field is the user's to fill.
@@ -85,11 +87,11 @@ A **Link to a portfolio** picker above the years and expected-return fields (KAN
 - **Left-out holdings:** `skipped` is listed with `DcaSkippedNotice` ("Left out of the suggestion:"), with or without a suggestion.
 - **Loading and errors** are notes under the picker only; nothing in the form is disabled. A failed suggestion offers **try again** (one automatic retry first); failing to load the portfolios still leaves "No portfolio" and the form usable.
 - The suggestion is asked for only once the portfolio is known to be in the user's list (or the list failed to load), so a deleted portfolio is never asked for.
-- The page tracks this with `portfolioId`, `returnTyped` and the last applied suggestion (`portfolioId:rate`), adjusting state while rendering like the last-valid-result logic. The query is cached for 10 minutes under `['portfolio', id, 'suggested-return']`, so transaction changes (which invalidate `['portfolio', id]`) refresh it.
+- The page tracks this with `portfolioId` and a `SuggestedFieldsState` holding, per field, a typed flag and the last applied suggestion (`portfolioId:value`). It adjusts state while rendering, like the last-valid-result logic. The query is cached for 10 minutes under `['portfolio', id, 'suggested-return']`, so transaction changes (which invalidate `['portfolio', id]`) refresh it.
 
 ## Input checks
 
-`src/utils/goalInputs.ts` (`validateGoalInputs`) runs on every render, and `parseGoalInputs` turns valid text into numbers. Only the amount the current mode uses is checked. Rules: name required (≤ 100 characters); currency required (≤ 10 characters); starting amount ≥ 0; monthly or target amount > 0; years > 0, ≤ 100 and at least one month; expected return required; return, yearly increase and inflation between −50% and 50%.
+`src/utils/goalInputs.ts` (`validateGoalInputs`) runs on every render, and `parseGoalInputs` turns valid text into numbers. Only the amount the current mode uses is checked. Rules: name required (≤ 100 characters); currency required (≤ 10 characters); starting amount ≥ 0; monthly or target amount > 0; years > 0, ≤ 100 and at least one month; expected return required; return, yearly increase and inflation between −50% and 50%; volatility empty or 0–100%.
 
 An invalid field shows a message under it and is marked `aria-invalid`. Results appear only once every field is valid. After that, an invalid edit keeps the last valid result on screen, dimmed, with a note asking the user to fix the highlighted fields.
 
@@ -105,6 +107,28 @@ Calculated by `src/utils/goalResult.ts` (`computeGoalResult`) from the goal math
   - Target: the target is taken as today's money and grown by inflation to the end of the plan, so the monthly amount needed is what the user actually pays. A note gives both figures; the other amounts stay in future money.
 - A note under the results says which basis is shown.
 
+### Chance of reaching the goal
+
+KAN-35. A card under the headline, from `computeGoalSimulation` in `src/utils/goalResult.ts` (the [Monte Carlo](#monte-carlo-simulation) at the expected return and the **Volatility a year** field), worded by `src/utils/goalChance.ts`:
+
+- **Target mode:** "About 70% chance of reaching 1,000,000 THB if you invest 12,400 THB a month." This is the chance at the monthly amount needed (the headline). `fmtChance` rounds to the nearest 5% and clamps the ends to "Less than 5%" and "Over 95%". When the starting amount already covers the target, it says "with your starting amount alone". Because the median sits slightly above the plan when there are monthly amounts, the chance at the amount needed is usually about 50–55%.
+- **Projection mode** has no target, so the card gives the range instead: "In 8 of 10 simulated outcomes you end with between X and Y" (the 10th and 90th percentiles). There is no goal-amount input for a probability in this mode.
+- **Note** (`role="note"`): how many paths, the volatility, that a suggested volatility is price-only, and that this is an estimate, not a promise.
+- **No volatility** (field empty, e.g. unlinked, or the backend had too little history): no card, just one muted line asking for a volatility. The deterministic results do not change.
+- **Today's money:** the same as the other figures. In target mode the target is grown by inflation (the sentence adds "in today's money"); in projection mode the percentiles are divided by `(1 + inflation)^years`.
+- **Performance:** the deterministic figures update at once. The simulation runs on `useDeferredValue` of the inputs and is memoised on them, so typing does not stutter. While it catches up, the card is dimmed (`aria-busy`). An invalid edit keeps the last valid result, chance included, dimmed like the rest.
+
+## Monte Carlo simulation
+
+`src/utils/goalMonteCarlo.ts` (KAN-33) is pure maths with no UI. `simulateGoalPaths(inputs, { annualReturnPct, annualVolatilityPct, paths?, seed? })` runs the plan along many random paths and follows `goalMath`'s conventions (monthly steps, payments at the end of each month, yearly increase).
+
+- **Returns:** each month the balance grows by `f · e^(σZ)`, where `f = 1 + return/12` is the deterministic monthly factor, `σ = volatility / √12` and `Z` is standard normal. The volatility is the annualised standard deviation of log returns, the same basis as the backend's suggested `annualVolatility`.
+- **Median, not mean:** `e^(σZ)` has median 1, so a lump sum's median matches `projectGoal` exactly. The mean is higher (volatility drag). With monthly amounts the median sits a little above the plan, because a sum of lognormal amounts is right-skewed. Over 20 years that is about 1% at 10% volatility, 4% at 20% and 10% at 30%. So saving exactly the amount needed gives slightly better than even odds.
+- **Volatility 0:** every path equals `goalSeries`, so the chance is 0 or 1.
+- **Repeatable:** a seeded PRNG (mulberry32, `SIMULATION_SEED`) gives the same output for the same inputs, so figures do not jump while typing.
+- **Speed:** `SIMULATION_PATHS` = 2,000 by default. Normal draws come from a 4,096-entry table of normal quantiles (inverse CDF, rescaled to unit variance), so a step is one multiply. 100 years × 2,000 paths takes about 10 ms, against about 60 ms with Box–Muller. That is fast enough without a Web Worker.
+- **Output:** `series`, yearly points shaped like `GoalChartPoint` with `value.low / expected / high` at the 10th / 50th / 90th percentiles (`SIMULATION_PERCENTILES`); `final`, the final-value percentiles; and `probabilityOfReaching(target)`, the share of paths ending at or above `target`.
+
 ## Short-goal notice
 
 For goals under 5 years (`SHORT_GOAL_YEARS` in `src/utils/goalResult.ts`), a notice under the headline compares the plan with keeping cash: `src/components/ShortGoalNotice.tsx`. At 5 years or more it is not shown.
@@ -117,12 +141,14 @@ For goals under 5 years (`SHORT_GOAL_YEARS` in `src/utils/goalResult.ts`), a not
 
 A **Growth over time** card between the figures and the range card: `src/components/GoalGrowthChart.tsx`, a hand-drawn SVG following the `DcaGrowthChart` pattern, sized to its box with `useElementSize`.
 
-- **Lines:** amount invested (dashed), expected value (solid) and a shaded band between the low and high returns. In target mode a dashed horizontal line marks the target.
+- **Lines:** amount invested (dashed), the middle line (solid) and a shaded band. In target mode a dashed horizontal line marks the target.
+- **Band source** (KAN-36, `GoalChartBand`): with a volatility, the band is the 10th–90th percentile of the simulation and the middle line is its median (`GoalSimulationResult.chart`). The legend reads "10th–90th percentile of 2,000 simulations" and "Median of simulations". Without a volatility it is the plan at the low and high returns (expected ∓ 2 points, legend "Expected return ∓ 2 points") around the expected value, as before. The median sits close to, but with monthly amounts slightly above, the expected line.
 - **Data:** `GoalResult.chart` from `computeGoalResult`, built by `goalChartPoints` in `src/utils/goalChart.ts` on top of `goalSeries`: one point a year from today (year 0 is the starting amount), with a part-year point at the end when years is not whole. Target mode charts the plan at the monthly amount needed; there is no chart when the target cannot be reached.
 - **Today's money:** follows the toggle the same way as the figures. Projection mode divides each point by `(1 + inflation)^year` for its own year, so the last point matches the headline. Target mode stays in future money and the target line sits at the target grown by inflation.
 - **X-axis:** years ("Now", "Year 5", …) on a round step: up to 6 labels, 3 below 480 px wide. **Y-axis:** round gridlines (`valueTicks`) with short labels such as 1.25M (`fmtCompact`), no currency.
-- **Readout:** hovering, or tapping on a phone, shows the nearest year, the amount invested and the value at the low, expected and high returns, with the currency label.
-- **Text alternative:** the SVG's `aria-label` (`describeGoalChart`) gives the years, the amount invested, the expected final value with its low and high, and the target when there is one.
+- **Readout:** hovering, or tapping on a phone, shows the nearest year, the amount invested and the three band values with the currency label: "Low (6%) / Expected (8%) / High (10%)", or "10th percentile / Median / 90th percentile" for a simulated band (`bandLabels`).
+- **Text alternative:** the SVG's `aria-label` (`describeGoalChart`) gives the years, the amount invested, the expected final value with its low and high (or the median with the 10th and 90th percentiles and the number of simulations), and the target when there is one.
+- **Range card:** stays on the low / expected / high **returns** in both modes. It answers a different question, how much the result depends on the return you choose, while the chart's band shows the spread of outcomes at that return. With a simulated band, its note says so.
 
 ## Files
 
@@ -141,17 +167,20 @@ A **Growth over time** card between the figures and the range card: `src/compone
 | `src/utils/goalInputs.ts` | Form state shape, defaults, validation and parsing |
 | `src/components/GoalPortfolioLink.tsx`, `.css` | Portfolio picker, suggested-return line, "Use suggested", loading/error/no-suggestion notes (KAN-21) |
 | `src/hooks/useSuggestedReturn.ts` | React Query hook for `GET /portfolios/:id/suggested-return` |
-| `src/utils/suggestedReturn.ts` | Reads the suggested rate, formats it for the field and describes its source |
+| `src/utils/suggestedReturn.ts` | Reads the suggested rate and volatility, formats them for the fields and describes their source |
+| `src/utils/suggestedFields.ts` | Typed / filled-in rules shared by the expected-return and volatility fields (KAN-34) |
 | `src/components/DcaSkippedNotice.tsx`, `.css` | Lists the holdings left out of the suggestion (shared with the DCA simulation) |
-| `src/utils/goalResult.ts` | Turns parsed inputs into the figures and chart points the page shows |
+| `src/utils/goalResult.ts` | Turns parsed inputs into the figures and chart points the page shows; `computeGoalSimulation` for the chance and the percentile band |
 | `src/components/ShortGoalNotice.tsx`, `.css` | Short-goal notice: plan versus cash for goals under 5 years (KAN-20) |
-| `src/components/GoalGrowthChart.tsx`, `.css` | Growth chart: lines, low–high band, target line, readout, text alternative (KAN-19) |
-| `src/utils/goalChart.ts` | Chart points at the three returns, axis ticks and labels, text alternative |
+| `src/components/GoalGrowthChart.tsx`, `.css` | Growth chart: lines, low–high or percentile band, target line, readout, text alternative (KAN-19, KAN-36) |
+| `src/utils/goalChart.ts` | Chart points at the three returns, today's-money deflation, band labels and legend, axis ticks and labels, text alternative |
+| `src/utils/goalChance.ts` | Chance wording: rounding and clamping, target / projection sentences, note, no-volatility line (KAN-35) |
 | `src/utils/goalProgress.ts` | Progress: months elapsed since `createdAt`, plan value to date (KAN-25); status and gap (KAN-26) |
 | `src/api/fx.ts` | Today's FX rate (Frankfurter), supported ISO codes, rate description (KAN-27) |
 | `src/hooks/useGoalProgress.ts` | Goal progress state from the goal, the linked portfolio's value and FX (KAN-28) |
 | `src/hooks/useFxRate.ts` | Today's rate for a currency pair, fetched once a day per browser (KAN-27) |
 | `src/utils/goalMath.ts` | Projection, required monthly amount, range, today's money (KAN-17) |
+| `src/utils/goalMonteCarlo.ts` | Monte Carlo: seeded lognormal paths, yearly percentiles, chance of reaching a target (KAN-33) |
 | `src/utils/format.ts` (`fmtAmount`, `fmtRate`) | Amount with the currency label, whole units; a rate such as "7.25%" |
 
 ## Progress
@@ -217,4 +246,4 @@ When the goal's currency differs from the portfolio's, the portfolio value is co
 
 ## Not yet
 
-The short-goal notice never stops the user saving a goal. The today's-money toggle is not saved with the goal. Progress is not marked on the growth chart, the plan always starts on `createdAt` (no separate start date from the backend), and portfolio values are assumed to be USD until the API gives a portfolio currency.
+The short-goal notice never stops the user saving a goal. The today's-money toggle is not saved with the goal. Progress is not marked on the growth chart, the plan always starts on `createdAt` (no separate start date from the backend), and portfolio values are assumed to be USD until the API gives a portfolio currency. Projection mode shows the range of outcomes but no probability (it has no goal amount). The chance in target mode is at the monthly amount needed only; there is no "save X for a 90% chance" figure. Goal cards in the list do not show the chance.
