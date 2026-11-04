@@ -33,6 +33,7 @@ import {
   linkChanged,
   markTyped,
   restoreSuggestion,
+  SUGGESTED_FIELDS,
   type SuggestedField,
 } from '../utils/suggestedFields';
 import { usePortfolios } from '../hooks/usePortfolios';
@@ -391,6 +392,17 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
     // Adjusting state while rendering, as above: fill each field once per new suggestion.
     setSuggestedFields(filled.state);
     setForm(filled.form);
+    // A saved goal whose own link fills a field it saved empty (e.g. a volatility saved
+    // before the field existed): the fill is not the user's edit, so it is not "unsaved".
+    if (saved && portfolioId === baseline.portfolioId) {
+      const autoFilled = SUGGESTED_FIELDS.filter(
+        f => baseline.form[f] === '' && form[f] === '' && filled.form[f] !== '',
+      );
+      if (autoFilled.length > 0) {
+        const fills = Object.fromEntries(autoFilled.map(f => [f, filled.form[f]]));
+        setBaseline(b => ({ ...b, form: { ...b.form, ...fills } }));
+      }
+    }
   }
 
   const changePortfolio = (id: string) => {

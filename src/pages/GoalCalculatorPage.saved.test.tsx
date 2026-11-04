@@ -191,6 +191,32 @@ describe('GoalCalculatorPage saving', () => {
     expect(await screen.findByRole('heading', { name: 'DCA page' })).toBeInTheDocument();
   });
 
+  it('fills an empty volatility on a linked goal without flagging unsaved changes (KAN-34)', async () => {
+    // A goal saved before volatility existed: linked, volatility null.
+    vi.mocked(getGoal).mockResolvedValue({ ...saved, portfolioId: 'p1', volatility: null });
+    vi.mocked(getSuggestedReturn).mockResolvedValue({
+      available: true,
+      annualReturn: 6.5,
+      annualVolatility: 15,
+      lookback: { startDate: '2016-11-04', endDate: '2026-11-03', years: 10, requestedYears: 10, shortHistory: false },
+      holdings: [],
+      skipped: [],
+      priceBasisNote: '',
+    });
+    renderGoalRoutes('/dashboard/goals/g1');
+    await waitFor(() => expect(field('Volatility a year (optional)')).toHaveValue(15));
+    // The saved return is the user's and stays; the empty volatility is filled in.
+    expect(field('Expected return a year')).toHaveValue(8);
+    expect(screen.queryByTestId('goal-unsaved')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    // The chance comes from the deferred simulation render.
+    expect(await screen.findByTestId('goal-chance')).toBeInTheDocument();
+
+    // Editing it afterwards is a real change.
+    type('Volatility a year (optional)', '20');
+    expect(screen.getByTestId('goal-unsaved')).toBeInTheDocument();
+  });
+
   it('asks the browser to confirm closing the tab only while there are unsaved changes', async () => {
     vi.mocked(getGoal).mockResolvedValue(saved);
     renderGoalRoutes('/dashboard/goals/g1');
