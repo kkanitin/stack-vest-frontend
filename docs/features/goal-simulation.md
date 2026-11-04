@@ -36,7 +36,7 @@ The backend caps goals at 50 a user and pages at up to 100, so one page holds th
 
 ### Goals list (`/dashboard/goals`)
 
-`src/pages/GoalsPage.tsx` with one `src/components/GoalCard.tsx` per goal, newest first. A card shows the name, the mode ("How much will I have?" / "How much must I save?"), the years and the headline result in future money: the final value or the monthly amount needed ("Not reachable" when no amount reaches the target). It says "Linked to <portfolio>" when linked, or "Linked portfolio removed" once the portfolios have loaded and the linked one is not among them. The card opens the goal; **Delete** on the card asks in the card (`InlineConfirm`, not a browser dialog). With no goals there is an empty state with **Create your first goal**; otherwise a **+ New goal** button.
+`src/pages/GoalsPage.tsx` with one `src/components/GoalCard.tsx` per goal, newest first. A card shows the name, the mode ("How much will I have?" / "How much must I save?"), the years and the headline result in future money: the final value or the monthly amount needed ("Not reachable" when no amount reaches the target). It says "Linked to <portfolio>" when linked, or "Linked portfolio removed" once the portfolios have loaded and the linked one is not among them. A linked card also shows progress (KAN-29, from `useGoalProgress`): a status chip (**On track** / **Ahead** / **Behind**, a text label with an icon, not colour alone), a bar of the portfolio's value against where the plan should be today (`role="progressbar"`, value 0–100) and the gap, e.g. "Behind by 12,400 THB" or "Within 2% of the plan". Converted amounts start with "≈" and the rate is in the gap's tooltip. States without figures are one muted line: "Checking progress…", "No portfolio value yet.", "Can't convert <label>…", or a failed rate with **Try again** (which does not open the goal). Unlinked cards, and cards whose portfolio was removed, show no progress. The card opens the goal; **Delete** on the card asks in the card (`InlineConfirm`, not a browser dialog). With no goals there is an empty state with **Create your first goal**; otherwise a **+ New goal** button.
 
 ### Saving, loading and editing
 
@@ -130,7 +130,9 @@ A **Growth over time** card between the figures and the range card: `src/compone
 |---|---|
 | `src/pages/GoalCalculatorPage.tsx`, `.css` | Page: loads a saved goal or starts a new one; form, mode switch, today's-money toggle, results, save / delete / unsaved-changes prompt |
 | `src/pages/GoalsPage.tsx`, `.css` | Saved-goals list, empty state, delete from the list (KAN-22) |
-| `src/components/GoalCard.tsx`, `.css` | One saved goal: name, mode, years, headline result, linked portfolio, in-card delete confirmation |
+| `src/components/GoalCard.tsx`, `.css` | One saved goal: name, mode, years, headline result, linked portfolio, progress (KAN-29), in-card delete confirmation |
+| `src/components/GoalProgressStatus.tsx`, `.css` | Status chip (label + icon) and progress bar shared by the card and the goal page |
+| `src/utils/goalProgressText.ts` | Progress wording: status labels, gap, rate note, bar fill, notes for states without figures |
 | `src/components/InlineConfirm.tsx`, `.css` | In-page confirmation used for delete and for leaving with unsaved changes |
 | `src/api/goals.ts` | `/goals` REST client: `listGoals`, `getGoal`, `createGoal`, `updateGoal`, `deleteGoal` |
 | `src/hooks/useGoals.ts`, `src/hooks/useGoalMutations.ts` | Query hooks (`useGoals`, `useGoal`) and create / update / delete mutations |

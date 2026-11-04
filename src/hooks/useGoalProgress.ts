@@ -42,22 +42,25 @@ export function useGoalProgress(goal: Goal | undefined, today: Date = new Date()
   const portfolioId = goal?.portfolioId ?? undefined;
   const portfolio = portfolioId ? portfolios.data?.find(p => p.id === portfolioId) : undefined;
 
+  // Without a plan there is nothing to compare with, so no value or rate is asked for.
+  const plan = goal ? goalPlanToDate(goal, today) : null;
+
   const listValue = portfolio?.value;
-  const needsDetail = !!portfolio && (listValue == null || !Number.isFinite(listValue));
+  const needsDetail = !!plan && !!portfolio && (listValue == null || !Number.isFinite(listValue));
   const detail = usePortfolio(needsDetail ? portfolioId : undefined);
   const detailValue = needsDetail && !detail.isPlaceholderData ? detail.data?.value : undefined;
   const value = needsDetail ? detailValue : listValue;
 
   const from = portfolio ? portfolioCurrency(portfolio) : null;
   const to = goal ? fxCurrencyCode(goal.currency) : null;
-  const fxRate = useFxRate(value != null ? from : null, value != null ? to : null);
+  const askRate = !!plan && value != null;
+  const fxRate = useFxRate(askRate ? from : null, askRate ? to : null);
 
   if (!goal || !portfolioId) return { state: 'not-linked' };
   if (portfolios.isPending) return { state: 'loading' };
   if (!portfolios.data) return { state: 'no-value', retry: () => void portfolios.refetch() };
   if (!portfolio) return { state: 'portfolio-removed' };
 
-  const plan = goalPlanToDate(goal, today);
   if (!plan) return { state: 'unreachable' };
 
   if (value == null || !Number.isFinite(value)) {

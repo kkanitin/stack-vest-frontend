@@ -1,7 +1,8 @@
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { renderGoalRoutes } from '../test/renderGoalRoutes';
 import { deleteGoal, listGoals, type Goal } from '../api/goals';
-import { listPortfolios, type Portfolio } from '../api/portfolios';
+import { getPortfolio, listPortfolios, type Portfolio } from '../api/portfolios';
+import { getFxRate } from '../api/fx';
 
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ token: 'test-token' }) }));
 vi.mock('../api/goals', async importOriginal => ({
@@ -15,7 +16,12 @@ vi.mock('../api/goals', async importOriginal => ({
 vi.mock('../api/portfolios', async importOriginal => ({
   ...(await importOriginal<typeof import('../api/portfolios')>()),
   listPortfolios: vi.fn(),
+  getPortfolio: vi.fn(),
   getSuggestedReturn: vi.fn(),
+}));
+vi.mock('../api/fx', async importOriginal => ({
+  ...(await importOriginal<typeof import('../api/fx')>()),
+  getFxRate: vi.fn(),
 }));
 
 const portfolios: Portfolio[] = [{ id: 'p1', name: 'Growth', description: '', createdAt: '', updatedAt: '' }];
@@ -33,8 +39,8 @@ const retirement: Goal = {
   contributionGrowth: null,
   inflation: 3,
   portfolioId: 'p1',
-  createdAt: '',
-  updatedAt: '',
+  createdAt: '2026-01-15T05:00:00.000Z',
+  updatedAt: '2026-01-15T05:00:00.000Z',
 };
 const house: Goal = {
   ...retirement,
@@ -49,8 +55,11 @@ const house: Goal = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   vi.mocked(listPortfolios).mockResolvedValue(portfolios);
+  vi.mocked(getPortfolio).mockResolvedValue(portfolios[0]);
 });
+afterEach(() => vi.useRealTimers());
 
 describe('GoalsPage', () => {
   it('shows an empty state that starts a new goal', async () => {
@@ -112,5 +121,89 @@ describe('GoalsPage', () => {
     renderGoalRoutes('/dashboard/goals');
     expect(await screen.findByRole('alert')).toHaveTextContent('Failed to load goals');
     expect(screen.queryByTestId('goals-empty')).not.toBeInTheDocument();
+  });
+
+  describe('progress on linked cards', () => {
+    // A year in: 12 × 1,000 USD at 0% puts the plan at 12,000 USD.
+    const car: Goal = {
+      ...retirement,
+      id: 'g3',
+      name: 'Car',
+      currency: 'USD',
+      monthlyAmount: 1_000,
+      years: 5,
+      expectedReturn: 0,
+      createdAt: new Date(2026, 0, 15, 12).toISOString(),
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2027, 0, 20, 12));
+    });
+
+    async function cardWithValue(value: number, goal: Goal = car) {
+      vi.mocked(listPortfolios).mockResolvedValue([{ ...portfolios[0], value }]);
+      vi.mocked(listGoals).mockResolvedValue([goal]);
+      renderGoalRoutes('/dashboard/goals');
+      const [card] = await screen.findAllByTestId('goal-card');
+      return within(card);
+    }
+
+    it.each([
+      [15_000, 'Ahead', 'Ahead by 3,000 USD', 100],
+      [12_100, 'On track', 'Within 2% of the plan', 100],
+      [9_000, 'Behind', 'Behind by 3,000 USD', 75],
+    ])('value %d → %s', async (value, label, gap, pct) => {
+      const card = await cardWithValue(value);
+      expect(await card.findByTestId('goal-status')).toHaveTextContent(label);
+      expect(card.getByText(gap)).toBeInTheDocument();
+      const bar = card.getByRole('progressbar');
+      expect(bar).toHaveAttribute('aria-valuenow', String(pct));
+      expect(bar).toHaveAccessibleName('Car: portfolio value against the plan today');
+    });
+
+    it('marks converted amounts and gives the rate in a tooltip', async () => {
+      vi.mocked(getFxRate).mockResolvedValue({ from: 'USD', to: 'THB', rate: 35, date: '2027-01-20' });
+      const card = await cardWithValue(300, { ...car, currency: 'THB', monthlyAmount: 1_000 }); // 10,500 THB vs 12,000
+      const gap = await card.findByText('Behind by ≈ 1,500 THB');
+      expect(gap).toHaveAttribute('title', 'Converted at 1 USD = 35.00 THB, 20 Jan 2027');
+      expect(getFxRate).toHaveBeenCalledWith('USD', 'THB');
+    });
+
+    it("says when the goal's currency cannot be converted, with no status", async () => {
+      const card = await cardWithValue(9_000, { ...car, currency: 'Baht' });
+      expect(await card.findByTestId('goal-card-progress')).toHaveTextContent("Can't convert Baht");
+      expect(card.queryByTestId('goal-status')).not.toBeInTheDocument();
+      expect(getFxRate).not.toHaveBeenCalled();
+    });
+
+    it('offers to try again when the rate fails, without opening the goal', async () => {
+      vi.mocked(getFxRate).mockRejectedValue(new Error('down'));
+      const card = await cardWithValue(300, { ...car, currency: 'THB' });
+      const retry = await card.findByRole('button', { name: 'Try again' }, { timeout: 3000 });
+      expect(card.getByTestId('goal-card-progress')).toHaveTextContent("Could not load today's USD to THB rate.");
+
+      vi.mocked(getFxRate).mockResolvedValue({ from: 'USD', to: 'THB', rate: 35, date: '2027-01-20' });
+      fireEvent.click(retry);
+      expect(await card.findByTestId('goal-status')).toHaveTextContent('Behind');
+      expect(screen.queryByRole('heading', { name: 'Goal Calculator' })).not.toBeInTheDocument();
+    });
+
+    it('shows a muted line while the portfolio has no value', async () => {
+      vi.mocked(listPortfolios).mockResolvedValue(portfolios);
+      vi.mocked(listGoals).mockResolvedValue([car]);
+      renderGoalRoutes('/dashboard/goals');
+      const [card] = await screen.findAllByTestId('goal-card');
+      expect(await within(card).findByText('No portfolio value yet.')).toBeInTheDocument();
+      expect(getPortfolio).toHaveBeenCalledWith('test-token', 'p1');
+    });
+
+    it('unlinked and removed-link cards show no progress', async () => {
+      vi.mocked(listGoals).mockResolvedValue([{ ...car, portfolioId: null }, { ...car, id: 'g4', portfolioId: 'gone' }]);
+      renderGoalRoutes('/dashboard/goals');
+      const cards = await screen.findAllByTestId('goal-card');
+      await within(cards[1]).findByText('Linked portfolio removed');
+      expect(screen.queryByTestId('goal-card-progress')).not.toBeInTheDocument();
+    });
   });
 });
