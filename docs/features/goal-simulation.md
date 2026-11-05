@@ -93,7 +93,7 @@ A **Link to a portfolio** picker above the years and expected-return fields (KAN
 
 `src/utils/goalInputs.ts` (`validateGoalInputs`) runs on every render, and `parseGoalInputs` turns valid text into numbers. Only the amount the current mode uses is checked. Rules: name required (≤ 100 characters); currency required (≤ 10 characters); starting amount ≥ 0; monthly or target amount > 0; years > 0, ≤ 100 and at least one month; expected return required; return, yearly increase and inflation between −50% and 50%; volatility empty or 0–100%.
 
-An invalid field shows a message under it and is marked `aria-invalid`. Results appear only once every field is valid. After that, an invalid edit keeps the last valid result on screen, dimmed, with a note asking the user to fix the highlighted fields.
+An invalid field shows a message under it and is marked `aria-invalid`, but only once the user has edited or left that field, so a new goal does not open full of errors (a saved goal's fields count as touched, and once a result has been shown every error shows). Until then the save hint asks to fill in the remaining fields. Results appear only once every field is valid. After that, an invalid edit keeps the last valid result on screen, dimmed, with a note asking the user to fix the highlighted fields.
 
 ## Outputs
 

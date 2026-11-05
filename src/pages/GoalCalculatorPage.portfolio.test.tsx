@@ -245,6 +245,8 @@ describe('GoalCalculatorPage volatility (KAN-34)', () => {
     // Unlinking clears the filled-in return, so the last valid result stays, dimmed.
     pick('');
     expect(screen.getByTestId('goal-results')).toHaveClass('goal-results--stale');
+    // The cleared return was never typed in, but the stale note points at it, so it is flagged.
+    expect(returnField()).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('flags an out-of-range value', () => {

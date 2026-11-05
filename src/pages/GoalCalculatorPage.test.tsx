@@ -27,9 +27,27 @@ describe('GoalCalculatorPage', () => {
     renderGoalRoutes();
     expect(screen.getByTestId('goal-empty')).toBeInTheDocument();
     expect(screen.queryByTestId('goal-results')).not.toBeInTheDocument();
-    // Required fields complain while empty.
+    // A fresh form shows no errors before the user touches a field.
+    expect(screen.getByLabelText('Goal name')).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.getByLabelText('Monthly amount')).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it("shows a required field's error once the user leaves it empty", () => {
+    renderGoalRoutes();
+    fireEvent.blur(screen.getByLabelText('Goal name'));
     expect(screen.getByLabelText('Goal name')).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByLabelText('Monthly amount')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText('Enter a name for this goal.')).toBeInTheDocument();
+    // Fields the user has not reached yet stay quiet.
+    expect(screen.getByLabelText('Monthly amount')).toHaveAttribute('aria-invalid', 'false');
+  });
+
+  it('asks to fill in the remaining fields rather than fix highlighted ones', () => {
+    renderGoalRoutes();
+    type('Goal name', 'Retirement');
+    expect(screen.getByTestId('goal-save-hint')).toHaveTextContent('Fill in the remaining fields to save.');
+    type('Years', '0');
+    expect(screen.getByTestId('goal-save-hint')).toHaveTextContent('Fix the highlighted fields to save.');
   });
 
   it('projects the final value as the user types (≈ 14.9M for the epic example)', () => {
