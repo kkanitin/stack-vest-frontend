@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { nearestIndex } from '../utils/dcaChart';
+import { nearestIndex } from '../utils/timeAxis';
 import {
   bandLabels,
   describeGoalChart,
@@ -9,7 +9,7 @@ import {
   yearTicks,
   type GoalChartBand,
   type GoalChartPoint,
-} from '../utils/goalChart';
+} from '../domain/goal/chart';
 import { fmtAmount } from '../utils/format';
 import './GoalGrowthChart.css';
 

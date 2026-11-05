@@ -108,9 +108,18 @@ src/
     ui/        # Reusable primitives (Button, Card, Modal, Input, …)
   pages/       # Route-level pages (LandingPage shell, Portfolios, Heatmap, …)
   context/     # AuthContext, ToastContext
-  utils/       # Formatting, scoring, chart, P&L and goal-maths helpers (e.g. `pnlTotals`, `pctChangeSeries`, `goalMath`)
+  domain/      # Pure business logic, grouped by domain (no React, no fetching)
+    goal/      # Goal maths, inputs, results, chart points, Monte Carlo, progress, saved goals, suggested return
+    dca/       # DCA inputs, lump-sum comparison, asset comparison, chart text alternative
+    portfolio/ # Holdings merge and allocation, stats, P&L totals, percent-change series
+    market/    # Holdings-today status, Fear & Greed bands, heatmap intensity, base-100 normalisation
+    dividends/ # Calendar date helpers
+  utils/       # Domain-neutral helpers: number/date formatting (`format`), chart time axis (`timeAxis`)
+  lib/         # `cn` class-name helper for the UI primitives
   config.ts    # Client-side feature limits
 ```
+
+Code in `src/domain/` must not import from `components/`, `hooks/` or `pages/`; it may import types from `src/api/` and helpers from `src/utils/`. Each domain file keeps its tests next to it (`math.ts` + `math.test.ts`). A helper used by only one domain belongs in that domain; put it in `utils/` only if it has no domain meaning.
 
 ## Architectural constraints
 

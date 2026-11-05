@@ -8,8 +8,8 @@ import type {
   DcaHoldingsSimulation,
   DcaComparison as DcaComparisonData,
 } from '../api/simulations';
-import type { LumpSumResult } from '../utils/dcaLumpSum';
-import { defaultRange, validateInputs } from '../utils/dcaInputs';
+import type { LumpSumResult } from '../domain/dca/lumpSum';
+import { defaultRange, validateInputs } from '../domain/dca/inputs';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -19,8 +19,8 @@ import DcaGrowthChart from './DcaGrowthChart';
 import DcaComparison from './DcaComparison';
 import DcaHoldingsResult from './DcaHoldingsResult';
 import HoldingsPicker from './HoldingsPicker';
-import type { ChartPoint } from '../utils/dcaChart';
-import { computeLumpSum } from '../utils/dcaLumpSum';
+import type { ChartPoint } from '../domain/dca/chart';
+import { computeLumpSum } from '../domain/dca/lumpSum';
 import type { PickedAsset } from './AssetPicker';
 import './DCASimulation.css';
 

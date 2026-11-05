@@ -1,34 +1,10 @@
 import type { Goal } from '../api/goals';
-import { fxCurrencyCode, type FxRate } from '../api/fx';
-import { portfolioCurrency, type Portfolio } from '../api/portfolios';
-import { goalPlanToDate, goalProgress, type GoalProgress, type PlanToDate } from '../utils/goalProgress';
+import { fxCurrencyCode } from '../api/fx';
+import { portfolioCurrency } from '../api/portfolios';
+import { goalPlanToDate, goalProgress, type GoalProgressState } from '../domain/goal/progress';
 import { useFxRate } from './useFxRate';
 import { usePortfolio } from './usePortfolio';
 import { usePortfolios } from './usePortfolios';
-
-export interface GoalProgressReady extends GoalProgress {
-  state: 'ready';
-  /** The portfolio's value in the goal's currency. */
-  actual: number;
-  /** The portfolio's value in its own currency. */
-  portfolioValue: number;
-  portfolioCurrency: string;
-  portfolio: Portfolio;
-  /** The rate used; null when the goal and the portfolio share a currency. */
-  fx: FxRate | null;
-  plan: PlanToDate;
-}
-
-export type GoalProgressState =
-  | { state: 'not-linked' }
-  | { state: 'portfolio-removed' }
-  | { state: 'loading' }
-  /** No value for the portfolio yet; `retry` is set when loading it failed. */
-  | { state: 'no-value'; retry?: () => void }
-  /** `unsupported`: the goal's currency label is not a code the rates cover. */
-  | { state: 'fx-unavailable'; reason: 'unsupported' | 'error'; from: string; to: string; retry?: () => void }
-  | { state: 'unreachable' }
-  | GoalProgressReady;
 
 /**
  * Progress of a saved goal against its linked portfolio (KAN-28), shared by the goal card

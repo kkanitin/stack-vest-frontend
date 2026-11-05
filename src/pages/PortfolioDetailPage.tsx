@@ -21,8 +21,8 @@ import HoldingHistoryDialog from '../components/HoldingHistoryDialog';
 import PortfolioFormModal from '../components/PortfolioFormModal';
 import { fmtMoney, fmtPct, fmtCount, fmtShares, fmtSignedMoney, changeTone } from '../utils/format';
 import type { ChangeTone } from '../utils/format';
-import { totalNetValue, change24h } from '../utils/portfolioStats';
-import { totalUnrealisedPnl, totalRealisedPnl } from '../utils/pnlTotals';
+import { totalNetValue, change24h } from '../domain/portfolio/stats';
+import { totalUnrealisedPnl, totalRealisedPnl } from '../domain/portfolio/pnlTotals';
 import './PortfolioDetailPage.css';
 
 const AnalyzePortfolioModal = lazy(() => import('../components/AnalyzePortfolioModal'));

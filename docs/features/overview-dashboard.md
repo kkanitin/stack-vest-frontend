@@ -21,7 +21,7 @@ With no holdings, or when holdings fail to load, the Holdings row is replaced by
 |---|---|
 | `PortfolioValueCard` | Total value, the 30-day time-weighted return in percent and dollars, Realised and Unrealised P&L, and the recorded trend |
 | `PortfolioValueChart` | Line chart of recorded daily value with a range toggle (`30D`, `90D`, `1Y`, `All`) and a "Compare with" select (None or an index) that overlays a benchmark as percent change (the portfolio line is the ledger-based time-weighted return); rendered inside `PortfolioValueCard` when the total is above zero |
-| `MarketStatusCard` | "Your Holdings Today": up / down / flat counts (`src/utils/marketStatus.ts`) and the four biggest 24h movers |
+| `MarketStatusCard` | "Your Holdings Today": up / down / flat counts (`src/domain/market/marketStatus.ts`) and the four biggest 24h movers |
 | `AllocationDonut` | Share of total value per symbol; the five largest are named and the rest fold into "Other" |
 | `TopHoldingsCard` | The five largest holdings with value, weight and 24h change |
 | `RecentActivityCard` | The six newest ledger buys and sells across all portfolios (BUY / SELL badge, symbol, quantity and price, portfolio name) |
@@ -39,7 +39,7 @@ With no holdings, or when holdings fail to load, the Holdings row is replaced by
 | `useRecentActivity` | `src/api/portfolios.ts` → `getRecentActivity` (`GET /portfolios/activity?limit=`) |
 | `useFearGreedIndex` | `src/api/sentiment.ts` → `getFearGreedIndex` |
 
-Helpers: `src/utils/holdings.ts` (merging, allocation slices, movers), `src/utils/portfolioStats.ts` (`changeUsdFromPct`), `src/utils/pctChangeSeries.ts` (percent-mode rows), `src/utils/format.ts` (`changeTone`, `fmtPct`, `fmtSignedMoney`, `fmtRelativeTime`), `src/utils/fearGreed.ts` (scoring).
+Helpers: `src/domain/portfolio/holdings.ts` (merging, allocation slices, movers), `src/domain/portfolio/stats.ts` (`changeUsdFromPct`), `src/domain/portfolio/pctChangeSeries.ts` (percent-mode rows), `src/utils/format.ts` (`changeTone`, `fmtPct`, `fmtSignedMoney`, `fmtRelativeTime`), `src/domain/market/fearGreed.ts` (scoring).
 
 ## Behaviour to know
 
@@ -52,7 +52,7 @@ Helpers: `src/utils/holdings.ts` (merging, allocation slices, movers), `src/util
 - **The chart needs two recorded days.** The backend records the total every three hours and keeps one value per UTC day, starting the day recording began. With fewer than two points the card says so instead of drawing a chart, and a failed request shows "unavailable". Today's point can trail the live total by up to three hours.
 - **Benchmark overlay.** Off by default. The choice is kept per signed-in user in `localStorage` (`stackvest:benchmark:<userId>`, `useBenchmarkPreference`); a stored symbol missing from the `useBenchmarks` list, or read before that list has loaded, is ignored so the history request never carries a symbol the backend would reject with HTTP 400.
 - **Two query keys.** History is `['portfolios', 'history', range, benchmark ?? 'none']`, under `['portfolios']`, so position edits refresh it. The benchmark list is `['benchmarks']` with `staleTime: Infinity`.
-- **Percent mode plots returns, not value.** The portfolio line is the backend's cumulative time-weighted `returnPct` per point, rebased to 0% at the range start (`(100 + returnPct) / (100 + baseReturnPct) - 1`); the benchmark line is its `benchmarkClose` change from the same day (`src/utils/pctChangeSeries.ts`). The base is the first day where the portfolio value is above zero and `benchmarkClose` is a finite number (missing and null are the same); earlier days are dropped, and later days without a close are skipped. The note under the chart names that first day and says money added or withdrawn does not move the portfolio line.
+- **Percent mode plots returns, not value.** The portfolio line is the backend's cumulative time-weighted `returnPct` per point, rebased to 0% at the range start (`(100 + returnPct) / (100 + baseReturnPct) - 1`); the benchmark line is its `benchmarkClose` change from the same day (`src/domain/portfolio/pctChangeSeries.ts`). The base is the first day where the portfolio value is above zero and `benchmarkClose` is a finite number (missing and null are the same); earlier days are dropped, and later days without a close are skipped. The note under the chart names that first day and says money added or withdrawn does not move the portfolio line.
 - **Absolute view still includes deposits.** With no index selected the chart shows recorded total value in dollars, so money added or withdrawn counts as change there; the note under it says so.
 - **Trading days.** The backend forward-fills `benchmarkClose` across weekends and holidays, so the benchmark line has a value on every recorded day. Index history is limited to 5 years, so `All` can start before the benchmark does and the percent chart starts at the first day with a close.
 - **Unavailable index.** `benchmark.available: false` means the index data failed; no closes come back, so the chart stays in dollars and shows "{label} data is unavailable right now."

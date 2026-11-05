@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getDividendCalendar } from '../api/dividends';
 import type { DividendEvent } from '../api/dividends';
-import { monthRange } from '../utils/dividendDate';
+import { monthRange } from '../domain/dividends/dividendDate';
 
 /** How long a month must stay in view before it is requested. */
 const SETTLE_MS = 250;

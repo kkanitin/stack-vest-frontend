@@ -10,7 +10,7 @@
 | Heatmap | `HeatmapTile` | Colour-coded tiles with a mini sparkline |
 | List | `SparklineList` / `SparklineRow` | Rows with sparklines |
 | Performance | `PerformanceBarChart` | Performance bars |
-| Compare | `ComparisonChart` | Multi-asset chart, normalised to base 100 (`src/utils/normalizeBase100.ts`) |
+| Compare | `ComparisonChart` | Multi-asset chart, normalised to base 100 (`src/domain/market/normalizeBase100.ts`) |
 
 Clicking an asset opens `AssetDetailModal` (see [Global asset search](./asset-search.md)).
 

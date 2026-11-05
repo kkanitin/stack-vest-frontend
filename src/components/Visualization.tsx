@@ -11,7 +11,7 @@ import FearGreedGauge from './FearGreedGauge';
 import FearGreedSignals from './FearGreedSignals';
 import { useFearGreedIndex } from '../hooks/useFearGreedIndex';
 import { useAllPositions } from '../hooks/useAllPositions';
-import { mergeHoldings, allocationSlices, MAX_NAMED_SLICES } from '../utils/holdings';
+import { mergeHoldings, allocationSlices, MAX_NAMED_SLICES } from '../domain/portfolio/holdings';
 import './Visualization.css';
 
 const Visualization: React.FC = () => {

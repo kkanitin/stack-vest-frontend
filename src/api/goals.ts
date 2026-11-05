@@ -1,5 +1,5 @@
 import { API_BASE } from './config';
-import type { GoalKind } from '../utils/goalInputs';
+import type { GoalKind } from '../domain/goal/inputs';
 
 /**
  * A saved financial goal (`/goals`, backend KAN-15). The backend stores inputs only; every

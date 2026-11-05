@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
-import {
-  axisDates,
-  dateMs,
-  describeChart,
-  formatAxisDate,
-  formatFullDate,
-  nearestIndex,
-} from '../utils/dcaChart';
-import type { ChartPoint } from '../utils/dcaChart';
+import { axisDates, dateMs, formatAxisDate, formatFullDate, nearestIndex } from '../utils/timeAxis';
+import { describeChart, type ChartPoint } from '../domain/dca/chart';
 
 interface Props {
   points: ChartPoint[];

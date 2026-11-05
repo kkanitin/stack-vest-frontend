@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import GoalGrowthChart from './GoalGrowthChart';
-import type { GoalChartBand, GoalChartPoint } from '../utils/goalChart';
+import type { GoalChartBand, GoalChartPoint } from '../domain/goal/chart';
 
 const points: GoalChartPoint[] = [
   { year: 0, invested: 1000, value: { low: 1000, expected: 1000, high: 1000 } },

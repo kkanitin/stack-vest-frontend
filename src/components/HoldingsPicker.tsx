@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { usePortfolios } from '../hooks/usePortfolios';
 import { usePortfolioPositionsById } from '../hooks/usePortfolioPositionsById';
-import { mergeHoldings } from '../utils/holdings';
+import { mergeHoldings } from '../domain/portfolio/holdings';
 import type { DcaHolding } from '../api/simulations';
 
 interface Props {

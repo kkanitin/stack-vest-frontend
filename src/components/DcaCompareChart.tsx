@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { axisDates, dateMs, formatAxisDate, formatFullDate, nearestIndex } from '../utils/dcaChart';
-import { describeCompare, pctAt, unionDates } from '../utils/dcaCompare';
-import type { CompareSeries } from '../utils/dcaCompare';
+import { axisDates, dateMs, formatAxisDate, formatFullDate, nearestIndex } from '../utils/timeAxis';
+import { describeCompare, pctAt, unionDates } from '../domain/dca/compare';
+import type { CompareSeries } from '../domain/dca/compare';
 
 interface Props {
   series: CompareSeries[];

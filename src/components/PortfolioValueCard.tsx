@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { usePortfoliosSummary } from '../hooks/usePortfoliosSummary';
 import { fmtMoney, fmtPct, fmtSignedMoney, changeTone } from '../utils/format';
 import type { ChangeTone } from '../utils/format';
-import { changeUsdFromPct } from '../utils/portfolioStats';
+import { changeUsdFromPct } from '../domain/portfolio/stats';
 import PortfolioValueChart from './PortfolioValueChart';
 import './Visualization.css';
 

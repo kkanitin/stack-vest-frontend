@@ -1,7 +1,7 @@
 import React from 'react';
 import { CircleCheck, TrendingDown, TrendingUp } from 'lucide-react';
-import type { ProgressStatus } from '../utils/goalProgress';
-import { PROGRESS_STATUS_LABEL } from '../utils/goalProgressText';
+import type { ProgressStatus } from '../domain/goal/progress';
+import { PROGRESS_STATUS_LABEL } from '../domain/goal/progressText';
 import './GoalProgressStatus.css';
 
 const ICON: Record<ProgressStatus, React.ElementType> = {

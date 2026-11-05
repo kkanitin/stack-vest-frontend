@@ -1,7 +1,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { OTHER_KEY } from '../utils/holdings';
-import type { AllocationSlice } from '../utils/holdings';
+import { OTHER_KEY } from '../domain/portfolio/holdings';
+import type { AllocationSlice } from '../domain/portfolio/holdings';
 import './Visualization.css';
 
 // Fixed order, never cycled: allocationSlices() caps named slices at the palette size
