@@ -1,8 +1,8 @@
 import React from 'react';
 import { usePortfolios } from '../hooks/usePortfolios';
 import type { SuggestedReturn } from '../api/portfolios';
-import { describeSuggestion, isSuggestedRate, suggestedRate, suggestedVolatility } from '../utils/suggestedReturn';
-import type { SuggestedField } from '../utils/suggestedFields';
+import { describeSuggestion, isSuggestedRate, suggestedRate, suggestedVolatility } from '../domain/goal/suggestedReturn';
+import type { SuggestedField } from '../domain/goal/suggestedFields';
 import DcaSkippedNotice from './DcaSkippedNotice';
 import './GoalPortfolioLink.css';
 

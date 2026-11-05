@@ -2,7 +2,7 @@ import { API_BASE } from './config';
 
 /** Mirrors the backend dividend calendar event for one of the user's held symbols.
  *  Dates are RFC3339 UTC strings with a zero time component — treat them as calendar
- *  dates (see `src/utils/dividendDate.ts`). A field the provider did not supply is
+ *  dates (see `src/domain/dividends/dividendDate.ts`). A field the provider did not supply is
  *  serialized as the zero value `"0001-01-01T00:00:00Z"` (treat as absent). */
 export interface DividendEvent {
   symbol: string;

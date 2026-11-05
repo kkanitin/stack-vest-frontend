@@ -20,7 +20,7 @@ Holdings are derived from the ledger. There is no direct "edit a position" actio
 
 ### Stat cards
 
-Total Net Value, 24h Performance, **Unrealised P&L** (with percent "on cost"), **Realised P&L** and Asset Allocation (slots used). The two P&L figures come from `src/utils/pnlTotals.ts`: `totalUnrealisedPnl` sums `unrealisedPnl` over open positions and expresses it as a percent of their summed `costBasis` (only priced holdings, `valueUsd > 0`, count toward the cost; no percent when that cost is zero); `totalRealisedPnl` sums `realisedPnl` over open and closed positions, because realised profit survives a full sale. The Realised card shows "—" while the closed-positions query loads or if it fails (a small notice with Retry appears above the holdings table, and the empty-portfolio state is withheld until that query succeeds). A holding with no market value shows "—" in the Unrealised P&L column, like Market Value.
+Total Net Value, 24h Performance, **Unrealised P&L** (with percent "on cost"), **Realised P&L** and Asset Allocation (slots used). The two P&L figures come from `src/domain/portfolio/pnlTotals.ts`: `totalUnrealisedPnl` sums `unrealisedPnl` over open positions and expresses it as a percent of their summed `costBasis` (only priced holdings, `valueUsd > 0`, count toward the cost; no percent when that cost is zero); `totalRealisedPnl` sums `realisedPnl` over open and closed positions, because realised profit survives a full sale. The Realised card shows "—" while the closed-positions query loads or if it fails (a small notice with Retry appears above the holdings table, and the empty-portfolio state is withheld until that query succeeds). A holding with no market value shows "—" in the Unrealised P&L column, like Market Value.
 
 ### TransactionFormModal
 
@@ -76,7 +76,7 @@ A `409` (open-position limit, or a sell larger than the holding) throws an `Erro
 - **Invalidation.** Every create, update and delete settles by invalidating `['portfolio', id]` (positions, transactions), `['portfolio', id, 'positions']` and `['portfolios']` (list, summary, history, activity, all-positions), so the Overview and Portfolios pages refresh too.
 - **No position PATCH.** The `PATCH /portfolios/{id}/positions/{symbol}` call is gone from the client; the backend answers `410 Gone` ("Holdings are now edited through their transactions").
 
-Stats helpers live in `src/utils/portfolioStats.ts` and `src/utils/pnlTotals.ts`. Gain / loss colouring and signs come from `changeTone` in `src/utils/format.ts`: a figure that displays as zero is neutral and unsigned.
+Stats helpers live in `src/domain/portfolio/stats.ts` and `src/domain/portfolio/pnlTotals.ts`. Gain / loss colouring and signs come from `changeTone` in `src/utils/format.ts`: a figure that displays as zero is neutral and unsigned.
 
 ## Limits
 

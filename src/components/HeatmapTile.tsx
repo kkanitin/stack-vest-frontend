@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { intensity } from '../utils/perfColor';
+import { intensity } from '../domain/market/perfColor';
 import Sparkline from './Sparkline';
 import type { WatchlistEntry } from '../hooks/useWatchlistQuotes';
 import type { HistoryPoint, StockPriceChange } from '../api/stocks';

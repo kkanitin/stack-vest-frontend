@@ -1,6 +1,6 @@
 import { TriangleAlert } from 'lucide-react';
-import type { CashComparison } from '../utils/goalResult';
-import { SHORT_GOAL_YEARS } from '../utils/goalResult';
+import type { CashComparison } from '../domain/goal/result';
+import { SHORT_GOAL_YEARS } from '../domain/goal/result';
 import { fmtAmount, fmtRate } from '../utils/format';
 import './ShortGoalNotice.css';
 

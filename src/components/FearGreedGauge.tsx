@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Badge } from '@/components/ui/badge';
-import { FEAR_GREED_BANDS, STATUS_TONE, descriptorForStatus, scoreToNeedleAngle } from '../utils/fearGreed';
+import { FEAR_GREED_BANDS, STATUS_TONE, descriptorForStatus, scoreToNeedleAngle } from '../domain/market/fearGreed';
 import type { FearGreedIndex } from '../api/sentiment';
 import './FearGreedGauge.css';
 

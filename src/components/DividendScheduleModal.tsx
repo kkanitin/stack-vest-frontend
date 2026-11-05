@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useDividendCalendar } from '../hooks/useDividendCalendar';
 import type { DividendEvent } from '../api/dividends';
 import { fmtMoney } from '../utils/format';
-import { parseYmd, makeKey, referenceKey, formatLongDate, formatMonthLabel } from '../utils/dividendDate';
+import { parseYmd, makeKey, referenceKey, formatLongDate, formatMonthLabel } from '../domain/dividends/dividendDate';
 import './DividendScheduleModal.css';
 
 interface DividendScheduleModalProps {

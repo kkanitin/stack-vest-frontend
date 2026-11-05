@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { intensity } from '../utils/perfColor';
+import { intensity } from '../domain/market/perfColor';
 import type { WatchlistEntry } from '../hooks/useWatchlistQuotes';
 import type { StockPriceChange } from '../api/stocks';
 

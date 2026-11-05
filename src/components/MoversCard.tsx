@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fmtPct, changeTone } from '../utils/format';
-import { biggestMovers } from '../utils/holdings';
-import type { Holding } from '../utils/holdings';
+import { biggestMovers } from '../domain/portfolio/holdings';
+import type { Holding } from '../domain/portfolio/holdings';
 import './Visualization.css';
 
 const VISIBLE_LIMIT = 5;

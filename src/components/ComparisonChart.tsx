@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-import { normalizeBase100 } from '../utils/normalizeBase100';
+import { normalizeBase100 } from '../domain/market/normalizeBase100';
 import { useComparisonData } from '../hooks/useComparisonData';
 import { Button } from '@/components/ui/button';
 

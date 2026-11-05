@@ -14,7 +14,7 @@ import { useBenchmarks } from '../hooks/useBenchmarks';
 import { useBenchmarkPreference } from '../hooks/useBenchmarkPreference';
 import type { ValueHistoryRange } from '../api/portfolios';
 import { fmtMoney, fmtPct } from '../utils/format';
-import { pctChangeSeries } from '../utils/pctChangeSeries';
+import { pctChangeSeries } from '../domain/portfolio/pctChangeSeries';
 import './Visualization.css';
 
 const RANGES: ValueHistoryRange[] = ['30D', '90D', '1Y', 'All'];

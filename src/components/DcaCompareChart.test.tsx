@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import DcaCompareChart from './DcaCompareChart';
-import type { CompareSeries } from '../utils/dcaCompare';
+import type { CompareSeries } from '../domain/dca/compare';
 
 const series: CompareSeries[] = [
   { symbol: 'AAA', color: 'red', points: [{ date: '2024-01-02', pct: 0 }, { date: '2024-03-01', pct: 20 }] },

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fmtMoney, fmtPct, changeTone } from '../utils/format';
-import type { Holding } from '../utils/holdings';
+import type { Holding } from '../domain/portfolio/holdings';
 import './Visualization.css';
 
 const VISIBLE_LIMIT = 5;

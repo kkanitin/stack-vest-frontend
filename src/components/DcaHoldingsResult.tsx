@@ -5,7 +5,7 @@ import DcaGrowthChart from './DcaGrowthChart';
 import DcaSkippedNotice from './DcaSkippedNotice';
 import { changeTone, fmtMoney, fmtPct } from '../utils/format';
 import type { DcaHoldingsSimulation } from '../api/simulations';
-import type { ChartPoint } from '../utils/dcaChart';
+import type { ChartPoint } from '../domain/dca/chart';
 
 function Kpi({ label, value, tone, note }: { label: string; value: string; tone?: string; note?: string }) {
   return (

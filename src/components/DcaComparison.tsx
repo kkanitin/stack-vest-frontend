@@ -3,7 +3,7 @@ import { Card, CardTitle } from '@/components/ui/card';
 import { useElementSize } from '../hooks/useElementSize';
 import DcaCompareChart from './DcaCompareChart';
 import DcaSkippedNotice from './DcaSkippedNotice';
-import { toSeries } from '../utils/dcaCompare';
+import { toSeries } from '../domain/dca/compare';
 import type { DcaComparison as Comparison } from '../api/simulations';
 
 function money(n: number): string {

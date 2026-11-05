@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router';
 import type { Goal } from '../api/goals';
 import { fmtAmount } from '../utils/format';
-import { GOAL_KIND_LABEL, goalHeadline } from '../utils/savedGoal';
+import { GOAL_KIND_LABEL, goalHeadline } from '../domain/goal/savedGoal';
 import InlineConfirm from './InlineConfirm';
 import { GoalProgressBar, GoalStatusChip } from './GoalProgressStatus';
 import { useGoalProgress } from '../hooks/useGoalProgress';
-import { progressBarPct, progressGapText, progressRateText, progressStateNote } from '../utils/goalProgressText';
+import { progressBarPct, progressGapText, progressRateText, progressStateNote } from '../domain/goal/progressText';
 import './GoalCard.css';
 
 /** The linked portfolio: its name, `removed` when it no longer exists, null when not linked. */

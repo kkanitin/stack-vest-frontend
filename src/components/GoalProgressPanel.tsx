@@ -3,7 +3,7 @@ import { Card, CardTitle } from '@/components/ui/card';
 import type { Goal } from '../api/goals';
 import { useGoalProgress } from '../hooks/useGoalProgress';
 import { fmtAmount } from '../utils/format';
-import { fmtProgressAmount, progressBarPct, progressGapText, progressRateText, progressStateNote } from '../utils/goalProgressText';
+import { fmtProgressAmount, progressBarPct, progressGapText, progressRateText, progressStateNote } from '../domain/goal/progressText';
 import { GoalProgressBar, GoalStatusChip } from './GoalProgressStatus';
 import './GoalProgressPanel.css';
 

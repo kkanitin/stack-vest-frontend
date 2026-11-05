@@ -10,23 +10,23 @@ import {
   type GoalFormInputs,
   type GoalInputErrors,
   type GoalKind,
-} from '../utils/goalInputs';
+} from '../domain/goal/inputs';
 import {
   computeGoalResult,
   computeGoalSimulation,
   type GoalResult,
   type GoalSimulationResult,
-} from '../utils/goalResult';
-import { bandLegend, type GoalChartBand } from '../utils/goalChart';
-import { chanceNote, describeChance, noChanceText } from '../utils/goalChance';
+} from '../domain/goal/result';
+import { bandLegend, type GoalChartBand } from '../domain/goal/chart';
+import { chanceNote, describeChance, noChanceText } from '../domain/goal/chance';
 import { fmtAmount, fmtRate } from '../utils/format';
 import ShortGoalNotice from '../components/ShortGoalNotice';
-import type { GoalRange } from '../utils/goalMath';
+import type { GoalRange } from '../domain/goal/math';
 import { useElementSize } from '../hooks/useElementSize';
 import GoalGrowthChart from '../components/GoalGrowthChart';
 import GoalPortfolioLink from '../components/GoalPortfolioLink';
 import { useSuggestedReturn } from '../hooks/useSuggestedReturn';
-import { suggestedRate, suggestedVolatility } from '../utils/suggestedReturn';
+import { suggestedRate, suggestedVolatility } from '../domain/goal/suggestedReturn';
 import {
   applySuggestions,
   initialSuggestedFields,
@@ -35,7 +35,7 @@ import {
   restoreSuggestion,
   SUGGESTED_FIELDS,
   type SuggestedField,
-} from '../utils/suggestedFields';
+} from '../domain/goal/suggestedFields';
 import { usePortfolios } from '../hooks/usePortfolios';
 import { useGoal } from '../hooks/useGoals';
 import { useGoalMutations } from '../hooks/useGoalMutations';
@@ -50,7 +50,7 @@ import {
   sameDraft,
   saveProblem,
   type GoalDraft,
-} from '../utils/savedGoal';
+} from '../domain/goal/savedGoal';
 import './GoalCalculatorPage.css';
 
 /**

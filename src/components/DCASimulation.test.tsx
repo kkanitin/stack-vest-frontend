@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DCASimulation from './DCASimulation';
 import { runDcaSimulation, DcaRequestError } from '../api/simulations';
-import { defaultRange, addYears, todayUtc } from '../utils/dcaInputs';
+import { defaultRange, addYears, todayUtc } from '../domain/dca/inputs';
 import type { DcaResult } from '../api/simulations';
 
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ token: 'test-token' }) }));

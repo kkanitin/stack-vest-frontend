@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { computeMarketStatus } from '../utils/marketStatus';
-import { biggestMovers } from '../utils/holdings';
-import type { Holding } from '../utils/holdings';
+import { computeMarketStatus } from '../domain/market/marketStatus';
+import { biggestMovers } from '../domain/portfolio/holdings';
+import type { Holding } from '../domain/portfolio/holdings';
 import { fmtPct, changeTone } from '../utils/format';
 import './Visualization.css';
 
