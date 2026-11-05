@@ -83,6 +83,8 @@ interface FieldProps {
   form: GoalFormInputs;
   errors: GoalInputErrors;
   onChange: (field: TextField, value: string) => void;
+  /** Called when the user leaves the field, so its error can show from then on. */
+  onBlur?: (field: TextField) => void;
   /** Shown inside the input on the right, e.g. the currency label or "%". */
   suffix?: string;
   hint?: string;
@@ -90,7 +92,7 @@ interface FieldProps {
   placeholder?: string;
 }
 
-function Field({ field, label, form, errors, onChange, suffix, hint, numeric = true, placeholder }: FieldProps) {
+function Field({ field, label, form, errors, onChange, onBlur, suffix, hint, numeric = true, placeholder }: FieldProps) {
   const id = `goal-${field}`;
   const error = errors[field];
   const describedBy = [error ? `${id}-err` : null, hint ? `${id}-hint` : null].filter(Boolean).join(' ') || undefined;
@@ -107,6 +109,7 @@ function Field({ field, label, form, errors, onChange, suffix, hint, numeric = t
           value={form[field]}
           placeholder={placeholder}
           onChange={e => onChange(field, e.target.value)}
+          onBlur={onBlur ? () => onBlur(field) : undefined}
           aria-invalid={!!error}
           aria-describedby={describedBy}
         />
@@ -355,6 +358,18 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
     setLastValidForm(form);
   }
   const shownForm = valid ? form : lastValidForm;
+  // A field's error shows only once the user has edited or left it, so a fresh form does not
+  // open full of complaints. A saved goal's fields count as touched: its values are already set.
+  const [touched, setTouched] = useState<ReadonlySet<TextField>>(
+    () => new Set(saved ? (Object.keys(form).filter(f => f !== 'kind') as TextField[]) : []),
+  );
+  const touch = (field: TextField) =>
+    setTouched(t => (t.has(field) ? t : new Set(t).add(field)));
+  // Once a result is on screen, every error shows: the stale note points at the highlighted fields.
+  const shownErrors: GoalInputErrors = lastValidForm
+    ? errors
+    : Object.fromEntries(Object.entries(errors).filter(([f]) => touched.has(f as TextField)));
+  const showsErrors = hasErrors(shownErrors);
 
   const result = useMemo(
     () => (shownForm ? computeGoalResult(parseGoalInputs(shownForm), todaysMoney) : null),
@@ -422,6 +437,7 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
     if (field === 'expectedReturn' || field === 'volatility') {
       setSuggestedFields(state => markTyped(state, field));
     }
+    touch(field);
     setForm(f => ({ ...f, [field]: value }));
   };
   const setKind = (kind: GoalKind) => setForm(f => ({ ...f, kind }));
@@ -434,7 +450,9 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
   const saving = createMutation.isPending || updateMutation.isPending;
   const canSave = valid && !problem && !saving && (saved === null || dirty || linkRemoved);
   let saveHint: string | null = null;
-  if (!valid && (saved !== null || dirty)) saveHint = 'Fix the highlighted fields to save.';
+  if (!valid && (saved !== null || dirty)) {
+    saveHint = showsErrors ? 'Fix the highlighted fields to save.' : 'Fill in the remaining fields to save.';
+  }
   else if (problem) saveHint = problem;
 
   const applySaved = (goal: Goal) => {
@@ -561,22 +579,22 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
           </ToggleGroup>
 
           <div className="goal-field-row">
-            <Field field="name" label="Goal name" form={form} errors={errors} onChange={update} numeric={false}
+            <Field field="name" label="Goal name" form={form} errors={shownErrors} onBlur={touch} onChange={update} numeric={false}
               placeholder={isTarget ? 'House down payment' : 'Retirement'} />
             <div className="goal-field-narrow">
-              <Field field="currency" label="Currency" form={form} errors={errors} onChange={update} numeric={false}
+              <Field field="currency" label="Currency" form={form} errors={shownErrors} onBlur={touch} onChange={update} numeric={false}
                 hint={portfolioId ? 'A code such as THB lets progress convert the portfolio value.' : 'Label only, no conversion.'} />
             </div>
           </div>
 
-          <Field field="startingAmount" label="Starting amount (optional)" form={form} errors={errors}
+          <Field field="startingAmount" label="Starting amount (optional)" form={form} errors={shownErrors} onBlur={touch}
             onChange={update} suffix={currencyLabel} placeholder="0" />
 
           {isTarget ? (
-            <Field field="targetAmount" label="Target amount" form={form} errors={errors} onChange={update}
+            <Field field="targetAmount" label="Target amount" form={form} errors={shownErrors} onBlur={touch} onChange={update}
               suffix={currencyLabel} />
           ) : (
-            <Field field="monthlyAmount" label="Monthly amount" form={form} errors={errors} onChange={update}
+            <Field field="monthlyAmount" label="Monthly amount" form={form} errors={shownErrors} onBlur={touch} onChange={update}
               suffix={currencyLabel} />
           )}
 
@@ -591,12 +609,12 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
           />
 
           <div className="goal-field-row">
-            <Field field="years" label="Years" form={form} errors={errors} onChange={update} suffix="yrs" />
-            <Field field="expectedReturn" label="Expected return a year" form={form} errors={errors}
+            <Field field="years" label="Years" form={form} errors={shownErrors} onBlur={touch} onChange={update} suffix="yrs" />
+            <Field field="expectedReturn" label="Expected return a year" form={form} errors={shownErrors} onBlur={touch}
               onChange={update} suffix="%" />
           </div>
 
-          <Field field="volatility" label="Volatility a year (optional)" form={form} errors={errors}
+          <Field field="volatility" label="Volatility a year (optional)" form={form} errors={shownErrors} onBlur={touch}
             onChange={update} suffix="%"
             hint={suggestedValues.volatility != null
               ? 'How much the yearly return swings. Used for the chance of reaching your goal.'
@@ -604,8 +622,8 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
 
           <div className="goal-field-row">
             <Field field="contributionGrowth" label="Yearly increase in monthly amount (optional)" form={form}
-              errors={errors} onChange={update} suffix="%" placeholder="0" />
-            <Field field="inflation" label="Inflation a year (optional)" form={form} errors={errors}
+              errors={shownErrors} onBlur={touch} onChange={update} suffix="%" placeholder="0" />
+            <Field field="inflation" label="Inflation a year (optional)" form={form} errors={shownErrors} onBlur={touch}
               onChange={update} suffix="%" placeholder="0" />
           </div>
         </Card>
