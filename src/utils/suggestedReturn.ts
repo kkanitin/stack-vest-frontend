@@ -7,6 +7,13 @@ export function suggestedRate(s: SuggestedReturn | undefined): number | null {
   return s.annualReturn;
 }
 
+/** The suggested yearly volatility in percent, or null when the response has none. */
+export function suggestedVolatility(s: SuggestedReturn | undefined): number | null {
+  if (suggestedRate(s) == null) return null;
+  const v = s!.annualVolatility;
+  return v == null || !Number.isFinite(v) || v < 0 ? null : v;
+}
+
 /** The text put in the expected-return field, e.g. "7.4" (at most 2 decimals, no trailing zeros). */
 export function suggestedRateText(rate: number): string {
   return String(Number(rate.toFixed(2)));
@@ -27,10 +34,15 @@ export function lookbackYears(s: SuggestedReturn): string | null {
   return start === end ? start : `${start}–${end}`;
 }
 
-/** "Suggested 7.4% a year from your holdings, 2016–2026, price only." */
+/**
+ * "Suggested 7.4% a year, ±15% volatility, from your holdings, 2016–2026, price only." The
+ * volatility part is left out when the backend has none.
+ */
 export function describeSuggestion(s: SuggestedReturn): string | null {
   const rate = suggestedRate(s);
   if (rate == null) return null;
   const period = lookbackYears(s);
-  return `Suggested ${fmtRate(rate)} a year from your holdings${period ? `, ${period}` : ''}, price only.`;
+  const vol = suggestedVolatility(s);
+  const volText = vol == null ? '' : `, ±${fmtRate(vol)} volatility,`;
+  return `Suggested ${fmtRate(rate)} a year${volText} from your holdings${period ? `, ${period}` : ''}, price only.`;
 }

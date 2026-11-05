@@ -1,7 +1,8 @@
 import React from 'react';
 import { usePortfolios } from '../hooks/usePortfolios';
 import type { SuggestedReturn } from '../api/portfolios';
-import { describeSuggestion, isSuggestedRate, suggestedRate } from '../utils/suggestedReturn';
+import { describeSuggestion, isSuggestedRate, suggestedRate, suggestedVolatility } from '../utils/suggestedReturn';
+import type { SuggestedField } from '../utils/suggestedFields';
 import DcaSkippedNotice from './DcaSkippedNotice';
 import './GoalPortfolioLink.css';
 
@@ -20,7 +21,10 @@ interface Props {
   suggestion: SuggestionState;
   /** The expected-return field as typed, to tell whether it already holds the suggestion. */
   expectedReturnText: string;
-  onUseSuggested: (rate: number) => void;
+  /** The volatility field as typed, likewise. */
+  volatilityText: string;
+  /** Puts the suggested value back in the field. */
+  onUseSuggested: (field: SuggestedField, value: number) => void;
   /**
    * The linked portfolio no longer exists (a saved goal whose portfolio was deleted). The
    * picker shows it as removed and no suggestion is asked for.
@@ -37,6 +41,7 @@ const GoalPortfolioLink: React.FC<Props> = ({
   onPortfolioChange,
   suggestion,
   expectedReturnText,
+  volatilityText,
   onUseSuggested,
   linkRemoved = false,
 }) => {
@@ -45,6 +50,7 @@ const GoalPortfolioLink: React.FC<Props> = ({
   const linked = portfolioId !== '';
   const data = linked ? suggestion.data : undefined;
   const rate = suggestedRate(data);
+  const volatility = suggestedVolatility(data);
   const description = data ? describeSuggestion(data) : null;
 
   let pickerHint: string | null = null;
@@ -101,8 +107,13 @@ const GoalPortfolioLink: React.FC<Props> = ({
           <div className="goal-link-suggestion" role="status">
             <p className="goal-hint" data-testid="goal-suggestion">{description}</p>
             {!isSuggestedRate(expectedReturnText, rate) && (
-              <button type="button" className="goal-link-use" onClick={() => onUseSuggested(rate)}>
+              <button type="button" className="goal-link-use" onClick={() => onUseSuggested('expectedReturn', rate)}>
                 Use suggested
+              </button>
+            )}
+            {volatility != null && !isSuggestedRate(volatilityText, volatility) && (
+              <button type="button" className="goal-link-use" onClick={() => onUseSuggested('volatility', volatility)}>
+                Use suggested volatility
               </button>
             )}
           </div>

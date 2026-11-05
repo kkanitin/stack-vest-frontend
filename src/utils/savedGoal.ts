@@ -43,6 +43,7 @@ export function goalToDraft(goal: Goal): GoalDraft {
       expectedReturn: text(goal.expectedReturn),
       contributionGrowth: text(goal.contributionGrowth),
       inflation: text(goal.inflation),
+      volatility: text(goal.volatility),
     },
     portfolioId: goal.portfolioId ?? '',
   };
@@ -93,6 +94,7 @@ export function draftToBody(draft: GoalDraft): GoalBody {
     expectedReturn: Number(form.expectedReturn.trim()),
     contributionGrowth: numberOrNull(form.contributionGrowth),
     inflation: numberOrNull(form.inflation),
+    volatility: numberOrNull(form.volatility),
     portfolioId: draft.portfolioId || null,
   };
 }

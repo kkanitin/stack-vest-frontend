@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, useBlocker, useNavigate, useParams } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,14 @@ import {
   type GoalInputErrors,
   type GoalKind,
 } from '../utils/goalInputs';
-import { computeGoalResult, type GoalResult } from '../utils/goalResult';
+import {
+  computeGoalResult,
+  computeGoalSimulation,
+  type GoalResult,
+  type GoalSimulationResult,
+} from '../utils/goalResult';
+import { bandLegend, type GoalChartBand } from '../utils/goalChart';
+import { chanceNote, describeChance, noChanceText } from '../utils/goalChance';
 import { fmtAmount, fmtRate } from '../utils/format';
 import ShortGoalNotice from '../components/ShortGoalNotice';
 import type { GoalRange } from '../utils/goalMath';
@@ -19,7 +26,16 @@ import { useElementSize } from '../hooks/useElementSize';
 import GoalGrowthChart from '../components/GoalGrowthChart';
 import GoalPortfolioLink from '../components/GoalPortfolioLink';
 import { useSuggestedReturn } from '../hooks/useSuggestedReturn';
-import { suggestedRate, suggestedRateText } from '../utils/suggestedReturn';
+import { suggestedRate, suggestedVolatility } from '../utils/suggestedReturn';
+import {
+  applySuggestions,
+  initialSuggestedFields,
+  linkChanged,
+  markTyped,
+  restoreSuggestion,
+  SUGGESTED_FIELDS,
+  type SuggestedField,
+} from '../utils/suggestedFields';
 import { usePortfolios } from '../hooks/usePortfolios';
 import { useGoal } from '../hooks/useGoals';
 import { useGoalMutations } from '../hooks/useGoalMutations';
@@ -140,18 +156,52 @@ function RangeRow({
   );
 }
 
-function GrowthCard({ result }: { result: GoalResult }) {
+/**
+ * The chance of reaching the target (target mode) or the range of simulated outcomes
+ * (projection mode), or one line saying a volatility is needed (KAN-35).
+ */
+function ChanceCard({
+  result,
+  simulation,
+  pending,
+}: {
+  result: GoalResult;
+  simulation: GoalSimulationResult | null;
+  /** The simulation is still catching up with the latest inputs. */
+  pending: boolean;
+}) {
+  if (result.kind === 'target' && result.headline == null) return null;
+  if (!simulation) {
+    return <p className="goal-chance-none" data-testid="goal-chance-none">{noChanceText(result.kind)}</p>;
+  }
+  return (
+    <Card className={`goal-chance px-6${pending ? ' goal-chance--pending' : ''}`} data-testid="goal-chance" aria-busy={pending}>
+      <CardTitle className="label-caps">
+        {result.kind === 'target' ? 'Chance of reaching it' : 'Likely range'}
+      </CardTitle>
+      <p className="goal-chance-text" data-testid="goal-chance-text">{describeChance(result, simulation)}</p>
+      <p className="goal-note" role="note">{chanceNote(simulation)}</p>
+    </Card>
+  );
+}
+
+function GrowthCard({ result, simulation }: { result: GoalResult; simulation: GoalSimulationResult | null }) {
   // Match the SVG viewBox to the rendered box so axis text is not stretched.
   const [wrapRef, size] = useElementSize<HTMLDivElement>({ initialWidth: 760, initialHeight: 260 });
   if (!result.chart) return null;
   const isTarget = result.kind === 'target';
+  // With a volatility the band is the simulated percentiles and the line their median (KAN-36).
+  const band: GoalChartBand = simulation
+    ? { kind: 'percentiles', percentiles: simulation.percentiles, paths: simulation.paths }
+    : { kind: 'returns', returns: result.returns };
+  const points = simulation ? simulation.chart : result.chart;
   return (
     <Card className="goal-chart-card px-6" data-testid="goal-chart-card">
       <CardTitle className="label-caps">Growth over time</CardTitle>
       <div className="goal-chart-wrap" ref={wrapRef}>
         <GoalGrowthChart
-          points={result.chart}
-          returns={result.returns}
+          points={points}
+          band={band}
           currency={result.currency}
           target={isTarget ? result.targetNominal : undefined}
           width={size.width}
@@ -161,11 +211,11 @@ function GrowthCard({ result }: { result: GoalResult }) {
       <div className="goal-chart-legend">
         <span className="goal-legend-item">
           <span className="goal-legend-swatch" />
-          Expected value
+          {simulation ? 'Median of simulations' : 'Expected value'}
         </span>
-        <span className="goal-legend-item">
+        <span className="goal-legend-item" data-testid="goal-legend-band">
           <span className="goal-legend-swatch goal-legend-swatch--band" />
-          Low–high return
+          {bandLegend(band)}
         </span>
         <span className="goal-legend-item">
           <span className="goal-legend-swatch goal-legend-swatch--dashed" />
@@ -182,7 +232,17 @@ function GrowthCard({ result }: { result: GoalResult }) {
   );
 }
 
-function Results({ result, stale }: { result: GoalResult; stale: boolean }) {
+function Results({
+  result,
+  simulation,
+  simulationPending,
+  stale,
+}: {
+  result: GoalResult;
+  simulation: GoalSimulationResult | null;
+  simulationPending: boolean;
+  stale: boolean;
+}) {
   const { currency } = result;
   const isTarget = result.kind === 'target';
   const figures = result.figures;
@@ -212,6 +272,8 @@ function Results({ result, stale }: { result: GoalResult; stale: boolean }) {
         )}
         <div className="goal-headline-sub">at the expected return of {fmtRate(result.returns.expected)} a year</div>
       </Card>
+
+      <ChanceCard result={result} simulation={simulation} pending={simulationPending} />
 
       {result.cashComparison && (
         <ShortGoalNotice
@@ -244,7 +306,7 @@ function Results({ result, stale }: { result: GoalResult; stale: boolean }) {
         </div>
       )}
 
-      <GrowthCard result={result} />
+      <GrowthCard result={result} simulation={simulation} />
 
       <Card className="goal-range-card px-6">
         <CardTitle className="label-caps">
@@ -254,6 +316,7 @@ function Results({ result, stale }: { result: GoalResult; stale: boolean }) {
         <p className="goal-note">
           A single steady return never happens in practice. The low and high cases show how much the
           result depends on it.
+          {simulation && ' The chart’s band shows the spread of simulated outcomes instead.'}
         </p>
       </Card>
 
@@ -297,13 +360,20 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
     () => (shownForm ? computeGoalResult(parseGoalInputs(shownForm), todaysMoney) : null),
     [shownForm, todaysMoney],
   );
+  // The Monte Carlo (KAN-35) runs on a deferred copy of the inputs, so typing stays smooth;
+  // the deterministic figures above update at once. Same inputs → same seeded result.
+  const simForm = useDeferredValue(shownForm);
+  const simulation = useMemo(
+    () => (simForm ? computeGoalSimulation(parseGoalInputs(simForm), todaysMoney) : null),
+    [simForm, todaysMoney],
+  );
 
-  // Optional portfolio link (KAN-21). The suggested return fills the expected-return field
-  // unless the user typed a value there themselves; an empty field is always free to fill.
+  // Optional portfolio link (KAN-21, KAN-34). The suggested return and volatility fill their
+  // fields unless the user typed a value there themselves; an empty field is always free to
+  // fill. The rules live in `suggestedFields`.
   const [portfolioId, setPortfolioId] = useState(baseline.portfolioId);
-  // A saved goal's expected return is the user's choice: a suggestion never overwrites it.
-  const [returnTyped, setReturnTyped] = useState(saved !== null);
-  const [appliedSuggestion, setAppliedSuggestion] = useState<string | null>(null);
+  // A saved goal's values are the user's choice: a suggestion never overwrites them.
+  const [suggestedFields, setSuggestedFields] = useState(() => initialSuggestedFields(saved !== null));
   // A saved goal can point at a portfolio that has since been deleted.
   const portfolios = usePortfolios();
   const linkRemoved =
@@ -313,30 +383,45 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
   const linkKnown = portfolios.data ? !linkRemoved : portfolios.isError;
   const linkedId = portfolioId && linkKnown ? portfolioId : undefined;
   const suggestion = useSuggestedReturn(linkedId);
-  const suggested = linkedId ? suggestedRate(suggestion.data) : null;
-  const suggestionKey = suggested == null ? null : `${portfolioId}:${suggested}`;
-  if (suggestionKey !== null && suggestionKey !== appliedSuggestion) {
-    // Adjusting state while rendering, as above: fill the field once per new suggestion.
-    setAppliedSuggestion(suggestionKey);
-    if (!returnTyped || form.expectedReturn.trim() === '') {
-      setForm(f => ({ ...f, expectedReturn: suggestedRateText(suggested!) }));
-      setReturnTyped(false);
+  const suggestedValues = {
+    expectedReturn: linkedId ? suggestedRate(suggestion.data) : null,
+    volatility: linkedId ? suggestedVolatility(suggestion.data) : null,
+  };
+  const filled = applySuggestions(suggestedFields, form, portfolioId, suggestedValues);
+  if (filled) {
+    // Adjusting state while rendering, as above: fill each field once per new suggestion.
+    setSuggestedFields(filled.state);
+    setForm(filled.form);
+    // A saved goal whose own link fills a field it saved empty (e.g. a volatility saved
+    // before the field existed): the fill is not the user's edit, so it is not "unsaved".
+    if (saved && portfolioId === baseline.portfolioId) {
+      const autoFilled = SUGGESTED_FIELDS.filter(
+        f => baseline.form[f] === '' && form[f] === '' && filled.form[f] !== '',
+      );
+      if (autoFilled.length > 0) {
+        const fills = Object.fromEntries(autoFilled.map(f => [f, filled.form[f]]));
+        setBaseline(b => ({ ...b, form: { ...b.form, ...fills } }));
+      }
     }
   }
 
   const changePortfolio = (id: string) => {
     setPortfolioId(id);
-    setAppliedSuggestion(null);
-    // A filled-in suggestion belonged to the old portfolio; a typed value is the user's to keep.
-    if (!returnTyped) setForm(f => ({ ...f, expectedReturn: '' }));
+    // Filled-in suggestions belonged to the old portfolio; typed values are the user's to keep.
+    const next = linkChanged(suggestedFields, form);
+    setSuggestedFields(next.state);
+    setForm(next.form);
   };
-  const applySuggested = (rate: number) => {
-    setForm(f => ({ ...f, expectedReturn: suggestedRateText(rate) }));
-    setReturnTyped(false);
+  const applySuggested = (field: SuggestedField, value: number) => {
+    const next = restoreSuggestion(suggestedFields, form, field, value);
+    setSuggestedFields(next.state);
+    setForm(next.form);
   };
 
   const update = (field: TextField, value: string) => {
-    if (field === 'expectedReturn') setReturnTyped(true);
+    if (field === 'expectedReturn' || field === 'volatility') {
+      setSuggestedFields(state => markTyped(state, field));
+    }
     setForm(f => ({ ...f, [field]: value }));
   };
   const setKind = (kind: GoalKind) => setForm(f => ({ ...f, kind }));
@@ -357,7 +442,7 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
     setBaseline(draft);
     setForm(draft.form);
     setPortfolioId(draft.portfolioId);
-    setReturnTyped(true);
+    setSuggestedFields(state => ({ ...state, typed: initialSuggestedFields(true).typed }));
   };
 
   const save = () => {
@@ -500,6 +585,7 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
             onPortfolioChange={changePortfolio}
             suggestion={suggestion}
             expectedReturnText={form.expectedReturn}
+            volatilityText={form.volatility}
             onUseSuggested={applySuggested}
             linkRemoved={linkRemoved}
           />
@@ -509,6 +595,12 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
             <Field field="expectedReturn" label="Expected return a year" form={form} errors={errors}
               onChange={update} suffix="%" />
           </div>
+
+          <Field field="volatility" label="Volatility a year (optional)" form={form} errors={errors}
+            onChange={update} suffix="%"
+            hint={suggestedValues.volatility != null
+              ? 'How much the yearly return swings. Used for the chance of reaching your goal.'
+              : 'Leave empty to skip the chance of reaching your goal. Broad stock funds are often 15–20%.'} />
 
           <div className="goal-field-row">
             <Field field="contributionGrowth" label="Yearly increase in monthly amount (optional)" form={form}
@@ -524,7 +616,12 @@ function GoalCalculator({ saved }: { saved: Goal | null }) {
             Show in today's money
           </label>
           {result ? (
-            <Results result={result} stale={!valid} />
+            <Results
+              result={result}
+              simulation={simulation}
+              simulationPending={simForm !== shownForm}
+              stale={!valid}
+            />
           ) : (
             <Card className="goal-empty px-6" data-testid="goal-empty">
               <p className="goal-empty-text">

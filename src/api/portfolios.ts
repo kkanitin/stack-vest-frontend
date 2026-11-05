@@ -436,6 +436,8 @@ export interface SuggestedReturnHolding {
   valueUsd: number;
   weightPct: number;
   annualReturn: number;
+  /** This holding's own annualised volatility, percent; null with under 24 monthly returns. Missing from older backends. */
+  annualVolatility?: number | null;
   startDate: string;
   endDate: string;
   years: number;
@@ -457,6 +459,12 @@ export interface SuggestedReturn {
   available: boolean;
   /** Percent a year, rounded to 2 decimals. */
   annualReturn: number | null;
+  /**
+   * Annualised volatility of the portfolio's monthly log returns (holdings weighted by
+   * today's value), percent, 2 decimals (KAN-31). Null when not available or with under 24
+   * shared monthly returns; missing from older backends.
+   */
+  annualVolatility?: number | null;
   lookback: SuggestedReturnLookback | null;
   holdings: SuggestedReturnHolding[];
   skipped: SuggestedReturnSkipped[];

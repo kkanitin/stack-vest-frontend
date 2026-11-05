@@ -14,6 +14,7 @@ const goal: Goal = {
   expectedReturn: 8,
   contributionGrowth: null,
   inflation: 3,
+  volatility: 16.5,
   portfolioId: 'p1',
   createdAt: '2026-11-01T00:00:00Z',
   updatedAt: '2026-11-01T00:00:00Z',
@@ -33,6 +34,7 @@ describe('goalToDraft', () => {
         expectedReturn: '8',
         contributionGrowth: '',
         inflation: '3',
+        volatility: '16.5',
       },
       portfolioId: 'p1',
     });
@@ -59,8 +61,25 @@ describe('draftToBody', () => {
       expectedReturn: goal.expectedReturn,
       contributionGrowth: goal.contributionGrowth,
       inflation: goal.inflation,
+      volatility: goal.volatility,
       portfolioId: goal.portfolioId,
     });
+  });
+
+  it('keeps a volatility of 0, and sends an empty or missing one as null', () => {
+    expect(draftToBody(goalToDraft({ ...goal, volatility: 0 })).volatility).toBe(0);
+    expect(goalToDraft({ ...goal, volatility: 0 }).form.volatility).toBe('0');
+    expect(draftToBody(goalToDraft({ ...goal, volatility: null })).volatility).toBeNull();
+    // Goals from a backend without the field load as empty.
+    const { volatility: _omit, ...older } = goal;
+    void _omit;
+    expect(goalToDraft(older).form.volatility).toBe('');
+  });
+
+  it('flags a changed volatility as unsaved', () => {
+    const draft = goalToDraft(goal);
+    expect(sameDraft(draft, { ...draft, form: { ...draft.form, volatility: '20' } })).toBe(false);
+    expect(sameDraft(draft, goalToDraft(goal))).toBe(true);
   });
 
   it('sends empty optional fields as null and no link as null', () => {

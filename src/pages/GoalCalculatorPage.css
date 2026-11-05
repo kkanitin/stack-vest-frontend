@@ -388,3 +388,27 @@
   gap: 8px;
   margin-top: 12px;
 }
+
+/* Chance of reaching the goal / likely range (KAN-35). */
+.goal-chance {
+  gap: 8px;
+  transition: opacity 0.15s ease;
+}
+
+.goal-chance--pending {
+  opacity: 0.6;
+}
+
+.goal-chance-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.goal-chance-none {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}

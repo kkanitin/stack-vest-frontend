@@ -80,6 +80,26 @@ describe('validateGoalInputs', () => {
   });
 });
 
+describe('volatility', () => {
+  it('may be empty, 0 or up to 100', () => {
+    for (const volatility of ['', '0', '15.5', '100']) {
+      expect(validateGoalInputs({ ...valid, volatility })).toEqual({});
+    }
+  });
+
+  it('rejects text, negative values and values above 100', () => {
+    for (const volatility of ['x', '-1', '100.5']) {
+      expect(validateGoalInputs({ ...valid, volatility }).volatility).toBeDefined();
+    }
+  });
+
+  it('parses an empty field as null (no probability) and keeps 0', () => {
+    expect(parseGoalInputs(valid).volatilityPct).toBeNull();
+    expect(parseGoalInputs({ ...valid, volatility: '0' }).volatilityPct).toBe(0);
+    expect(parseGoalInputs({ ...valid, volatility: ' 18 ' }).volatilityPct).toBe(18);
+  });
+});
+
 describe('parseGoalInputs', () => {
   it('turns the text into numbers, with empty optional fields as 0', () => {
     const parsed = parseGoalInputs({ ...valid, startingAmount: '', contributionGrowth: '', inflation: '' });

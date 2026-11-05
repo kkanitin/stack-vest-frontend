@@ -18,6 +18,8 @@ export interface GoalFormInputs {
   expectedReturn: string;
   contributionGrowth: string;
   inflation: string;
+  /** Annual volatility (%), optional: empty means no chance of reaching the goal is shown. */
+  volatility: string;
 }
 
 export type GoalInputErrors = Partial<Record<Exclude<keyof GoalFormInputs, 'kind'>, string>>;
@@ -30,6 +32,9 @@ export const MAX_YEARS = 100;
 /** Bounds for the percentage fields (return, contribution growth, inflation). */
 export const MIN_RATE_PCT = -50;
 export const MAX_RATE_PCT = 50;
+/** Bounds for the volatility field, the same as the backend's. */
+export const MIN_VOLATILITY_PCT = 0;
+export const MAX_VOLATILITY_PCT = 100;
 
 export const DEFAULT_GOAL_FORM: GoalFormInputs = {
   kind: 'projection',
@@ -42,6 +47,7 @@ export const DEFAULT_GOAL_FORM: GoalFormInputs = {
   expectedReturn: '',
   contributionGrowth: '',
   inflation: DEFAULT_INFLATION,
+  volatility: '',
 };
 
 /** `NaN` for empty or non-numeric text, so `Number('')` never becomes 0. */
@@ -111,6 +117,13 @@ export function validateGoalInputs(inputs: GoalFormInputs): GoalInputErrors {
   const inflationError = rateError(optionalNumber(inputs.inflation), 'inflation');
   if (inflationError) errors.inflation = inflationError;
 
+  if (inputs.volatility.trim() !== '') {
+    const v = Number(inputs.volatility.trim());
+    if (!Number.isFinite(v) || v < MIN_VOLATILITY_PCT || v > MAX_VOLATILITY_PCT) {
+      errors.volatility = `Enter a volatility between ${MIN_VOLATILITY_PCT}% and ${MAX_VOLATILITY_PCT}%, or leave it empty.`;
+    }
+  }
+
   return errors;
 }
 
@@ -124,6 +137,8 @@ export interface ParsedGoal {
   currency: string;
   years: number;
   inflationPct: number;
+  /** Annual volatility in percent; null when the field is empty (no probability is shown). */
+  volatilityPct: number | null;
   projection: ProjectionInputs;
   target: TargetInputs;
 }
@@ -142,6 +157,7 @@ export function parseGoalInputs(inputs: GoalFormInputs): ParsedGoal {
     currency: inputs.currency.trim(),
     years: shared.years,
     inflationPct: optionalNumber(inputs.inflation),
+    volatilityPct: inputs.volatility.trim() === '' ? null : Number(inputs.volatility.trim()),
     projection: { ...shared, monthlyAmount: toNumber(inputs.monthlyAmount) },
     target: { ...shared, targetAmount: toNumber(inputs.targetAmount) },
   };
