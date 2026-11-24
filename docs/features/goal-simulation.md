@@ -2,7 +2,7 @@
 
 **Routes:** `/dashboard/goals` (saved goals), `/dashboard/goals/new` (new goal), `/dashboard/goals/:id` (a saved goal)
 **Entry points:** `src/pages/GoalsPage.tsx` (list), `src/pages/GoalCalculatorPage.tsx` (calculator)
-**Sidebar:** Goals (opens the list)
+**Sidebar:** Plan → Goals (opens the list)
 
 Plan toward a goal with investing. The DCA simulation looks back at real prices. This page looks forward at a steady return the user chooses. Every result is calculated in the browser. The API calls are for saved goals (the backend stores inputs only, see [Saved goals](#saved-goals)) and the optional portfolio link: the user's portfolios and a suggested return for the linked one. Goal progress also reads the linked portfolio's value and, when currencies differ, today's exchange rate from an external FX source (see [Progress](#progress)).
 

@@ -2,6 +2,7 @@
 
 **Route:** `/dashboard/dca`
 **Entry point:** `src/components/DCASimulation.tsx`
+**Sidebar:** Plan → DCA Simulation, or the **New DCA simulation** button in the sidebar footer
 
 Backtest dollar-cost averaging before committing real money.
 

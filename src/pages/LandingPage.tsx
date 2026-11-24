@@ -10,7 +10,7 @@ import DividendScheduleModal from '../components/DividendScheduleModal';
 import './LandingPage.css';
 
 // Lightweight monoline glyphs (Lucide-style strokes) — kept inline to avoid
-// pulling an icon library for four sidebar items.
+// pulling an icon library for a handful of sidebar items.
 const Icon: Record<string, React.FC<{ size?: number }>> = {
   Overview: ({ size = 16 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -74,6 +74,44 @@ const Icon: Record<string, React.FC<{ size?: number }>> = {
   ),
 };
 
+interface NavItem {
+  to: string;
+  label: string;
+  icon: React.FC<{ size?: number }>;
+  /** Match the path exactly, so a child route doesn't light this link up. */
+  end?: boolean;
+}
+
+interface NavGroup {
+  /** Heading shown above the links; the first group has none. */
+  label?: string;
+  items: NavItem[];
+}
+
+// Own money first, then planning tools, then the market.
+const NAV_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { to: '/dashboard/visualization', label: 'Overview', icon: Icon.Overview, end: true },
+      { to: '/dashboard/portfolios', label: 'Portfolios', icon: Icon.Portfolios },
+    ],
+  },
+  {
+    label: 'Plan',
+    items: [
+      { to: '/dashboard/goals', label: 'Goals', icon: Icon.Goals },
+      { to: '/dashboard/dca', label: 'DCA Simulation', icon: Icon.DCA },
+    ],
+  },
+  {
+    label: 'Market',
+    items: [
+      { to: '/dashboard/watchlist', label: 'Watchlist', icon: Icon.Watchlist },
+      { to: '/dashboard/visualization/heatmap', label: 'Heatmap', icon: Icon.Heatmap },
+    ],
+  },
+];
+
 const LandingPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -114,61 +152,39 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          <nav className="sidebar-nav">
-            <NavLink
-              to="/dashboard/visualization"
-              end
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="sidebar-link-icon"><Icon.Overview /></span>
-              Overview
-            </NavLink>
-            <NavLink
-              to="/dashboard/portfolios"
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="sidebar-link-icon"><Icon.Portfolios /></span>
-              Portfolios
-            </NavLink>
-            <NavLink
-              to="/dashboard/visualization/heatmap"
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="sidebar-link-icon"><Icon.Heatmap /></span>
-              Heatmap
-            </NavLink>
-            <NavLink
-              to="/dashboard/dca"
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="sidebar-link-icon"><Icon.DCA /></span>
-              DCA Simulation
-            </NavLink>
-            <NavLink
-              to="/dashboard/goals"
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="sidebar-link-icon"><Icon.Goals /></span>
-              Goals
-            </NavLink>
-            <NavLink
-              to="/dashboard/watchlist"
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="sidebar-link-icon"><Icon.Watchlist /></span>
-              Watchlist
-            </NavLink>
+          <nav className="sidebar-nav" aria-label="Main">
+            {NAV_GROUPS.map((group, i) => {
+              const headingId = group.label ? `sidebar-group-${group.label.toLowerCase()}` : undefined;
+              return (
+                <div
+                  key={group.label ?? i}
+                  className="sidebar-group"
+                  role={headingId ? 'group' : undefined}
+                  aria-labelledby={headingId}
+                >
+                  {group.label && (
+                    <div id={headingId} className="sidebar-group-label">{group.label}</div>
+                  )}
+                  {group.items.map(({ to, label, icon: ItemIcon, end }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={end}
+                      className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <span className="sidebar-link-icon"><ItemIcon /></span>
+                      {label}
+                    </NavLink>
+                  ))}
+                </div>
+              );
+            })}
           </nav>
 
           <div className="sidebar-foot">
             <Button onClick={handleNewSimulation} className="w-full sidebar-cta">
-              <Icon.Plus /> New Simulation
+              <Icon.Plus /> New DCA simulation
             </Button>
 
             <div className="sidebar-foot-links">
