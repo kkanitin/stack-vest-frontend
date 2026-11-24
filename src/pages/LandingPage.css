@@ -76,7 +76,24 @@
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-group {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
+}
+
+/* Same caps style as .sidebar-brand-sub, lined up with the link text's left edge. */
+.sidebar-group-label {
+  padding: 0 12px 6px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
 
 .sidebar-link {

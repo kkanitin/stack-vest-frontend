@@ -57,6 +57,18 @@ If `VITE_GOOGLE_CLIENT_ID` is missing or still the placeholder value, `App` rend
 
 `LandingPage` is the dashboard shell rendered on every authenticated route, so it is imported eagerly. Every other route component is lazy-loaded.
 
+### Sidebar
+
+The sidebar is built from `NAV_GROUPS` in `src/pages/LandingPage.tsx`: your own money first, then planning tools, then the market. Each labelled group is a `role="group"` named by its heading.
+
+| Group | Links |
+|---|---|
+| (no heading) | Overview, Portfolios |
+| Plan | Goals, DCA Simulation |
+| Market | Watchlist, Heatmap |
+
+The footer's **New DCA simulation** button opens `/dashboard/dca`. Adding a page means adding an entry to `NAV_GROUPS`. The sidebar order doesn't follow the URLs: Heatmap sits under Market although its route is `visualization/heatmap`.
+
 ## Data layer
 
 - **API layer** — `src/api/*` is a thin REST client per resource (portfolios, goals, stocks, watchlist, dividends, sentiment, simulations, users, …), based at `${VITE_API_URL}/api/v1`.
